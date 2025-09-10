@@ -45,40 +45,28 @@ invisible(lapply(pacotes, use_package))
 # Funções estatisticas
 
 # Estatistica Quanti
-{
-  anQuant <- function(resp, resp_exp,
-                      medida = c("me", "md"),
-                      m = c("linear", "linear2", "Exp", "Log"),
-                      y_min = NULL, y_max = NULL,
-                      conf.level = 0.95,
-                      nsim = 1000,
-                      shade_alpha = 0.2,
-                      rotulo = 0.5) {
+anQuant <- function(resp, resp_exp,
+                    medida = c("me", "md"),
+                    m = c("linear", "linear2", "Exp", "Log"),
+                    y_min = NULL, y_max = NULL,
+                    conf.level = 0.95,
+                    nsim = 1000,
+                    shade_alpha = 0.2,
+                    rotulo = 0.5,
+                    fator = NULL,
+                    PM = TRUE) {
 
-    suppressWarnings({
-      library(dplyr)
-      library(tibble)
-    })
+  suppressWarnings({
+    library(dplyr)
+    library(tibble)
+  })
 
-    medida <- match.arg(medida)
-    m <- match.arg(m)
+  medida <- match.arg(medida)
+  m <- match.arg(m)
 
-    df <- data.frame(resp = resp, resp_exp = resp_exp)
-    resumo <- df %>%
-      group_by(resp_exp) %>%
-      summarise(
-        media   = mean(resp),
-        mediana = median(resp),
-        sd      = sd(resp),
-        n       = n(),
-        se      = sd / sqrt(n),
-        cv      = (sd / mean(resp)) * 100,
-        .groups = "drop"
-      )
-
-    y_var <- if (medida == "me") resumo$media else resumo$mediana
-    df_modelo <- tibble(resp_exp = resumo$resp_exp, y = y_var)
-
+  # --- helper para ajuste ---
+  .fit_model <- function(df_modelo, m, conf.level, nsim) {
+    y_var <- df_modelo$y
     if (m == "linear") {
       modelo <- lm(y ~ resp_exp, data = df_modelo)
     } else if (m == "linear2") {
@@ -91,8 +79,7 @@ invisible(lapply(pacotes, use_package))
         start_list$a <- exp(unname(coef(lin0)[1]))
       }
       modelo <- nls(y ~ a * exp(b * resp_exp),
-                    data = df_modelo,
-                    start = start_list,
+                    data = df_modelo, start = start_list,
                     control = nls.control(warnOnly = TRUE))
     } else if (m == "Log") {
       df_modelo$y_adj <- ifelse(df_modelo$y == 0, 0.01, df_modelo$y)
@@ -100,15 +87,15 @@ invisible(lapply(pacotes, use_package))
       if (all(df_modelo$y_adj > 0 & df_modelo$y_adj < max(df_modelo$y))) {
         y_logit <- log(start_list$A / df_modelo$y_adj - 1)
         lin0 <- lm(y_logit ~ resp_exp, data = df_modelo)
-        start_list$s <- -1 / coef(lin0)[2]
+        start_list$s  <- -1 / coef(lin0)[2]
         start_list$x0 <- -coef(lin0)[1] * start_list$s
       }
       modelo <- nls(y ~ A / (1 + exp(-(resp_exp - x0) / s)),
-                    data = df_modelo,
-                    start = start_list,
+                    data = df_modelo, start = start_list,
                     control = nls.control(warnOnly = TRUE))
     }
 
+    # Métricas
     if (inherits(modelo, "lm")) {
       smry <- summary(modelo)
       R2  <- unname(smry$r.squared)
@@ -123,101 +110,9 @@ invisible(lapply(pacotes, use_package))
       R2a <- if (tss > 0 && n > p) 1 - (rss/(n - p)) / (tss/(n - 1)) else NA_real_
     }
 
-    x_vals <- df_modelo$resp_exp
-    y_vals <- y_var
-    y_lim_inf <- if (!is.null(y_min)) y_min else min(y_vals) * 0.95
-    y_lim_sup <- if (!is.null(y_max)) y_max else max(y_vals) * 1.05
-
-    # gráfico base com fundo transparente
-    plot(x_vals, y_vals,
-         pch = 20,
-         xlab = "",
-         ylab = ifelse(medida == "me", "Média", "Mediana"),
-         main = paste("Modelo:", m),
-         ylim = c(y_lim_inf, y_lim_sup),
-         bg = "transparent")   # <<< fundo transparente
-
-
-    x_seq <- seq(min(x_vals), max(x_vals), length.out = 300)
-    pred  <- suppressWarnings(predict(modelo, newdata = data.frame(resp_exp = x_seq)))
-    lines(x_seq, pred, col = "black", lwd = 2)
-
-    alpha <- 1 - conf.level
-    draw_polygon_band <- function(x, lower, upper) {
-      col_band <- rgb(0, 0, 0, alpha = shade_alpha)
-      polygon(c(x, rev(x)), c(lower, rev(upper)),
-              border = NA, col = col_band)
-    }
-
-    if (inherits(modelo, "lm")) {
-      # Tenta usar confbands::confbands() se o pacote existir; caso contrário, fallback manual
-      if (requireNamespace("confbands", quietly = TRUE)) {
-        ok <- isTRUE(try({
-          confbands(
-            modelo,
-            newdata = data.frame(resp_exp = seq(min(x_vals), max(x_vals), length.out = 200)),
-            add = TRUE, conf.level = conf.level, col = "gray40"
-          )
-          TRUE
-        }, silent = TRUE))
-        if (!ok) {
-          sefit <- predict(modelo, newdata = data.frame(resp_exp = x_seq), se.fit = TRUE)
-          crit  <- qt(1 - alpha/2, df = df.residual(modelo))
-          upper <- sefit$fit + crit * sefit$se.fit
-          lower <- sefit$fit - crit * sefit$se.fit
-          draw_polygon_band(x_seq, lower, upper)
-        }
-      } else {
-        sefit <- predict(modelo, newdata = data.frame(resp_exp = x_seq), se.fit = TRUE)
-        crit  <- qt(1 - alpha/2, df = df.residual(modelo))
-        upper <- sefit$fit + crit * sefit$se.fit
-        lower <- sefit$fit - crit * sefit$se.fit
-        draw_polygon_band(x_seq, lower, upper)
-      }
-    } else {
-      co <- coef(modelo)
-      V  <- try(vcov(modelo), silent = TRUE)
-      if (inherits(V, "try-error")) {
-        res_sd <- sd(residuals(modelo))
-        crit   <- qnorm(1 - alpha/2)
-        upper  <- pred + crit * res_sd
-        lower  <- pred - crit * res_sd
-        draw_polygon_band(x_seq, lower, upper)
-      } else {
-        k <- length(co)
-        L <- try(chol(V), silent = TRUE)
-        if (inherits(L, "try-error")) {
-          eig <- eigen((V + t(V)) / 2, symmetric = TRUE)
-          eig$values[eig$values < 0] <- 0
-          L <- t(eig$vectors %*% diag(sqrt(eig$values)))
-        }
-        z <- matrix(rnorm(k * nsim), nrow = k, ncol = nsim)
-        sim_par <- matrix(co, nrow = k, ncol = nsim)
-        sim_par <- sim_par + L %*% z
-        rownames(sim_par) <- names(co)
-        nx <- length(x_seq)
-        sim_mat <- matrix(NA_real_, nrow = nx, ncol = nsim)
-        for (j in seq_len(nsim)) {
-          if (m == "Exp") {
-            a <- sim_par["a", j]; b <- sim_par["b", j]
-            sim_mat[, j] <- a * exp(b * x_seq)
-          } else if (m == "Log") {
-            A <- sim_par["A", j]; x0 <- sim_par["x0", j]; s <- sim_par["s", j]
-            sim_mat[, j] <- A / (1 + exp(-(x_seq - x0) / s))
-          }
-        }
-        lower <- apply(sim_mat, 1, quantile, probs = alpha/2, na.rm = TRUE)
-        upper <- apply(sim_mat, 1, quantile, probs = 1 - alpha/2, na.rm = TRUE)
-        draw_polygon_band(x_seq, lower, upper)
-      }
-    }
-
-    box()
-    grid(col = "gray80")
-    resumo <- resumo %>% mutate(valor = y_var)
-
+    # Ponto máximo
     dentro <- function(x, lo, hi) pmin(pmax(x, lo), hi)
-    x_lo <- min(x_vals); x_hi <- max(x_vals)
+    x_lo <- min(df_modelo$resp_exp); x_hi <- max(df_modelo$resp_exp)
 
     if (m == "linear") {
       b1 <- coef(modelo)["resp_exp"]
@@ -242,54 +137,212 @@ invisible(lapply(pacotes, use_package))
       y_max <- as.numeric(predict(modelo, newdata = data.frame(resp_exp = x_max)))
     }
 
-    abline(v = as.numeric(x_max), col = "darkorange", lwd = 2, lty = 3)
-    points(as.numeric(x_max), as.numeric(y_max),
-           col = "darkorange", lwd = 2, pch = 1, cex = 2.5)
+    list(modelo = modelo, R2 = R2, R2a = R2a,
+         x_max = as.numeric(x_max), y_max = as.numeric(y_max))
+  }
 
-    label_txt <- paste0("PM = ", formatC(y_max, format = "f", digits = 2))
-    xr <- range(x_vals); yr <- c(y_lim_inf, y_lim_sup)
-    dx <- 0.00 * diff(xr)
-    dy <- 0.1 * diff(yr)
+  # --- caso com fator ---
+  if (!is.null(fator)) {
+    df <- data.frame(resp = resp, resp_exp = resp_exp, fator = factor(fator))
+    resumo <- df %>%
+      group_by(fator, resp_exp) %>%
+      summarise(
+        media   = mean(resp),
+        mediana = median(resp),
+        sd      = sd(resp),
+        n       = n(),
+        se      = sd / sqrt(n),
+        cv      = (sd / mean(resp)) * 100,
+        .groups = "drop"
+      )
 
-    x_lab <- as.numeric(x_max) + dx
-    y_lab <- as.numeric(y_max) + dy
-    y_lab <- min(y_lab, y_lim_sup - rotulo * diff(yr))
+    lista_niveis <- split(resumo, resumo$fator)
+    y_ref <- if (medida == "me") resumo$media else resumo$mediana
+    y_lim_inf <- if (!is.null(y_min)) y_min else min(y_ref, na.rm = TRUE) * 0.95
+    y_lim_sup <- if (!is.null(y_max)) y_max else max(y_ref, na.rm = TRUE) * 1.05
+    x_all <- sort(unique(resumo$resp_exp))
 
-    cex_lab <- 0.7
-    tw <- strwidth(label_txt, cex = cex_lab)
-    th <- strheight(label_txt, cex = cex_lab)
-    pad_x <- 0.4 * th
-    pad_y <- 0.35 * th
+    cores <- grDevices::rainbow(length(lista_niveis))
+    names(cores) <- names(lista_niveis)
 
-    x0 <- x_lab - tw/2 - pad_x
-    x1 <- x_lab + tw/2 + pad_x
-    y0 <- y_lab - th/2 - pad_y
-    y1 <- y_lab + th/2 + pad_y
+    plot(NA, NA,
+         xlim = range(x_all),
+         ylim = c(y_lim_inf, y_lim_sup),
+         xlab = "Tempo",
+         ylab = ifelse(medida == "me", "Média", "Mediana"),
+         main = paste0("Modelo: ", m, " | Curvas por ", deparse(substitute(fator))))
 
-    op <- par(xpd = NA); on.exit(par(op), add = TRUE)
-    segments(as.numeric(x_max), as.numeric(y_max),
-             x_lab, y_lab, col = "gray90", lty = 3)
-    rect(x0, y0, x1, y1, col = "white", border = "gray90")
-    text(x_lab, y_lab, labels = label_txt, cex = cex_lab, col = "gray20")
+    params_list <- list()
+    leg_text <- character(0); leg_col <- character(0)
 
-    # >>> grava o gráfico para poder redesenhar no download
+    for (nm in names(lista_niveis)) {
+      dat_n <- lista_niveis[[nm]]
+      y_var <- if (medida == "me") dat_n$media else dat_n$mediana
+      df_modelo <- tibble(resp_exp = dat_n$resp_exp, y = y_var)
+
+      fit <- try(.fit_model(df_modelo, m, conf.level, nsim), silent = TRUE)
+
+      if (inherits(fit, "try-error")) {
+        warning("Não foi possível ajustar o modelo para o nível: ", nm)
+        params_list[[nm]] <- tibble(
+          nivel = nm, modelo = m,
+          coef = NA, valor = NA,
+          R2 = NA, R2_ajustado = NA,
+          x_max = NA, y_max = NA,
+          Modelo = list(NA)
+        )
+        next
+      }
+
+      modelo <- fit$modelo
+      points(df_modelo$resp_exp, df_modelo$y, pch = 20, col = cores[nm])
+      x_seq <- seq(min(df_modelo$resp_exp), max(df_modelo$resp_exp), length.out = 300)
+      pred  <- suppressWarnings(predict(modelo, newdata = data.frame(resp_exp = x_seq)))
+      lines(x_seq, pred, col = cores[nm], lwd = 2)
+
+      x_max <- fit$x_max; y_max <- fit$y_max
+      if (!is.null(PM) && isTRUE(PM)) {
+        abline(v = x_max, col = cores[nm], lwd = 2, lty = 3)
+        points(x_max, y_max, col = cores[nm], pch = 1, lwd = 2, cex = 1.8)
+
+        # Rótulo em duas linhas
+        label_txt <- c(
+          paste0("PM = ", formatC(y_max, format = "f", digits = 2)),
+          paste0("X  = ", formatC(x_max, format = "f", digits = 2))
+        )
+        y_lab <- min(y_max + 0.07 * (y_lim_sup - y_lim_inf),
+                     y_lim_sup - 0.02 * (y_lim_sup - y_lim_inf))
+
+        cex_lab <- 0.65
+        line_h  <- strheight("A", cex = cex_lab) * 1.2
+        tw <- max(strwidth(label_txt, cex = cex_lab))
+
+        rect(x_max - tw/2 - 0.2, y_lab - line_h,
+             x_max + tw/2 + 0.2, y_lab + line_h,
+             col = "white", border = "gray80")
+
+        text(x_max, y_lab,         labels = label_txt[1], col = cores[nm],
+             cex = cex_lab, font = 2)
+        text(x_max, y_lab - line_h, labels = label_txt[2], col = cores[nm],
+             cex = cex_lab, font = 2)
+      }
+
+      co <- coef(modelo)
+      params_list[[nm]] <- tibble(
+        nivel = nm,
+        modelo = m,
+        coef  = names(co),
+        valor = as.numeric(co),
+        R2 = fit$R2,
+        R2_ajustado = fit$R2a,
+        x_max = x_max,
+        y_max = y_max,
+        Modelo = list(modelo)
+      )
+
+      leg_text <- c(leg_text, nm)
+      leg_col  <- c(leg_col, cores[nm])
+    }
+
+    box(); grid(col = "gray80")
+    if (length(leg_text) > 0) {
+      legend("topleft", legend = leg_text, col = leg_col, lwd = 2, bty = "n")
+    }
+
     grafico_record <- recordPlot()
+    Tabela <- resumo %>% mutate(valor = if (medida == "me") media else mediana)
+    Parametros <- dplyr::bind_rows(params_list)
 
     return(list(
-      Tabela       = resumo,
-      R2           = R2,
-      R2_ajustado  = R2a,
-      Maximo       = list(x = as.numeric(x_max), y = as.numeric(y_max), modelo = m),
-      Modelo       = modelo,
-      Grafico      = grafico_record
+      Tabela      = Tabela,
+      Parametros  = Parametros,
+      Grafico     = grafico_record
     ))
   }
 
+  # --- caso sem fator ---
+  df <- data.frame(resp = resp, resp_exp = resp_exp)
+  resumo <- df %>%
+    group_by(resp_exp) %>%
+    summarise(
+      media   = mean(resp),
+      mediana = median(resp),
+      sd      = sd(resp),
+      n       = n(),
+      se      = sd / sqrt(n),
+      cv      = (sd / mean(resp)) * 100,
+      .groups = "drop"
+    )
 
+  y_var <- if (medida == "me") resumo$media else resumo$mediana
+  df_modelo <- tibble(resp_exp = resumo$resp_exp, y = y_var)
 
+  fit <- .fit_model(df_modelo, m, conf.level, nsim)
+  modelo <- fit$modelo
+
+  x_vals <- df_modelo$resp_exp
+  y_vals <- y_var
+  y_lim_inf <- if (!is.null(y_min)) y_min else min(y_vals) * 0.95
+  y_lim_sup <- if (!is.null(y_max)) y_max else max(y_vals) * 1.05
+
+  plot(x_vals, y_vals, pch = 20,
+       xlab = "Tempo", ylab = ifelse(medida == "me", "Média", "Mediana"),
+       main = paste("Modelo:", m), ylim = c(y_lim_inf, y_lim_sup))
+  x_seq <- seq(min(x_vals), max(x_vals), length.out = 300)
+  pred  <- suppressWarnings(predict(modelo, newdata = data.frame(resp_exp = x_seq)))
+  lines(x_seq, pred, col = "black", lwd = 2)
+
+  if (!is.null(PM) && isTRUE(PM)) {
+    x_max <- fit$x_max; y_max <- fit$y_max
+    abline(v = x_max, col = "black", lwd = 2, lty = 3)
+    points(x_max, y_max, col = "black", pch = 1, lwd = 2, cex = 1.8)
+
+    label_txt <- c(
+      paste0("PM = ", formatC(y_max, format = "f", digits = 2)),
+      paste0("X  = ", formatC(x_max, format = "f", digits = 2))
+    )
+    y_lab <- min(y_max + 0.07 * (y_lim_sup - y_lim_inf),
+                 y_lim_sup - 0.02 * (y_lim_sup - y_lim_inf))
+
+    cex_lab <- 0.65
+    line_h  <- strheight("A", cex = cex_lab) * 1.2
+    tw <- max(strwidth(label_txt, cex = cex_lab))
+
+    rect(x_max - tw/2 - 0.2, y_lab - line_h,
+         x_max + tw/2 + 0.2, y_lab + line_h,
+         col = "white", border = "gray80")
+
+    text(x_max, y_lab,         labels = label_txt[1], col = "black",
+         cex = cex_lab, font = 2)
+    text(x_max, y_lab - line_h, labels = label_txt[2], col = "black",
+         cex = cex_lab, font = 2)
+  }
+
+  grafico_record <- recordPlot()
+  resumo <- resumo %>% mutate(valor = y_var)
+  co <- coef(modelo)
+  params <- tibble(
+    nivel = NA_character_, modelo = m,
+    coef  = names(co), valor = as.numeric(co),
+    R2 = fit$R2, R2_ajustado = fit$R2a,
+    x_max = fit$x_max, y_max = fit$y_max,
+    Modelo = list(modelo)
+  )
+
+  list(
+    Tabela      = resumo,
+    Parametros  = params,
+    Grafico     = grafico_record
+  )
 }
 
 
+# UI ---------------------------------------------------------------------------
+ui <- fluidPage(
+  theme = shinythemes::shinytheme("flatly"),
+  withMathJax(),  # Habilita renderização de LaTeX
+  uiOutput("app_ui")
+)
 
 # UI ---------------------------------------------------------------------------
 ui <- fluidPage(
@@ -311,7 +364,7 @@ server <- function(input, output, session) {
             fileInput("file1", label = NULL, accept = c(".csv", ".xlsx")),
             uiOutput("column1"),
             uiOutput("column2"),
-
+            uiOutput("column3"),
             selectInput("medida", "Tipo de medida:",
                         choices = c("Média" = "me", "Mediana" = "md")),
 
@@ -325,16 +378,31 @@ server <- function(input, output, session) {
                         choices = c("1%" = 0.01, "5%" = 0.05,
                                     "10%" = 0.10, "15%" = 0.15),
                         selected = 0.05),
+            checkboxInput("show_max", "Exibir ponto de máximo", value = FALSE),
 
             numericInput("y_min", "Limite mínimo do eixo y:", value = 0, step = 1),
             numericInput("y_max", "Limite máximo do eixo y:", value = 100, step = 1),
 
             sliderInput("rotulo", "Posição vertical do rótulo (proporção):",
-                        min = 0, max = 1, value = 0.5, step = 0.01),
+                        min = 0, max = 10, value = 0.5, step = 0.01),
 
-            downloadButton("downloadPlot", "Salvar Gráfico"),
-            tags$hr(),
-            downloadButton("baixar_excel_st", "Salvar Excel")
+            fluidRow(
+              column(4,
+                     downloadButton("downloadPlot", "Gráfico",
+                                    style = "padding:2px 6px; font-size:12px;")
+              ),
+              column(4,
+                     downloadButton("baixar_excel_st", "Resumo",
+                                    style = "padding:2px 6px; font-size:12px;")
+              ),
+              column(4,
+                     downloadButton("baixar_excel_param", "Parâmetros",
+                                    style = "padding:2px 6px; font-size:12px;")
+              )
+            )
+
+
+
           ),
           mainPanel(
             plotOutput("plot_statis", height = "600px"),
@@ -342,36 +410,33 @@ server <- function(input, output, session) {
             # Estilos das info-boxes
             tags$head(
               tags$style(HTML("
-                .info-box {
-                  background-color: #f9f9f9;
-                  border-radius: 8px;
-                  padding: 15px;
-                  text-align: center;
-                  margin-bottom: 15px;
-                  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                  height: auto;
-                }
-                .info-box h3 { font-size: 16px; margin: 0; font-weight: bold; }
-                .info-box p { font-size: 14px; color: #666; margin: 5px 0 0; }
-                .info-box .separator { border-top: 1px solid #ccc; margin: 10px 0; }
-                .info-box .number { font-size: calc(1vw + 8px); font-weight: bold; }
-              "))
+      .info-box {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        height: auto;
+      }
+      .info-box h3 { font-size: 16px; margin: 0; font-weight: bold; }
+      .info-box p { font-size: 14px; color: #666; margin: 5px 0 0; }
+      .info-box .separator { border-top: 1px solid #ccc; margin: 10px 0; }
+      .info-box .number { font-size: calc(1vw + 8px); font-weight: bold; }
+    "))
             ),
 
-            fluidRow(
-              column(3, div(class = "info-box", h3(textOutput("R2")), div(class="separator"), p("R²"))),
-              column(3, div(class = "info-box", h3(textOutput("R2adj")), div(class="separator"), p("R² Ajustado"))),
-              column(3, div(class = "info-box", h3(textOutput("ANOVA_F")), div(class="separator"), p("F-ANOVA"))),
-              column(3, div(class = "info-box", h3(textOutput("ANOVA_p")), div(class="separator"), p("p-Valor ANOVA")))
-            ),
-            hr(),
             fluidRow(
               column(12, div(class = "info-box", uiOutput("Coeficientes"),
                              div(class="separator"), p("Equação Ajustada")))
             ),
             hr(),
-            DTOutput("table_results")
+            DTOutput("table_results"),
+            hr(),
+            DTOutput("table_parametros"),
+            br(), br()  # espaço extra abaixo da segunda tabela
           )
+
         )
       ),
       tabPanel(
@@ -425,7 +490,7 @@ server <- function(input, output, session) {
     ext <- tools::file_ext(input$file1$name)
     switch(ext,
            csv = read.csv2(input$file1$datapath, stringsAsFactors = FALSE),
-           xlsx = read_excel(input$file1$datapath),
+           xlsx = readxl::read_excel(input$file1$datapath),
            validate("Formato de arquivo não suportado."))
   })
 
@@ -434,15 +499,27 @@ server <- function(input, output, session) {
     cols <- colnames(data())
     output$column1 <- renderUI(selectInput("col1", "Selecionar Variável Explicativa", choices = cols))
     output$column2 <- renderUI(selectInput("col2", "Selecionar Variável Resposta", choices = cols))
+    output$column3 <- renderUI({
+      selectInput("col3", "Selecionar Fator", choices = c("", cols))
+    })
   })
 
   df_proc <- reactive({
     req(data(), input$col1, input$col2)
     df <- data()
-    data.frame(
+
+    out <- data.frame(
       x = as.numeric(df[[input$col1]]),
       y = as.numeric(df[[input$col2]])
     )
+
+    if (!is.null(input$col3) && input$col3 != "") {
+      out$f <- df[[input$col3]]
+    } else {
+      out$f <- NULL
+    }
+
+    out
   })
 
   resultado <- reactive({
@@ -456,7 +533,9 @@ server <- function(input, output, session) {
       y_max = input$y_max,
       conf.level = 1 - as.numeric(input$alfa),
       nsim = 5000,
-      rotulo = input$rotulo
+      rotulo = input$rotulo,
+      fator = df$f,
+      PM = input$show_max
     )
   })
 
@@ -474,7 +553,6 @@ server <- function(input, output, session) {
   output$downloadPlot <- downloadHandler(
     filename = function() paste0("grafico_", Sys.Date(), ".png"),
     content = function(file) {
-      # fundo transparente
       png(file, width = 1600, height = 1200, res = 300, bg = "transparent")
       on.exit(dev.off())
       if ("Grafico" %in% names(resultado())) {
@@ -485,8 +563,7 @@ server <- function(input, output, session) {
     }
   )
 
-
-  # --- Tabela ---
+  # --- Tabela Resumo ---
   output$table_results <- renderDT({
     req(resultado())
     tabela <- resultado()$Tabela
@@ -495,6 +572,22 @@ server <- function(input, output, session) {
     })
     datatable(tabela, options =  list(
       searching = FALSE, paging = FALSE, info = FALSE, lengthChange = FALSE,
+      columnDefs = list(list(className = 'dt-center', targets = '_all'))
+    ), rownames = FALSE, class = 'cell-border stripe')
+  })
+
+  # --- Tabela Parametros ---
+  output$table_parametros <- renderDT({
+    req(resultado())
+    tabela <- resultado()$Parametros
+    tabela[] <- lapply(tabela, function(col) {
+      if (is.numeric(col)) round(col, 3) else col
+    })
+    datatable(tabela, options = list(
+      searching = FALSE, paging = FALSE, info = FALSE, lengthChange = FALSE,
+      scrollX = TRUE,
+      scrollY = "400px",   # altura fixa
+      dom = 't',
       columnDefs = list(list(className = 'dt-center', targets = '_all'))
     ), rownames = FALSE, class = 'cell-border stripe')
   })
@@ -513,42 +606,37 @@ server <- function(input, output, session) {
   })
 
   # --- Coeficientes como equação em LaTeX ---
+  # --- Equações genuínas em LaTeX ---
   output$Coeficientes <- renderUI({
-    req(resultado())
-    mod <- resultado()$Modelo
-    cf <- coef(mod)
     eq <- NULL
 
     if (input$modelo == "linear") {
-      a <- formatC(cf[1], digits = 3, format = "f")
-      b <- formatC(cf[2], digits = 3, format = "f")
-      eq <- paste0("$$y = ", a, " + ", b, " \\cdot x$$")
+      eq <- "$$y = \\beta_0 + \\beta_1 x$$"
 
     } else if (input$modelo == "linear2") {
-      a <- formatC(cf[1], digits = 3, format = "f")
-      b <- formatC(cf[2], digits = 3, format = "f")
-      c <- formatC(cf[3], digits = 3, format = "f")
-      eq <- paste0("$$y = ", a, " + ", b, " \\cdot x + ", c, " \\cdot x^{2}$$")
+      eq <- "$$y = \\beta_0 + \\beta_1 x + \\beta_2 x^2$$"
 
     } else if (input$modelo == "Exp") {
-      a <- formatC(cf[1], digits = 3, format = "f")
-      b <- formatC(cf[2], digits = 3, format = "f")
-      eq <- paste0("$$y = ", a, " \\cdot e^{", b, " \\cdot x}$$")
+      eq <- "$$y = \\alpha \\cdot e^{\\beta x}$$"
 
     } else if (input$modelo == "Log") {
-      A  <- formatC(cf["A"],  digits = 3, format = "f")
-      x0 <- formatC(cf["x0"], digits = 3, format = "f")
-      s  <- formatC(cf["s"],  digits = 3, format = "f")
-      eq <- paste0("$$y = \\frac{", A, "}{1 + e^{-(x - ", x0, ")/", s, "}}$$")
+      eq <- "$$y = \\frac{A}{1 + e^{-\\frac{(x - x_0)}{s}}}$$"
     }
 
     withMathJax(HTML(eq))
   })
 
-  # --- Download Excel ---
+
+  # --- Download Excel Resumo ---
   output$baixar_excel_st <- downloadHandler(
-    filename = function() paste0("tabela_resultado_", Sys.Date(), ".xlsx"),
+    filename = function() paste0("tabela_resumo_", Sys.Date(), ".xlsx"),
     content = function(file) { writexl::write_xlsx(resultado()$Tabela, file) }
+  )
+
+  # --- Download Excel Parametros ---
+  output$baixar_excel_param <- downloadHandler(
+    filename = function() paste0("tabela_parametros_", Sys.Date(), ".xlsx"),
+    content = function(file) { writexl::write_xlsx(resultado()$Parametros, file) }
   )
 }
 

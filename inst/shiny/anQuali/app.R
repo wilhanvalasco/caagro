@@ -685,16 +685,15 @@ server <- function(input, output, session) {
                 .info-box .number { font-size: calc(2vw + 10px); font-weight: bold; }
               "))
             ),
-
             fluidRow(
-              column(width = 3, div(class = "info-box", h3(textOutput("df_residuo")), div(class = "separator"), p("DF Residual"))),
-              column(width = 3, div(class = "info-box", h3(textOutput("sq_residuo")), div(class = "separator"), p("Sum of Squares Residual"))),
-              column(width = 3, div(class = "info-box", h3(textOutput("qm_residuo")), div(class = "separator"), p("Mean Square Residual"))),
-              column(width = 3, div(class = "info-box", h3(textOutput("qm_trt")), div(class = "separator"), p("Mean Square Treatment"))),
-              column(width = 3, div(class = "info-box", h3(textOutput("p_valor")), div(class = "separator"), p("P-Value"))),
-              column(width = 3, div(class = "info-box", h3(textOutput("shapiro_p")), div(class = "separator"), p("Shapiro-Wilk"))),
-              column(width = 3, div(class = "info-box", h3(textOutput("bartlett_p")), div(class = "separator"), p("Bartlett"))),
-              column(width = 3, div(class = "info-box", h3(textOutput("cv_percent")), div(class = "separator"), p("CV%")))
+              column(width = 3, div(class = "info-box", h3(textOutput("df_residuo")), div(class = "separator"), p("GL Resíduo"))),
+              column(width = 3, div(class = "info-box", h3(textOutput("sq_residuo")), div(class = "separator"), p("SQ Resíduo"))),
+              column(width = 3, div(class = "info-box", h3(textOutput("qm_residuo")), div(class = "separator"), p("QM Resíduo"))),
+              column(width = 3, div(class = "info-box", h3(textOutput("qm_trat")), div(class = "separator"), p("QM Tratamento"))),
+              column(width = 3, div(class = "info-box", h3(textOutput("p_valor")), div(class = "separator"), p("Valor-p"))),
+              column(width = 3, div(class = "info-box", h3(textOutput("shapiro_p")), div(class = "separator"), p("Teste Shapiro-Wilk"))),
+              column(width = 3, div(class = "info-box", h3(textOutput("bartlett_p")), div(class = "separator"), p("Teste Bartlett"))),
+              column(width = 3, div(class = "info-box", h3(textOutput("cv_percent")), div(class = "separator"), p("CV (%)")))
             ),
             hr(),
             DTOutput("Table_st")
@@ -929,7 +928,7 @@ server <- function(input, output, session) {
   output$df_residuo <- renderText({ req(anova_res()); anova_res()$anova_info$df_residuo })
   output$sq_residuo <- renderText({ req(anova_res()); anova_res()$anova_info$sq_residuo })
   output$qm_residuo <- renderText({ req(anova_res()); anova_res()$anova_info$qm_residuo })
-  output$qm_trt     <- renderText({ req(anova_res()); anova_res()$anova_info$qm_trat })
+  output$qm_trat     <- renderText({ req(anova_res()); anova_res()$anova_info$qm_trat })
 
   output$p_valor <- renderText({
     req(anova_res())
