@@ -23,8 +23,11 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Inicia o aplicativo anQuali
+#' # Exemplo: iniciar o aplicativo anQuali
 #' anQuali(iniciar = TRUE)
+#'
+#' # Exemplo: mensagem quando iniciar = FALSE
+#' anQuali(iniciar = FALSE)
 #' }
 anQuali <- function(iniciar = TRUE) {
   if (isTRUE(iniciar)) {

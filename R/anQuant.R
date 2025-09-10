@@ -22,8 +22,11 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Inicia o aplicativo anQuant
+#' # Exemplo: iniciar o aplicativo anQuant
 #' anQuant(iniciar = TRUE)
+#'
+#' # Exemplo: mensagem quando iniciar = FALSE
+#' anQuant(iniciar = FALSE)
 #' }
 anQuant <- function(iniciar = TRUE) {
   if (isTRUE(iniciar)) {

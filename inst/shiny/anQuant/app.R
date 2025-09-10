@@ -128,12 +128,15 @@ invisible(lapply(pacotes, use_package))
     y_lim_inf <- if (!is.null(y_min)) y_min else min(y_vals) * 0.95
     y_lim_sup <- if (!is.null(y_max)) y_max else max(y_vals) * 1.05
 
+    # gráfico base com fundo transparente
     plot(x_vals, y_vals,
          pch = 20,
          xlab = "",
          ylab = ifelse(medida == "me", "Média", "Mediana"),
          main = paste("Modelo:", m),
-         ylim = c(y_lim_inf, y_lim_sup))
+         ylim = c(y_lim_inf, y_lim_sup),
+         bg = "transparent")   # <<< fundo transparente
+
 
     x_seq <- seq(min(x_vals), max(x_vals), length.out = 300)
     pred  <- suppressWarnings(predict(modelo, newdata = data.frame(resp_exp = x_seq)))
@@ -471,7 +474,8 @@ server <- function(input, output, session) {
   output$downloadPlot <- downloadHandler(
     filename = function() paste0("grafico_", Sys.Date(), ".png"),
     content = function(file) {
-      png(file, width = 1600, height = 1200, res = 300)
+      # fundo transparente
+      png(file, width = 1600, height = 1200, res = 300, bg = "transparent")
       on.exit(dev.off())
       if ("Grafico" %in% names(resultado())) {
         print(resultado()$Grafico)
@@ -480,6 +484,7 @@ server <- function(input, output, session) {
       }
     }
   )
+
 
   # --- Tabela ---
   output$table_results <- renderDT({

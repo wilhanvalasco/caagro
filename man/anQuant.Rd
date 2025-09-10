@@ -32,7 +32,10 @@ e tomadas de decisão.
 }
 \examples{
 \dontrun{
-# Inicia o aplicativo anQuant
+# Exemplo: iniciar o aplicativo anQuant
 anQuant(iniciar = TRUE)
+
+# Exemplo: mensagem quando iniciar = FALSE
+anQuant(iniciar = FALSE)
 }
 }
