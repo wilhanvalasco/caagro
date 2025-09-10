@@ -7,12 +7,18 @@ Authors@R:
              email = "wilhanvalasco@hotmail.com", 
              role = c("aut", "cre")))
 Description: O pacote **caagro** (Ciência Aplicada em Análises do Agro) 
-    fornece funções e uma aplicação interativa em Shiny para análises 
+    fornece funções e aplicações interativas em Shiny para análises 
     estatísticas aplicadas ao setor agrícola. Inclui métodos para 
     comparação de médias e medianas em distribuições Gaussianas e 
     não-Gaussianas, identificação e tratamento de valores atípicos 
     (outliers), além de visualizações gráficas como boxplots, gráficos 
     de dispersão e distribuições baseadas em quartis (Q1 e Q3). 
+    Também disponibiliza duas interfaces principais: 
+    `anQuali()` para análises de fatores qualitativos 
+    e `anQuant()` para análises de fatores quantitativos, 
+    com ajuste de modelos de regressão (linear, quadrático, 
+    exponencial e logístico), cálculo de métricas estatísticas, 
+    exportação de tabelas (Excel) e gráficos (PNG). 
     O objetivo é simplificar análises experimentais e fornecer 
     recursos acessíveis para pesquisadores, estudantes e profissionais 
     do agro.
