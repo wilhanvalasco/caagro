@@ -900,8 +900,16 @@ server <- function(input, output, session) {
   output$downloadPlot <- downloadHandler(
     filename = function() sprintf("output_%s.png", format(Sys.time(), "%Y%m%d_%H%M%S")),
     content = function(file) {
-      g <- grafico()
-      ggsave(filename = file, plot = g, width = 8, height = 6, units = "in", bg = "white")
+      g <- grafico()   # ou grafico_plotIC()$grafico, dependendo de como está sua reatividade
+      ggplot2::ggsave(
+        filename = file,
+        plot     = g,
+        width    = 8,
+        height   = 6,
+        units    = "in",
+        dpi      = 1000,          # alta qualidade (600–1000 já é excelente)
+        bg       = "transparent"  # fundo transparente
+      )
     }
   )
 

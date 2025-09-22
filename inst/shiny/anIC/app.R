@@ -92,109 +92,144 @@ invisible(lapply(pacotes, use_package))
                      file = "grafico.png",
                      outlier = TRUE) {
 
-    # normalizar nomes recebidos
+    # --------------------------
+    # 0) Preparos e validações
+    # --------------------------
     variavel_exp  <- trimws(variavel_exp)
     variavel_resp <- trimws(variavel_resp)
     if (!is.null(bloco)) bloco <- trimws(bloco)
 
-    # checagem de existência
-    if (!(variavel_exp %in% names(data))) stop("❌ Coluna experimental não encontrada: ", variavel_exp)
+    if (!(variavel_exp %in% names(data)))  stop("❌ Coluna experimental não encontrada: ", variavel_exp)
     if (!(variavel_resp %in% names(data))) stop("❌ Coluna resposta não encontrada: ", variavel_resp)
     if (!is.null(bloco) && !(bloco %in% names(data))) stop("❌ Coluna bloco não encontrada: ", bloco)
 
-    # Forçar resposta como numérica
-    data[[variavel_resp]] <- suppressWarnings(as.numeric(data[[variavel_resp]]))
-    data <- data[is.finite(data[[variavel_resp]]), ]
+    df <- as.data.frame(data, check.names = FALSE)
 
-    # Forçar variáveis categóricas como fator (mesmo que sejam numéricas)
-    if (!is.factor(data[[variavel_exp]])) data[[variavel_exp]] <- as.factor(data[[variavel_exp]])
-    if (!is.null(bloco) && !is.factor(data[[bloco]])) data[[bloco]] <- as.factor(data[[bloco]])
+    # --------------------------
+    # 1) Renomear internamente (robusto a nomes 'feios')
+    # --------------------------
+    df$.resp <- suppressWarnings(as.numeric(df[[variavel_resp]]))
+    df <- df[is.finite(df$.resp), , drop = FALSE]
+    df$.trat <- as.factor(df[[variavel_exp]])
+    tem_bloco <- !is.null(bloco)
+    if (tem_bloco) {
+      df$.block <- as.factor(df[[bloco]])
+      if (nlevels(df$.block) < 2) tem_bloco <- FALSE
+    }
 
-    # Checar níveis mínimos
-    if (nlevels(data[[variavel_exp]]) < 2) stop("❌ Variável experimental precisa ter pelo menos 2 níveis.")
-    if (!is.null(bloco) && nlevels(data[[bloco]]) < 2) bloco <- NULL
+    if (nlevels(df$.trat) < 2) stop("❌ Variável experimental precisa ter pelo menos 2 níveis.")
 
-    # Remover outliers se necessário
-    if (!outlier) data <- remove_outliers(data, variavel_exp, variavel_resp, bloco)
+    # --------------------------
+    # 2) Outliers (se houver função disponível)
+    # --------------------------
+    if (!outlier && exists("remove_outliers", mode = "function")) {
+      df <- tryCatch(
+        remove_outliers(df, variavel_exp = ".trat", variavel_resp = ".resp", bloco = if (tem_bloco) ".block" else NULL),
+        error = function(e) df
+      )
+    }
 
-    # Modelo ANOVA
-    form <- if (is.null(bloco))
-      as.formula(paste(variavel_resp, "~", variavel_exp))
-    else
-      as.formula(paste(variavel_resp, "~", bloco, "+", variavel_exp))
-
-    modelo <- aov(form, data = data)
+    # --------------------------
+    # 3) ANOVA e indicadores
+    # --------------------------
+    modelo <- if (tem_bloco) {
+      aov(.resp ~ .block + .trat, data = df)
+    } else {
+      aov(.resp ~ .trat, data = df)
+    }
     resumo_anova <- summary(modelo)
 
-    # Calcular CV%
     QMres <- resumo_anova[[1]]["Residuals", "Mean Sq"]
-    media_geral <- mean(data[[variavel_resp]], na.rm = TRUE)
+    media_geral <- mean(df$.resp, na.rm = TRUE)
     CV <- 100 * sqrt(QMres) / media_geral
 
-    # Teste de Bartlett (homogeneidade de variâncias)
     bartlett <- tryCatch(
-      bartlett.test(data[[variavel_resp]] ~ data[[variavel_exp]]),
+      bartlett.test(x = df$.resp, g = df$.trat),
       error = function(e) NULL
     )
 
-    # Médias e IC
-    groups <- split(data[[variavel_resp]], data[[variavel_exp]])
-    out <- data.frame(levels = names(groups), LSmeans = sapply(groups, mean, na.rm = TRUE))
+    # --------------------------
+    # 4) Médias e IC por tratamento
+    # --------------------------
+    groups <- split(df$.resp, df$.trat)
+    level_names <- names(groups)
+    out <- data.frame(
+      levels  = level_names,
+      LSmeans = sapply(groups, function(x) mean(x, na.rm = TRUE)),
+      stringsAsFactors = FALSE
+    )
     n <- sapply(groups, function(x) sum(!is.na(x)))
     alpha <- 1 - conf.level
-    out$LCL <- NA; out$UCL <- NA
+    out$LCL <- NA_real_
+    out$UCL <- NA_real_
 
-    if (var.equal) {
-      qm_res <- QMres
-      se <- sqrt(qm_res / n)
+    if (isTRUE(var.equal)) {
+      se <- sqrt(QMres / n)
       tval <- qt(1 - alpha/2, df.residual(modelo))
       ok <- n >= 2
-      out$LCL[ok] <- out$LSmeans[ok] - tval*se[ok]
-      out$UCL[ok] <- out$LSmeans[ok] + tval*se[ok]
+      out$LCL[ok] <- out$LSmeans[ok] - tval * se[ok]
+      out$UCL[ok] <- out$LSmeans[ok] + tval * se[ok]
     } else {
-      s2 <- sapply(groups, var, na.rm = TRUE)
-      se <- sqrt(s2/n)
-      tval <- qt(1 - alpha/2, n-1)
-      ok <- n >= 2 & !is.na(se)
-      out$LCL[ok] <- out$LSmeans[ok] - tval*se[ok]
-      out$UCL[ok] <- out$LSmeans[ok] + tval*se[ok]
+      s2 <- sapply(groups, stats::var, na.rm = TRUE)
+      se <- sqrt(s2 / n)
+      tval <- qt(1 - alpha/2, n - 1)   # Welch por grupo (aproxima)
+      ok <- n >= 2 & is.finite(se)
+      out$LCL[ok] <- out$LSmeans[ok] - tval[ok] * se[ok]
+      out$UCL[ok] <- out$LSmeans[ok] + tval[ok] * se[ok]
     }
 
-    # Ordenação
-    out$levels <- factor(out$levels, levels = if (ordered) out$levels[order(out$LSmeans)] else unique(data[[variavel_exp]]))
-    data[[variavel_exp]] <- factor(data[[variavel_exp]], levels = levels(out$levels))
+    # Ordenação dos níveis no gráfico
+    if (isTRUE(ordered)) {
+      ord <- order(out$LSmeans)
+      out$levels <- factor(out$levels, levels = out$levels[ord])
+    } else {
+      out$levels <- factor(out$levels, levels = levels(df$.trat))
+    }
+    df$.trat <- factor(df$.trat, levels = levels(out$levels))
     out$posx <- as.numeric(out$levels)
 
     # Ajustes de texto
     hj <- ifelse(angulo == 0, 0.5, 1)
     vj <- 1
 
-    # Construir gráfico
-    p <- ggplot(out, aes(x = levels, y = LSmeans)) +
-      geom_rect(aes(xmin = 0, xmax = posx, ymin = LCL, ymax = UCL),
-                fill = col, alpha = trans, color = NA) +
-      geom_errorbar(aes(ymin = LCL, ymax = UCL), width = 0.15, color = "black") +
-      geom_point(data = data, mapping = aes(x = .data[[variavel_exp]], y = .data[[variavel_resp]]),
-                 position = position_jitter(width = 0), alpha = 0.6, color = "black") +
-      geom_point(size = 5, color = "white") +
-      geom_point(size = 3, color = "gray30") +
-      geom_label(aes(label = round(LSmeans, 1)), size = 3, fill = "gray90") +
-      theme_minimal(base_size = 14, base_family = font) +
-      theme(axis.text.x = element_text(angle = angulo, hjust = hj, vjust = vj),
-            panel.border = element_rect(color = "black", fill = NA))
+    # --------------------------
+    # 5) Gráfico
+    # --------------------------
+    p <- ggplot2::ggplot(out, ggplot2::aes(x = levels, y = LSmeans)) +
+      ggplot2::geom_rect(ggplot2::aes(xmin = 0, xmax = posx, ymin = LCL, ymax = UCL),
+                         fill = col, alpha = trans, color = NA) +
+      ggplot2::geom_errorbar(ggplot2::aes(ymin = LCL, ymax = UCL), width = 0.15, color = "black") +
+      # pontos brutos (observações)
+      ggplot2::geom_point(data = df, ggplot2::aes(x = .trat, y = .resp),
+                          position = ggplot2::position_jitter(width = 0), alpha = 0.6, color = "black") +
+      # ponto da média
+      ggplot2::geom_point(size = 5, color = "white") +
+      ggplot2::geom_point(size = 3, color = "gray30") +
+      ggplot2::geom_label(ggplot2::aes(label = round(LSmeans, 1)), size = 3, fill = "gray90") +
+      ggplot2::theme_minimal(base_size = 14, base_family = font) +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = angulo, hjust = hj, vjust = vj),
+                     panel.border = ggplot2::element_rect(color = "black", fill = NA)) +
+      ggplot2::labs(x = "", y = "")
 
-    if (!is.null(ymin) | !is.null(ymax)) p <- p + coord_cartesian(ylim = c(ymin, ymax))
+    if (!is.null(ymin) || !is.null(ymax)) {
+      ylow  <- if (is.null(ymin)) min(out$LCL, out$UCL, out$LSmeans, na.rm = TRUE) else ymin
+      yhigh <- if (is.null(ymax)) max(out$LCL, out$UCL, out$LSmeans, na.rm = TRUE) else ymax
+      p <- p + ggplot2::coord_cartesian(ylim = c(ylow, yhigh))
+    }
 
-    if (salve) ggsave(filename = file, plot = p, dpi = 300, bg = "transparent")
+    if (isTRUE(salve)) ggplot2::ggsave(filename = file, plot = p, dpi = 300, bg = "transparent")
 
-    # Retornar tudo
-    return(list(
+    # --------------------------
+    # 6) Retorno
+    # --------------------------
+    list(
       grafico   = p,
       anova     = resumo_anova,
       cv        = CV,
       bartlett  = bartlett
-    ))
+    )
   }
+
 
 
 
@@ -249,7 +284,7 @@ ui <- fluidPage(
 
   tabsetPanel(
     tabPanel(
-      "Quantitativo", icon = icon("chart-bar"),
+      "Intervalos de Confiança", icon = icon("chart-bar"),
       sidebarLayout(
         sidebarPanel(
           fileInput("file1", label = "Carregar arquivo", accept = c(".csv", ".xlsx")),
@@ -260,9 +295,9 @@ ui <- fluidPage(
 
           tags$hr(),
           numericInput("conf_level", "Nível de confiança:", value = 0.95, step = 0.01, min = 0, max = 1),
-          checkboxInput("outlier", "Remover outliers", value = TRUE),
-          checkboxInput("ordered", "Ordenar tratamentos", value = FALSE),
-          checkboxInput("var_equal", "Assumir variâncias iguais", value = FALSE),
+          checkboxInput("outlier", "Remover outliers", value = FALSE),
+          checkboxInput("ordered", "Ordenar tratamentos", value = TRUE),
+          checkboxInput("var_equal", "Assumir variâncias iguais", value = TRUE),
           selectInput("col", "Cor:",
                       choices = c("Azul céu" = "skyblue", "Vermelho" = "red",
                                   "Verde" = "green", "Azul" = "blue", "Laranja" = "orange"),
@@ -354,15 +389,24 @@ server <- function(input, output, session) {
                  "csv" = {
                    primeira_linha <- readLines(input$file1$datapath, n = 1)
                    sep <- if (grepl(";", primeira_linha)) ";" else ","
-                   readr::read_delim(input$file1$datapath, delim = sep, show_col_types = FALSE)
+                   readr::read_delim(
+                     input$file1$datapath,
+                     delim = sep,
+                     show_col_types = FALSE,
+                     name_repair = "minimal"
+                   )
                  },
-                 "xlsx" = readxl::read_excel(input$file1$datapath),
+                 "xlsx" = readxl::read_excel(
+                   input$file1$datapath,
+                   .name_repair = "minimal"
+                 ),
                  validate("❌ Formato não suportado. Use CSV ou XLSX.")
     )
 
-    names(df) <- gsub(" ", "_", trimws(names(df)))
-    as.data.frame(df)
+    as.data.frame(df, check.names = FALSE)  # <- mantém "Prod (sc-ha)"
   })
+
+
 
   # --- Inputs dinâmicos ---
   output$column_treat <- renderUI({
@@ -387,28 +431,46 @@ server <- function(input, output, session) {
     df
   })
 
-  # --- Resultado da análise ---
+  # --- Resultado da análise (usa nomes seguros) ---
   resultado <- reactive({
-    req(dat())
-    validate(need(is.numeric(dat()[[input$resp]]), ""))  # vazio se não numérica
+    req(dados(), input$treat, input$resp)
 
-    bloco <- if (!is.null(input$bloco) && input$bloco != "Nenhum") input$bloco else NULL
-    form <- if (is.null(bloco)) as.formula(paste(input$resp, "~", input$treat))
-    else as.formula(paste(input$resp, "~", bloco, "+", input$treat))
-    modelo <- aov(form, data = dat())
+    # cria um data.frame com nomes seguros para evitar erro com parênteses/hífen
+    df <- dados()
+    # renomeia temporariamente as colunas escolhidas
+    df$.resp <- df[[input$resp]]
+    df$.trat <- as.factor(df[[input$treat]])
 
+    tem_bloco <- !is.null(input$bloco) && input$bloco != "Nenhum" && input$bloco %in% names(df)
+    if (tem_bloco) {
+      df$.block <- as.factor(df[[input$bloco]])
+    }
+
+    # checagem de numérico da resposta
+    validate(need(is.numeric(df$.resp), ""))
+
+    # modelo ANOVA com nomes seguros
+    modelo <- if (tem_bloco) {
+      aov(.resp ~ .block + .trat, data = df)
+    } else {
+      aov(.resp ~ .trat, data = df)
+    }
+
+    # CV%
     qm_res <- summary(modelo)[[1]]["Residuals", "Mean Sq"]
-    media_geral <- mean(dat()[[input$resp]], na.rm = TRUE)
+    media_geral <- mean(df$.resp, na.rm = TRUE)
     CV <- 100 * sqrt(qm_res) / media_geral
 
-    # Teste de Bartlett
+    # Bartlett: use interface por vetores (evita fórmulas com nomes ruins)
     bartlett <- tryCatch(
-      bartlett.test(dat()[[input$resp]] ~ dat()[[input$treat]]),
+      bartlett.test(x = df$.resp, g = df$.trat),
       error = function(e) NULL
     )
 
     list(Modelo = modelo, CV = CV, Bartlett = bartlett)
   })
+
+
 
   # --- Gráfico ou aviso ---
   output$plot_or_msg <- renderUI({

@@ -9,7 +9,6 @@
 #'   \item Cálculo e apresentação da análise de variância (ANOVA).
 #'   \item Cálculo do coeficiente de variação (CV\%).
 #'   \item Execução do teste de homocedasticidade de Bartlett.
-#'   \item Exportação dos resultados em \strong{Excel (.xlsx)}.
 #'   \item Exportação dos gráficos em \strong{PNG}.
 #' }
 #'
