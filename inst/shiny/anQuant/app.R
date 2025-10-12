@@ -161,7 +161,7 @@ anQuant <- function(resp, resp_exp,
 
     cores <- grDevices::rainbow(length(lista_niveis))
     names(cores) <- names(lista_niveis)
-
+    par(mar = c(5, 4, 4, 2) + 0.1)  # margens padrão
     plot(NA, NA,
          xlim = range(x_all),
          ylim = c(y_lim_inf, y_lim_sup),
@@ -251,7 +251,7 @@ anQuant <- function(resp, resp_exp,
   x_vals <- df_modelo$.exp; y_vals <- y_var
   y_lim_inf <- if (!is.null(y_min)) y_min else min(y_vals) * 0.95
   y_lim_sup <- if (!is.null(y_max)) y_max else max(y_vals) * 1.05
-
+  par(mar = c(5, 4, 4, 2) + 0.1)  # margens padrão
   plot(x_vals, y_vals, pch = 20,
        xlab = "", ylab = "", main = "",
        ylim = c(y_lim_inf, y_lim_sup))
@@ -350,9 +350,10 @@ server <- function(input, output, session) {
                         min = 0, max = 10, value = 0.5, step = 0.01),
 
             fluidRow(
-              column(4,
-                     downloadButton("downloadPlot", "Gráfico",
-                                    style = "padding:2px 6px; font-size:12px;")
+              column(
+                4,
+                downloadButton("downloadPlot", "Gráfico",
+                               style = "padding:2px 6px; font-size:12px;")
               ),
               column(4,
                      downloadButton("baixar_excel_st", "Resumo",
@@ -505,28 +506,81 @@ server <- function(input, output, session) {
   # --- Renderização do gráfico ---
   output$plot_statis <- renderPlot({
     req(resultado())
-    if ("Grafico" %in% names(resultado())) {
-      print(resultado()$Grafico)
-    } else {
-      resultado()
-    }
-  })
-
-  # --- Download do gráfico ---
-  output$downloadPlot <- downloadHandler(
-    filename = function() paste0("grafico_", Sys.Date(), ".png"),
-    content = function(file) {
-      # 1000 dpi, fundo transparente, tamanho 1600x1200 px
-      png(file, width = 1600, height = 1200, res = 1000, bg = "transparent")
-      on.exit(dev.off())
-
-      if ("Grafico" %in% names(resultado())) {
-        replayPlot(resultado()$Grafico)  # <- correto para recordPlot()
-      } else {
-        print(resultado())
+    obj <- resultado()
+    if (is.list(obj) && "Grafico" %in% names(obj)) {
+      if (inherits(obj$Grafico, "recordedplot")) {
+        grDevices::replayPlot(obj$Grafico)
+        return(invisible())
+      }
+      if (inherits(obj$Grafico, "ggplot")) {
+        print(obj$Grafico)
+        return(invisible())
       }
     }
+    obj
+  }, bg = "transparent")  # <- aqui!
+
+
+
+  ########
+  # --- Download PNG transparente (1000 dpi) ---
+  output$downloadPlot <- downloadHandler(
+    filename = function() paste0("grafico_", Sys.Date(), ".png"),
+    content  = function(file) {
+
+      obj <- try(resultado(), silent = TRUE)
+
+      ragg::agg_png(file, width = 8, height = 6, units = "in",
+                    res = 1000, background = "transparent")
+      on.exit(dev.off(), add = TRUE)
+
+      if (!inherits(obj, "try-error") && is.list(obj) && "Grafico" %in% names(obj)) {
+
+        if (inherits(obj$Grafico, "recordedplot")) {
+          op <- par(bg = NA)              # <- força fundo transparente no base R
+          on.exit(par(op), add = TRUE)
+          grDevices::replayPlot(obj$Grafico)
+          return(invisible())
+        }
+
+        if (inherits(obj$Grafico, "ggplot")) {
+          gp <- obj$Grafico +
+            ggplot2::theme(
+              plot.background  = ggplot2::element_rect(fill = NA, colour = NA),
+              panel.background = ggplot2::element_rect(fill = NA, colour = NA)
+            )
+          print(gp)
+          return(invisible())
+        }
+      }
+
+      if (inherits(obj, "ggplot")) {
+        gp <- obj +
+          ggplot2::theme(
+            plot.background  = ggplot2::element_rect(fill = NA, colour = NA),
+            panel.background = ggplot2::element_rect(fill = NA, colour = NA)
+          )
+        print(gp)
+        return(invisible())
+      }
+
+      plot.new()
+      text(0.5, 0.5, "Modelo não disponível ou inválido para plotagem.", cex = 1.1)
+    }
   )
+
+
+
+
+  #######
+
+
+
+
+
+
+
+
 
 
   # --- Tabela Resumo ---

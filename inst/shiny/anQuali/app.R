@@ -632,7 +632,7 @@ server <- function(input, output, session) {
                 #rm_out:active { border-color: black; }
                 .fa-exclamation-triangle { color: green !important; }
               ")),
-              actionButton("rm_out", label = "Remove outliers", icon = icon("thumbs-up"))
+              actionButton("rm_out", label = "Remover outliers", icon = icon("thumbs-up"))
             ),
 
             selectInput(
@@ -647,8 +647,8 @@ server <- function(input, output, session) {
             ),
 
             selectInput(
-              "angle_x", "Angle of the x-axis labels:",
-              choices = c("0 degrees" = 0, "90 degrees" = 90)
+              "angle_x", "Ângulo dos rótulos do eixo x:",
+              choices = c("0 graus" = 0, "90 graus" = 90)
             ),
 
             selectInput(
@@ -659,10 +659,14 @@ server <- function(input, output, session) {
 
             numericInput("ylim_min", "Limite mínimo do eixo y:", value = 0, step = 1),
             numericInput("ylim_max", "Limite máximo do eixo y:", value = 100, step = 1),
+            div(
+              style = "display: flex; gap: 10px; margin-top: 10px;",
+              downloadButton("downloadPlot", "Salvar Gráfico"),
+              downloadButton("baixar_excel_st", "Salvar Excel")
+            ),
 
-            downloadButton("downloadPlot", "Salvar Gráfico"),
             tags$hr(),
-            downloadButton("baixar_excel_st", "Salvar Excel")
+
           ),
           mainPanel(
             plotOutput("plot_statis"),

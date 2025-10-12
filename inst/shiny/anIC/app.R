@@ -309,7 +309,14 @@ ui <- fluidPage(
           textInput("file", "Nome do arquivo:", value = "grafico.png"),
 
           tags$hr(),
-          downloadButton("downloadPlot", label = NULL, icon = icon("download", lib = "glyphicon"))
+          downloadButton(
+            outputId = "downloadPlot",
+            label = HTML('<aria-hidden="true"></span> Baixar Gráfico'),
+            style = "padding:2px 6px; font-size:12px;",
+            class = "btn btn-default"
+          )
+
+
         ),
 
         mainPanel(
