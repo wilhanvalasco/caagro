@@ -46,253 +46,359 @@ invisible(lapply(pacotes, use_package))
 # ============================================================
 # Estatística Quanti - Função anQuant
 # ============================================================
-anQuant <- function(resp, resp_exp,
-                    medida = c("me", "md"),
-                    m = c("linear", "linear2", "Exp", "Log"),
-                    y_min = NULL, y_max = NULL,
-                    conf.level = 0.95,
-                    nsim = 1000,
-                    fator = NULL,
-                    PM = TRUE,
-                    rotulo = TRUE) {
+# Estatistica Quanti
+{
+  anQuant <- function(resp, resp_exp,
+                      medida = c("me", "md"),
+                      m = c("linear", "linear2", "Exp", "Log"),
+                      y_min = NULL, y_max = NULL,
+                      conf.level = 0.95,
+                      nsim = 1000,
+                      shade_alpha = 0.2,
+                      rotulo = 0.5,          # 0..1 controla quão alto fica o rótulo acima do PM
+                      fator = NULL,          # vetor/coluna opcional de fator
+                      PM = TRUE,             # exibir ponto de máximo
+                      ...) {
 
-  suppressWarnings({
-    library(dplyr)
-    library(tibble)
-  })
+    suppressWarnings({
+      library(dplyr)
+      library(tibble)
+    })
 
-  medida <- match.arg(medida)
-  m <- match.arg(m)
+    medida <- match.arg(medida)
+    m      <- match.arg(m)
 
-  # ============================================================
-  # Helper para ajuste do modelo (usa nomes internos .exp e .y)
-  # ============================================================
-  .fit_model <- function(df_modelo, m, conf.level, nsim) {
-    y_var <- df_modelo$.y
-    if (m == "linear") {
-      modelo <- lm(.y ~ .exp, data = df_modelo)
-    } else if (m == "linear2") {
-      modelo <- lm(.y ~ .exp + I(.exp^2), data = df_modelo)
-    } else if (m == "Exp") {
-      start_list <- list(a = 1, b = 0.1)
-      if (all(y_var > 0)) {
-        lin0 <- lm(log(.y) ~ .exp, data = df_modelo)
-        start_list$b <- unname(coef(lin0)[2])
-        start_list$a <- exp(unname(coef(lin0)[1]))
+    # -------------------------------
+    # Helpers
+    # -------------------------------
+    .fit_model <- function(df_modelo, modelo_tipo) {
+      # df_modelo: cols .exp, .y
+      if (modelo_tipo == "linear") {
+        modelo <- lm(.y ~ .exp, data = df_modelo)
+
+      } else if (modelo_tipo == "linear2") {
+        modelo <- lm(.y ~ .exp + I(.exp^2), data = df_modelo)
+
+      } else if (modelo_tipo == "Exp") {
+        start_list <- list(a = 1, b = 0.1)
+        if (all(df_modelo$.y > 0, na.rm = TRUE)) {
+          lin0 <- lm(log(.y) ~ .exp, data = df_modelo)
+          start_list$b <- unname(coef(lin0)[2])
+          start_list$a <- exp(unname(coef(lin0)[1]))
+        }
+        modelo <- nls(.y ~ a * exp(b * .exp),
+                      data = df_modelo, start = start_list,
+                      control = nls.control(warnOnly = TRUE))
+
+      } else if (modelo_tipo == "Log") {
+        df_modelo$y_adj <- ifelse(df_modelo$.y == 0, 0.01, df_modelo$.y)
+        A0  <- max(df_modelo$.y, na.rm = TRUE)
+        x00 <- stats::median(df_modelo$.exp, na.rm = TRUE)
+        s0  <- 1
+        if (all(df_modelo$y_adj > 0 & df_modelo$y_adj < A0, na.rm = TRUE)) {
+          y_logit <- log(A0 / df_modelo$y_adj - 1)
+          lin0 <- lm(y_logit ~ .exp, data = df_modelo)
+          s0  <- -1 / coef(lin0)[2]
+          x00 <- -coef(lin0)[1] * s0
+        }
+        modelo <- nls(.y ~ A / (1 + exp(-( .exp - x0) / s)),
+                      data = df_modelo,
+                      start = list(A = A0, x0 = x00, s = s0),
+                      control = nls.control(warnOnly = TRUE))
       }
-      modelo <- nls(.y ~ a * exp(b * .exp),
-                    data = df_modelo, start = start_list,
-                    control = nls.control(warnOnly = TRUE))
-    } else if (m == "Log") {
-      df_modelo$y_adj <- ifelse(df_modelo$.y == 0, 0.01, df_modelo$.y)
-      start_list <- list(A = max(df_modelo$.y), x0 = median(df_modelo$.exp), s = 1)
-      if (all(df_modelo$y_adj > 0 & df_modelo$y_adj < max(df_modelo$.y))) {
-        y_logit <- log(start_list$A / df_modelo$y_adj - 1)
-        lin0 <- lm(y_logit ~ .exp, data = df_modelo)
-        start_list$s  <- -1 / coef(lin0)[2]
-        start_list$x0 <- -coef(lin0)[1] * start_list$s
-      }
-      modelo <- nls(.y ~ A / (1 + exp(-( .exp - x0) / s)),
-                    data = df_modelo, start = start_list,
-                    control = nls.control(warnOnly = TRUE))
+      modelo
     }
 
-    # Métricas
-    if (inherits(modelo, "lm")) {
-      smry <- summary(modelo)
-      R2  <- unname(smry$r.squared)
-      R2a <- unname(smry$adj.r.squared)
-    } else {
-      rss <- sum(residuals(modelo)^2)
-      tss <- sum((y_var - mean(y_var))^2)
-      n   <- length(y_var); p <- length(coef(modelo))
-      R2  <- if (tss > 0) 1 - rss/tss else NA_real_
-      R2a <- if (tss > 0 && n > p) 1 - (rss/(n - p)) / (tss/(n - 1)) else NA_real_
-    }
-
-    # Ponto máximo
-    dentro <- function(x, lo, hi) pmin(pmax(x, lo), hi)
-    x_lo <- min(df_modelo$.exp); x_hi <- max(df_modelo$.exp)
-
-    if (m == "linear") {
-      b1 <- coef(modelo)[".exp"]
-      x_max <- if (is.na(b1) || b1 >= 0) x_hi else x_lo
-      y_max <- as.numeric(predict(modelo, newdata = data.frame(.exp = x_max)))
-    } else if (m == "linear2") {
-      cf <- coef(modelo)
-      a0 <- cf["(Intercept)"]; b1 <- cf[".exp"]; c2 <- cf["I(.exp^2)"]
-      if (!is.na(c2) && c2 < 0) {
-        xv <- -b1 / (2 * c2); xv <- dentro(xv, x_lo, x_hi)
-        x_max <- xv
-        y_max <- a0 + b1 * xv + c2 * xv^2
+    .r2s <- function(modelo, y_obs) {
+      if (inherits(modelo, "lm")) {
+        smry <- summary(modelo)
+        c(R2 = unname(smry$r.squared), R2a = unname(smry$adj.r.squared))
       } else {
-        cand_x <- c(x_lo, x_hi)
-        cand_y <- a0 + b1 * cand_x + c2 * cand_x^2
-        idx <- which.max(cand_y)
-        x_max <- cand_x[idx]; y_max <- cand_y[idx]
+        rss <- sum(residuals(modelo)^2)
+        tss <- sum((y_obs - mean(y_obs))^2)
+        n   <- length(y_obs); p <- length(coef(modelo))
+        R2  <- if (tss > 0) 1 - rss/tss else NA_real_
+        R2a <- if (tss > 0 && n > p) 1 - (rss/(n - p)) / (tss/(n - 1)) else NA_real_
+        c(R2 = R2, R2a = R2a)
       }
-    } else {
-      x_max <- x_hi
-      y_max <- as.numeric(predict(modelo, newdata = data.frame(.exp = x_max)))
     }
 
-    list(modelo = modelo, R2 = R2, R2a = R2a,
-         x_max = as.numeric(x_max), y_max = as.numeric(y_max))
-  }
+    .pm <- function(modelo, modelo_tipo, x_lo, x_hi) {
+      dentro <- function(x, lo, hi) pmin(pmax(x, lo), hi)
 
-  # ============================================================
-  # Caso com fator
-  # ============================================================
-  if (!is.null(fator)) {
-    df <- data.frame(.y = resp, .exp = resp_exp, .fac = factor(fator))
+      if (modelo_tipo == "linear") {
+        b1 <- unname(coef(modelo)[".exp"])
+        x_max <- if (is.na(b1) || b1 >= 0) x_hi else x_lo
+        y_max <- as.numeric(predict(modelo, newdata = data.frame(.exp = x_max)))
+
+      } else if (modelo_tipo == "linear2") {
+        cf <- coef(modelo)
+        a0 <- cf["(Intercept)"]; b1 <- cf[".exp"]; c2 <- cf["I(.exp^2)"]
+        if (!is.na(c2) && c2 < 0) {
+          xv <- -b1 / (2 * c2)
+          x_max <- dentro(xv, x_lo, x_hi)
+          y_max <- a0 + b1 * x_max + c2 * x_max^2
+        } else {
+          cand_x <- c(x_lo, x_hi)
+          cand_y <- a0 + b1 * cand_x + c2 * cand_x^2
+          idx <- which.max(cand_y)
+          x_max <- cand_x[idx]; y_max <- cand_y[idx]
+        }
+
+      } else {
+        # curvas crescentes típicas (Exp/Logístico): máximo no limite direito
+        x_max <- x_hi
+        y_max <- as.numeric(predict(modelo, newdata = data.frame(.exp = x_max)))
+      }
+      list(x_max = as.numeric(x_max), y_max = as.numeric(y_max))
+    }
+
+    .ci_bands <- function(modelo, modelo_tipo, x_seq, conf.level, nsim) {
+      alpha <- 1 - conf.level
+      if (inherits(modelo, "lm")) {
+        sefit <- predict(modelo, newdata = data.frame(.exp = x_seq), se.fit = TRUE)
+        crit  <- qt(1 - alpha/2, df = df.residual(modelo))
+        upper <- sefit$fit + crit * sefit$se.fit
+        lower <- sefit$fit - crit * sefit$se.fit
+        fit   <- sefit$fit
+        list(fit = fit, lower = lower, upper = upper)
+
+      } else {
+        # simulação paramétrica via vcov
+        co <- coef(modelo)
+        V  <- try(vcov(modelo), silent = TRUE)
+        if (inherits(V, "try-error")) {
+          # fallback simples: usa desvio dos resíduos
+          pred <- as.numeric(predict(modelo, newdata = data.frame(.exp = x_seq)))
+          res_sd <- stats::sd(residuals(modelo))
+          crit   <- qnorm(1 - alpha/2)
+          upper  <- pred + crit * res_sd
+          lower  <- pred - crit * res_sd
+          return(list(fit = pred, lower = lower, upper = upper))
+        }
+        # garantir matriz positiva
+        k <- length(co)
+        L <- try(chol(V), silent = TRUE)
+        if (inherits(L, "try-error")) {
+          eig <- eigen((V + t(V))/2, symmetric = TRUE)
+          eig$values[eig$values < 0] <- 0
+          L <- t(eig$vectors %*% diag(sqrt(eig$values)))
+        }
+
+        z <- matrix(rnorm(k * nsim), nrow = k, ncol = nsim)
+        sim_par <- matrix(co, nrow = k, ncol = nsim)
+        sim_par <- sim_par + L %*% z
+        rownames(sim_par) <- names(co)
+
+        nx <- length(x_seq)
+        sim_mat <- matrix(NA_real_, nrow = nx, ncol = nsim)
+        for (j in seq_len(nsim)) {
+          if (modelo_tipo == "Exp") {
+            a <- sim_par["a", j]; b <- sim_par["b", j]
+            sim_mat[, j] <- a * exp(b * x_seq)
+          } else if (modelo_tipo == "Log") {
+            A <- sim_par["A", j]; x0 <- sim_par["x0", j]; s <- sim_par["s", j]
+            sim_mat[, j] <- A / (1 + exp(-(x_seq - x0) / s))
+          }
+        }
+        pred  <- rowMeans(sim_mat, na.rm = TRUE)
+        lower <- apply(sim_mat, 1, quantile, probs = alpha/2, na.rm = TRUE)
+        upper <- apply(sim_mat, 1, quantile, probs = 1 - alpha/2, na.rm = TRUE)
+        list(fit = pred, lower = lower, upper = upper)
+      }
+    }
+
+    .draw_band <- function(x, lower, upper, alpha_band) {
+      col_band <- rgb(0, 0, 0, alpha = alpha_band)
+      polygon(c(x, rev(x)), c(lower, rev(upper)), border = NA, col = col_band)
+    }
+
+    # -------------------------------
+    # Pré-processamento (com/sem fator)
+    # -------------------------------
+    if (!is.null(fator)) {
+      df <- data.frame(.y = resp, .exp = resp_exp, .fac = factor(fator))
+      resumo <- df %>%
+        group_by(.fac, .exp) %>%
+        summarise(
+          media = mean(.y), mediana = median(.y),
+          sd = sd(.y), n = n(), se = sd/sqrt(n),
+          cv = (sd/mean(.y)) * 100, .groups = "drop"
+        )
+      y_ref <- if (medida == "me") resumo$media else resumo$mediana
+
+      y_lim_inf <- if (!is.null(y_min)) y_min else min(y_ref, na.rm = TRUE) * 0.95
+      y_lim_sup <- if (!is.null(y_max)) y_max else max(y_ref, na.rm = TRUE) * 1.05
+
+      # Paleta e layout
+      cores <- grDevices::rainbow(length(unique(resumo$.fac)))
+      names(cores) <- levels(resumo$.fac)
+      par(mar = c(5, 4, 4, 2) + 0.1)
+      opbg <- par(bg = NA); on.exit(par(opbg), add = TRUE)  # permite transparência
+      plot(NA, NA,
+           xlim = range(resumo$.exp, na.rm = TRUE),
+           ylim = c(y_lim_inf, y_lim_sup),
+           xlab = "", ylab = ifelse(medida == "me", "Média", "Mediana"),
+           main = paste("Modelo:", m),
+           xaxt = "n")
+      axis(1, at = sort(unique(resumo$.exp)), labels = sort(unique(resumo$.exp)))
+
+      params_list <- list()
+      pred_list   <- list()
+
+      for (lv in levels(resumo$.fac)) {
+        dat_n <- resumo[resumo$.fac == lv, , drop = FALSE]
+        if (nrow(dat_n) < 2) next
+
+        y_var   <- if (medida == "me") dat_n$media else dat_n$mediana
+        df_mod  <- tibble(.exp = dat_n$.exp, .y = y_var)
+        modelo  <- try(.fit_model(df_mod, m), silent = TRUE)
+        if (inherits(modelo, "try-error")) next
+
+        # pontos
+        points(df_mod$.exp, df_mod$.y, pch = 20, col = cores[lv])
+
+        # seq + bandas
+        x_seq <- seq(min(df_mod$.exp), max(df_mod$.exp), length.out = 300)
+        cb <- .ci_bands(modelo, m, x_seq, conf.level, nsim)
+        .draw_band(x_seq, cb$lower, cb$upper, shade_alpha)
+        lines(x_seq, cb$fit, col = cores[lv], lwd = 2)
+
+        # ponto de máximo
+        pm <- .pm(modelo, m, min(df_mod$.exp), max(df_mod$.exp))
+        if (isTRUE(PM)) {
+          abline(v = pm$x_max, col = cores[lv], lty = 3)
+          points(pm$x_max, pm$y_max, col = cores[lv], pch = 21, bg = "white", cex = 1.5)
+
+          # rótulo
+          xr <- range(resumo$.exp, na.rm = TRUE); yr <- c(y_lim_inf, y_lim_sup)
+          y_lab <- min(pm$y_max + rotulo * diff(yr), y_lim_sup)
+          lab <- sprintf("PM=%.2f | X=%.2f", pm$y_max, pm$x_max)
+          cex_lab <- 0.8
+          tw <- strwidth(lab, cex = cex_lab); th <- strheight(lab, cex = cex_lab)
+          pad <- 0.3 * th
+          rect(pm$x_max - tw/2 - pad, y_lab - th/2 - pad,
+               pm$x_max + tw/2 + pad, y_lab + th/2 + pad,
+               col = "gray90", border = "gray70")
+          text(pm$x_max, y_lab, labels = lab, cex = cex_lab, col = cores[lv], font = 2)
+          segments(pm$x_max, pm$y_max, pm$x_max, y_lab, col = "gray80", lty = 3)
+        }
+
+        # acumula saídas
+        r2s <- .r2s(modelo, y_var)
+        co  <- coef(modelo)
+        params_list[[lv]] <- tibble(
+          nivel = lv, modelo = m,
+          coef = names(co), valor = as.numeric(co),
+          R2 = unname(r2s["R2"]), R2_ajustado = unname(r2s["R2a"]),
+          x_max = pm$x_max, y_max = pm$y_max,
+          Modelo = list(modelo)
+        )
+        pred_list[[lv]] <- tibble(nivel = lv, .exp = x_seq,
+                                  fit = cb$fit, lower = cb$lower, upper = cb$upper)
+      }
+
+      box(); grid(col = "gray85")
+      legend("topleft", legend = names(cores), col = cores, lwd = 2, bty = "n")
+
+      grafico_record <- recordPlot()
+      Tabela     <- resumo %>% mutate(valor = if (medida == "me") media else mediana)
+      Parametros <- dplyr::bind_rows(params_list)
+      Predicoes  <- dplyr::bind_rows(pred_list)
+
+      return(list(
+        Tabela      = Tabela,         # cols: .fac, .exp, valor, ...
+        Parametros  = Parametros,     # inclui lista Modelo por nível
+        Predicoes   = Predicoes,      # para reconstruir no ggplot
+        Grafico     = grafico_record, # recordedplot
+        R2          = NA_real_,       # (global não faz sentido com fator)
+        R2_ajustado = NA_real_
+      ))
+    }
+
+    # -------------------------------
+    # Sem fator
+    # -------------------------------
+    df <- data.frame(.y = resp, .exp = resp_exp)
     resumo <- df %>%
-      group_by(.fac, .exp) %>%
+      group_by(.exp) %>%
       summarise(
-        media   = mean(.y), mediana = median(.y),
+        media = mean(.y), mediana = median(.y),
         sd = sd(.y), n = n(), se = sd/sqrt(n),
         cv = (sd/mean(.y)) * 100, .groups = "drop"
       )
+    y_var <- if (medida == "me") resumo$media else resumo$mediana
+    df_modelo <- tibble(.exp = resumo$.exp, .y = y_var)
 
-    lista_niveis <- split(resumo, resumo$.fac)
-    y_ref <- if (medida == "me") resumo$media else resumo$mediana
-    y_lim_inf <- if (!is.null(y_min)) y_min else min(y_ref, na.rm = TRUE) * 0.95
-    y_lim_sup <- if (!is.null(y_max)) y_max else max(y_ref, na.rm = TRUE) * 1.05
-    x_all <- sort(unique(resumo$.exp))
+    modelo <- .fit_model(df_modelo, m)
+    r2s    <- .r2s(modelo, y_var)
 
-    cores <- grDevices::rainbow(length(lista_niveis))
-    names(cores) <- names(lista_niveis)
-    par(mar = c(5, 4, 4, 2) + 0.1)  # margens padrão
-    plot(NA, NA,
-         xlim = range(x_all),
+    x_vals <- df_modelo$.exp
+    y_vals <- y_var
+
+    y_lim_inf <- if (!is.null(y_min)) y_min else min(y_vals, na.rm = TRUE) * 0.95
+    y_lim_sup <- if (!is.null(y_max)) y_max else max(y_vals, na.rm = TRUE) * 1.05
+
+    par(mar = c(5, 4, 4, 2) + 0.1)
+    opbg <- par(bg = NA); on.exit(par(opbg), add = TRUE)  # permite transparência
+    plot(x_vals, y_vals, pch = 20,
+         xlab = "", ylab = ifelse(medida == "me", "Média", "Mediana"),
+         main = paste("Modelo:", m),
          ylim = c(y_lim_inf, y_lim_sup),
-         xlab = "", ylab = "", main = "")
+         xaxt = "n")
+    axis(1, at = sort(unique(x_vals)), labels = sort(unique(x_vals)))
 
-    params_list <- list()
-    leg_text <- c(); leg_col <- c()
+    x_seq <- seq(min(x_vals), max(x_vals), length.out = 300)
+    cb <- .ci_bands(modelo, m, x_seq, conf.level, nsim)
+    .draw_band(x_seq, cb$lower, cb$upper, shade_alpha)
+    lines(x_seq, cb$fit, col = "black", lwd = 2)
 
-    for (nm in names(lista_niveis)) {
-      dat_n <- lista_niveis[[nm]]
-      y_var <- if (medida == "me") dat_n$media else dat_n$mediana
-      df_modelo <- tibble(.exp = dat_n$.exp, .y = y_var)
+    pm <- .pm(modelo, m, min(x_vals), max(x_vals))
+    if (isTRUE(PM)) {
+      abline(v = pm$x_max, col = "darkorange", lty = 3)
+      points(pm$x_max, pm$y_max, col = "darkorange", pch = 21, bg = "white", cex = 1.8)
 
-      fit <- try(.fit_model(df_modelo, m, conf.level, nsim), silent = TRUE)
-      if (inherits(fit, "try-error")) next
-
-      modelo <- fit$modelo
-      points(df_modelo$.exp, df_modelo$.y, pch = 20, col = cores[nm])
-      x_seq <- seq(min(df_modelo$.exp), max(df_modelo$.exp), length.out = 300)
-      pred  <- suppressWarnings(predict(modelo, newdata = data.frame(.exp = x_seq)))
-      lines(x_seq, pred, col = cores[nm], lwd = 2)
-
-      if (PM) {
-        abline(v = fit$x_max, col = cores[nm], lty = 3)
-        points(fit$x_max, fit$y_max, col = cores[nm], pch = 21, bg = "white", cex = 1.5)
-
-        if (rotulo) {
-          label_txt <- paste0("PM=", formatC(fit$y_max, 2, format = "f"),
-                              " | X=", formatC(fit$x_max, 2, format = "f"))
-          tw <- strwidth(label_txt, cex = 0.7)
-          th <- strheight(label_txt, cex = 0.7)
-          rect(fit$x_max - tw/2 - 0.05,
-               fit$y_max + 0.05*(y_lim_sup - y_lim_inf) - th/2 - 0.02,
-               fit$x_max + tw/2 + 0.05,
-               fit$y_max + 0.05*(y_lim_sup - y_lim_inf) + th/2 + 0.02,
-               col = "gray90", border = "gray70")
-          text(fit$x_max, fit$y_max + 0.05*(y_lim_sup - y_lim_inf),
-               labels = label_txt, col = cores[nm], cex = 0.7, font = 2)
-        }
-      }
-
-      co <- coef(modelo)
-      params_list[[nm]] <- tibble(
-        nivel = nm, modelo = m,
-        coef = names(co), valor = as.numeric(co),
-        R2 = fit$R2, R2_ajustado = fit$R2a,
-        x_max = fit$x_max, y_max = fit$y_max,
-        Modelo = list(modelo)
-      )
-
-      leg_text <- c(leg_text, nm)
-      leg_col  <- c(leg_col, cores[nm])
+      # rótulo
+      xr <- range(x_vals, na.rm = TRUE); yr <- c(y_lim_inf, y_lim_sup)
+      y_lab <- min(pm$y_max + rotulo * diff(yr), y_lim_sup)
+      lab <- sprintf("PM=%.2f | X=%.2f", pm$y_max, pm$x_max)
+      cex_lab <- 0.8
+      tw <- strwidth(lab, cex = cex_lab); th <- strheight(lab, cex = cex_lab)
+      pad <- 0.3 * th
+      rect(pm$x_max - tw/2 - pad, y_lab - th/2 - pad,
+           pm$x_max + tw/2 + pad, y_lab + th/2 + pad,
+           col = "gray90", border = "gray70")
+      text(pm$x_max, y_lab, labels = lab, cex = cex_lab, col = "gray20", font = 2)
+      segments(pm$x_max, pm$y_max, pm$x_max, y_lab, col = "gray80", lty = 3)
     }
 
-    box(); grid(col = "gray80")
-    if (length(leg_text) > 0) {
-      legend("topleft", legend = leg_text, col = leg_col, lwd = 2, bty = "n")
-    }
+    box(); grid(col = "gray85")
 
     grafico_record <- recordPlot()
-    Tabela <- resumo %>% mutate(valor = if (medida == "me") media else mediana)
-    Parametros <- dplyr::bind_rows(params_list)
-
-    return(list(Tabela = Tabela,
-                Parametros = Parametros,
-                Grafico = grafico_record))
-  }
-
-  # ============================================================
-  # Caso sem fator
-  # ============================================================
-  df <- data.frame(.y = resp, .exp = resp_exp)
-  resumo <- df %>%
-    group_by(.exp) %>%
-    summarise(
-      media = mean(.y), mediana = median(.y),
-      sd = sd(.y), n = n(), se = sd/sqrt(n),
-      cv = (sd/mean(.y)) * 100, .groups = "drop"
+    Tabela <- resumo %>% mutate(valor = y_var)
+    co <- coef(modelo)
+    Parametros <- tibble(
+      nivel = NA_character_, modelo = m,
+      coef  = names(co), valor = as.numeric(co),
+      R2 = unname(r2s["R2"]), R2_ajustado = unname(r2s["R2a"]),
+      x_max = pm$x_max, y_max = pm$y_max,
+      Modelo = list(modelo)
     )
+    Predicoes <- tibble(nivel = NA_character_, .exp = x_seq,
+                        fit = cb$fit, lower = cb$lower, upper = cb$upper)
 
-  y_var <- if (medida == "me") resumo$media else resumo$mediana
-  df_modelo <- tibble(.exp = resumo$.exp, .y = y_var)
-
-  fit <- .fit_model(df_modelo, m, conf.level, nsim)
-  modelo <- fit$modelo
-
-  x_vals <- df_modelo$.exp; y_vals <- y_var
-  y_lim_inf <- if (!is.null(y_min)) y_min else min(y_vals) * 0.95
-  y_lim_sup <- if (!is.null(y_max)) y_max else max(y_vals) * 1.05
-  par(mar = c(5, 4, 4, 2) + 0.1)  # margens padrão
-  plot(x_vals, y_vals, pch = 20,
-       xlab = "", ylab = "", main = "",
-       ylim = c(y_lim_inf, y_lim_sup))
-
-  x_seq <- seq(min(x_vals), max(x_vals), length.out = 300)
-  pred  <- suppressWarnings(predict(modelo, newdata = data.frame(.exp = x_seq)))
-  lines(x_seq, pred, col = "black", lwd = 2)
-
-  if (PM) {
-    abline(v = fit$x_max, col = "black", lty = 3)
-    points(fit$x_max, fit$y_max, col = "black", pch = 21, bg = "white", cex = 1.5)
-
-    if (rotulo) {
-      label_txt <- paste0("PM=", formatC(fit$y_max, 2, format = "f"),
-                          " | X=", formatC(fit$x_max, 2, format = "f"))
-      tw <- strwidth(label_txt, cex = 0.7)
-      th <- strheight(label_txt, cex = 0.7)
-      rect(fit$x_max - tw/2 - 0.05,
-           fit$y_max + 0.05*(y_lim_sup - y_lim_inf) - th/2 - 0.02,
-           fit$x_max + tw/2 + 0.05,
-           fit$y_max + 0.05*(y_lim_sup - y_lim_inf) + th/2 + 0.02,
-           col = "gray90", border = "gray70")
-      text(fit$x_max, fit$y_max + 0.05*(y_lim_sup - y_lim_inf),
-           labels = label_txt, col = "black", cex = 0.7, font = 2)
-    }
+    list(
+      Tabela      = Tabela,         # cols: .exp, valor, ...
+      Parametros  = Parametros,     # inclui Modelo
+      Predicoes   = Predicoes,      # para ggplot
+      Grafico     = grafico_record, # recordedplot
+      R2          = unname(r2s["R2"]),
+      R2_ajustado = unname(r2s["R2a"])
+    )
   }
 
-  grafico_record <- recordPlot()
-  resumo <- resumo %>% mutate(valor = y_var)
-  co <- coef(modelo)
-  params <- tibble(
-    nivel = NA_character_, modelo = m,
-    coef  = names(co), valor = as.numeric(co),
-    R2 = fit$R2, R2_ajustado = fit$R2a,
-    x_max = fit$x_max, y_max = fit$y_max,
-    Modelo = list(modelo)
-  )
 
-  list(Tabela = resumo,
-       Parametros = params,
-       Grafico = grafico_record)
+
 }
 
 
@@ -337,10 +443,10 @@ server <- function(input, output, session) {
                                     "Exponencial" = "Exp",
                                     "Logístico" = "Log")),
 
-            selectInput("alfa", "Nível de confiança:",
-                        choices = c("1%" = 0.01, "5%" = 0.05,
-                                    "10%" = 0.10, "15%" = 0.15),
-                        selected = 0.05),
+            sliderInput("alfa", "Nível de confiança:",
+                        min = 0.1, max = 1, step = 0.01,
+                        value = 0.95,   # valor inicial
+                        ticks = TRUE),   # mostra as marcações
             checkboxInput("show_max", "Exibir ponto de máximo", value = FALSE),
 
             numericInput("y_min", "Limite mínimo do eixo y:", value = 0, step = 1),
