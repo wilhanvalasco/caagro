@@ -58,12 +58,20 @@ invisible(lapply(pacotes, use_package))
                       rotulo = 0.5,          # 0..1 controla quão alto fica o rótulo acima do PM
                       fator = NULL,          # vetor/coluna opcional de fator
                       PM = TRUE,             # exibir ponto de máximo
+                      fonte = 1,             # << controla tamanhos de texto
                       ...) {
 
     suppressWarnings({
       library(dplyr)
       library(tibble)
     })
+
+    # garante valor válido p/ fonte e define cex dos pontos
+    fonte   <- as.numeric(fonte)
+    if (!is.finite(fonte) || fonte <= 0) fonte <- 1
+    .cex_pt <- fonte        # pontos dos dados
+    .cex_pm <- 1.2 * fonte  # marcador do ponto de máximo (um pouquinho maior)
+
 
     medida <- match.arg(medida)
     m      <- match.arg(m)
@@ -214,7 +222,7 @@ invisible(lapply(pacotes, use_package))
     }
 
     # -------------------------------
-    # Pré-processamento (com/sem fator)
+    # Pré-processamento (com fator)
     # -------------------------------
     if (!is.null(fator)) {
       df <- data.frame(.y = resp, .exp = resp_exp, .fac = factor(fator))
@@ -235,13 +243,21 @@ invisible(lapply(pacotes, use_package))
       names(cores) <- levels(resumo$.fac)
       par(mar = c(5, 4, 4, 2) + 0.1)
       opbg <- par(bg = NA); on.exit(par(opbg), add = TRUE)  # permite transparência
+
       plot(NA, NA,
            xlim = range(resumo$.exp, na.rm = TRUE),
            ylim = c(y_lim_inf, y_lim_sup),
-           xlab = "", ylab = ifelse(medida == "me", "Média", "Mediana"),
+           xlab = "",
+           ylab = ifelse(medida == "me", "Média", "Mediana"),
            main = paste("Modelo:", m),
-           xaxt = "n")
-      axis(1, at = sort(unique(resumo$.exp)), labels = sort(unique(resumo$.exp)))
+           xaxt = "n",
+           cex.axis = fonte,   # <<< tamanhos dos ticks dos eixos
+           cex.lab  = fonte,   # <<< rótulos dos eixos
+           cex.main = fonte)   # <<< título
+
+      axis(1, at = sort(unique(resumo$.exp)),
+           labels = sort(unique(resumo$.exp)),
+           cex.axis = fonte)
 
       params_list <- list()
       pred_list   <- list()
@@ -256,7 +272,8 @@ invisible(lapply(pacotes, use_package))
         if (inherits(modelo, "try-error")) next
 
         # pontos
-        points(df_mod$.exp, df_mod$.y, pch = 20, col = cores[lv])
+        points(df_mod$.exp, df_mod$.y, pch = 20, col = cores[lv], cex = .cex_pt)
+
 
         # seq + bandas
         x_seq <- seq(min(df_mod$.exp), max(df_mod$.exp), length.out = 300)
@@ -264,17 +281,18 @@ invisible(lapply(pacotes, use_package))
         .draw_band(x_seq, cb$lower, cb$upper, shade_alpha)
         lines(x_seq, cb$fit, col = cores[lv], lwd = 2)
 
+
         # ponto de máximo
         pm <- .pm(modelo, m, min(df_mod$.exp), max(df_mod$.exp))
         if (isTRUE(PM)) {
           abline(v = pm$x_max, col = cores[lv], lty = 3)
-          points(pm$x_max, pm$y_max, col = cores[lv], pch = 21, bg = "white", cex = 1.5)
+          points(pm$x_max, pm$y_max, col = cores[lv], pch = 21, bg = "white", cex = 1.8)
 
           # rótulo
           xr <- range(resumo$.exp, na.rm = TRUE); yr <- c(y_lim_inf, y_lim_sup)
           y_lab <- min(pm$y_max + rotulo * diff(yr), y_lim_sup)
           lab <- sprintf("PM=%.2f | X=%.2f", pm$y_max, pm$x_max)
-          cex_lab <- 0.8
+          cex_lab <- 0.8 * fonte   # <<< tamanho do label proporcional à fonte
           tw <- strwidth(lab, cex = cex_lab); th <- strheight(lab, cex = cex_lab)
           pad <- 0.3 * th
           rect(pm$x_max - tw/2 - pad, y_lab - th/2 - pad,
@@ -299,7 +317,8 @@ invisible(lapply(pacotes, use_package))
       }
 
       box(); grid(col = "gray85")
-      legend("topleft", legend = names(cores), col = cores, lwd = 2, bty = "n")
+      legend("topleft", legend = names(cores), col = cores, lwd = 2, bty = "n",
+             cex = fonte)  # <<< legenda acompanha fonte
 
       grafico_record <- recordPlot()
       Tabela     <- resumo %>% mutate(valor = if (medida == "me") media else mediana)
@@ -341,12 +360,20 @@ invisible(lapply(pacotes, use_package))
 
     par(mar = c(5, 4, 4, 2) + 0.1)
     opbg <- par(bg = NA); on.exit(par(opbg), add = TRUE)  # permite transparência
+
     plot(x_vals, y_vals, pch = 20,
-         xlab = "", ylab = ifelse(medida == "me", "Média", "Mediana"),
+         xlab = "",
+         ylab = ifelse(medida == "me", "Média", "Mediana"),
          main = paste("Modelo:", m),
          ylim = c(y_lim_inf, y_lim_sup),
-         xaxt = "n")
-    axis(1, at = sort(unique(x_vals)), labels = sort(unique(x_vals)))
+         xaxt = "n",
+         cex = .cex_pt,
+         cex.axis = fonte,   # <<< eixos
+         cex.lab  = fonte,   # <<< rótulos dos eixos
+         cex.main = fonte)   # <<< título
+
+    axis(1, at = sort(unique(x_vals)), labels = sort(unique(x_vals)),
+         cex.axis = fonte)
 
     x_seq <- seq(min(x_vals), max(x_vals), length.out = 300)
     cb <- .ci_bands(modelo, m, x_seq, conf.level, nsim)
@@ -362,7 +389,7 @@ invisible(lapply(pacotes, use_package))
       xr <- range(x_vals, na.rm = TRUE); yr <- c(y_lim_inf, y_lim_sup)
       y_lab <- min(pm$y_max + rotulo * diff(yr), y_lim_sup)
       lab <- sprintf("PM=%.2f | X=%.2f", pm$y_max, pm$x_max)
-      cex_lab <- 0.8
+      cex_lab <- 0.8 * fonte     # <<< texto interno proporcional à fonte
       tw <- strwidth(lab, cex = cex_lab); th <- strheight(lab, cex = cex_lab)
       pad <- 0.3 * th
       rect(pm$x_max - tw/2 - pad, y_lab - th/2 - pad,
@@ -396,6 +423,7 @@ invisible(lapply(pacotes, use_package))
       R2_ajustado = unname(r2s["R2a"])
     )
   }
+
 
 
 
@@ -447,6 +475,11 @@ server <- function(input, output, session) {
                         min = 0.1, max = 1, step = 0.01,
                         value = 0.95,   # valor inicial
                         ticks = TRUE),   # mostra as marcações
+            sliderInput(
+              "fonte", "Tamanho da fonte:",
+              min = 0, max = 10,
+              value = 1.5, step = 0.1
+            ),
             checkboxInput("show_max", "Exibir ponto de máximo", value = FALSE),
 
             numericInput("y_min", "Limite mínimo do eixo y:", value = 0, step = 1),
@@ -605,7 +638,8 @@ server <- function(input, output, session) {
       nsim = 5000,
       rotulo = input$rotulo,
       fator = df$f,
-      PM = input$show_max
+      PM = input$show_max,
+      fonte = input$fonte
     )
   })
 
