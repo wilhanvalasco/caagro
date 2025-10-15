@@ -113,8 +113,9 @@ invisible(lapply(pacotes, use_package))
   # Define a função grafics
   plot_Data <- function(Trat, Bloco, Resp,
                         ylim_min = 0, ylim_max = 100, test, conf.level = 0.95, rm = FALSE,
-                        angle.x = 0, salve = FALSE, quali_graf = 30, nome_graf = NULL)
-  {
+                        angle.x = 0, salve = FALSE, quali_graf = 30, nome_graf = NULL,
+                        fonte = 1) {
+
     alfa <- conf.level
 
     # Definindo estrutura dos dados com lógica simplificada
@@ -137,27 +138,26 @@ invisible(lapply(pacotes, use_package))
     dat <- na.omit(dat)
 
     # Remover outliers se 'rm' for TRUE
-    if (rm==TRUE) {
-      dat <- rm.out.trt(dat$Trat,dat$Resp, remove_outliers = rm)
+    if (rm == TRUE) {
+      dat <- rm.out.trt(dat$Trat, dat$Resp, remove_outliers = rm)
       dat <- na.omit(dat)
-      dat <- data.frame(Trat = dat[,2], Resp = dat[,1])
+      dat <- data.frame(Trat = dat[, 2], Resp = dat[, 1])
     }
 
     # Escolher o modelo apropriado baseado na presença de 'Bloco'
     if (!"Bloco" %in% colnames(dat)) {
       mod <- aov(Resp ~ Trat, data = dat)
     } else {
-      mod <- aov(Resp ~  Trat+Bloco, data = dat)
+      mod <- aov(Resp ~ Trat + Bloco, data = dat)
     }
 
     # Teste de comparação múltipla
     comp <- switch(test,
-                   "tk" = { HSD.test(mod, "Trat", alpha = alfa) },
+                   "tk"  = { HSD.test(mod, "Trat", alpha = alfa) },
                    "snk" = { SNK.test(mod, "Trat", alpha = alfa, console = FALSE) },
                    "lsd" = { LSD.test(mod, "Trat", p.adj = "bonferroni", alpha = alfa) },
-                   "md" = {
-                     dat <- na.omit(dat)  # Remove NAs
-
+                   "md"  = {
+                     dat <- na.omit(dat)
                      if (length(unique(dat$Trat)) > 1 && all(table(dat$Trat) > 0)) {
                        mediana <- Median.test(dat$Resp, dat$Trat, alpha = alfa, console = FALSE)
                        colnames(mediana$groups) <- c("Resp", "groups")
@@ -167,13 +167,14 @@ invisible(lapply(pacotes, use_package))
                        stop("Um ou mais grupos não têm observações suficientes.")
                      }
                    },
-                   "sk" = {
+                   "sk"  = {
                      sk_result <- SK(mod, sig.level = alfa)
                      combine_groups <- function(sk_result) {
                        media <- sk_result$out$Result
                        group_columns <- grep("^G", names(media), value = TRUE)
                        media <- media %>%
-                         mutate(G_combined = apply(select(media, all_of(group_columns)), 1, function(x) paste(x, collapse = " ")))
+                         mutate(G_combined = apply(select(media, all_of(group_columns)), 1,
+                                                   function(x) paste(x, collapse = " ")))
                        media1 <- media %>%
                          select(Resp = 1, groups = G_combined)
                        media1$Resp <- as.numeric(media1$Resp)
@@ -192,14 +193,14 @@ invisible(lapply(pacotes, use_package))
 
     # Bigodes
     conf_ints <- calcular_limites_bigode(dat$Resp, dat$Trat)
-    conf_ints_df <- data.frame(trt = conf_ints[,1],
-                               upr  = conf_ints[,2],
-                               lwr = conf_ints[,3])
+    conf_ints_df <- data.frame(trt = conf_ints[, 1],
+                               upr = conf_ints[, 2],
+                               lwr = conf_ints[, 3])
 
     df <- df %>%
       left_join(conf_ints_df, by = "trt")
 
-    # Construção do gráfico
+    # Construção do gráfico (aplicando 'fonte' nos tamanhos)
     grafico <- ggplot(df, aes(x = reorder(trt, -Resp), y = Resp, fill = groups)) +
       geom_bar(stat = "identity") +
       geom_point(data = dat, aes(x = Trat, y = Resp),
@@ -207,10 +208,11 @@ invisible(lapply(pacotes, use_package))
                  position = position_dodge(width = 0.9)) +
       geom_errorbar(aes(ymin = lwr, ymax = upr), width = 0.2, color = "black") +
       geom_label(aes(label = round(Resp, 1)),
-                 vjust = 5, color = "black", size = 3.5, fontface = "plain",
+                 vjust = 5, color = "black", size = 3.5 * fonte, fontface = "plain",
                  label.size = 0, label.padding = unit(0.2, "lines"), fill = "white") +
-      geom_label(aes(label = groups), vjust = -1.5, color = "black", size = 5,
-                 fontface = "plain", label.size = 0.00002, label.padding = unit(0.2, "lines"), fill = "white") +
+      geom_label(aes(label = groups), vjust = -1.5, color = "black", size = 5 * fonte,
+                 fontface = "plain", label.size = 0.00002,
+                 label.padding = unit(0.2, "lines"), fill = "white") +
       geom_point(aes(y = Resp), color = "black", fill = "black", shape = 19, size = 1.5,
                  position = position_dodge(width = 0.9)) +
       scale_fill_manual(values = c("a" = "#E97132", "b" = "#156082",
@@ -224,15 +226,20 @@ invisible(lapply(pacotes, use_package))
       scale_y_continuous(expand = c(0, 0)) +
       theme_classic() +
       theme(
-        axis.text.x = element_text(angle = angle.x, hjust = ifelse(angle.x == 90, 1, 0.5),
-                                   vjust = ifelse(angle.x == 90, 0.5, 1),
-                                   face = "bold", color = "black", size = 12),
-        axis.text.y = element_text(color = "black"),
-        axis.title.x = element_text(face = "bold", color = "black", size = 14),
-        legend.position = "none",
-        panel.border = element_blank(),
-        panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent", color = NA)
+        axis.text.x  = element_text(
+          angle = angle.x,
+          hjust = ifelse(angle.x == 90, 1, 0.5),
+          vjust = ifelse(angle.x == 90, 0.5, 1),
+          face  = "bold", color = "black", size = 12 * fonte
+        ),
+        axis.text.y  = element_text(color = "black", size = 11 * fonte),
+        axis.title.x = element_text(face = "bold", color = "black", size = 14 * fonte),
+        axis.title.y = element_text(face = "bold", color = "black", size = 14 * fonte),
+        plot.title   = element_text(face = "bold", color = "black", size = 16 * fonte),
+        legend.position   = "none",
+        panel.border = element_rect(color = "black", fill = NA, size = 0.8),
+        panel.background  = element_rect(fill = "transparent"),
+        plot.background   = element_rect(fill = "transparent", color = NA)
       ) +
       scale_x_discrete(guide = guide_axis(n.dodge = 1)) +
       geom_hline(yintercept = 0, color = "black", size = 0.5) +
@@ -243,13 +250,13 @@ invisible(lapply(pacotes, use_package))
       if (is.null(nome_graf) || nome_graf == "") {
         stop("Preencha o nome do gráfico.")
       }
-      ggsave(paste0(nome_graf, ".png"), plot = grafico, width = 8, height = 6, dpi = quali_graf, bg = "transparent")
+      ggsave(paste0(nome_graf, ".png"),
+             plot = grafico, width = 8, height = 6, dpi = quali_graf, bg = "transparent")
       cat("Gráfico salvo como:", paste0(nome_graf, ".png"), "\n")
     } else {
       print(grafico)
     }
 
-    # Retorna o modelo e o gráfico
     return(grafico)
   }
 
@@ -358,240 +365,6 @@ invisible(lapply(pacotes, use_package))
 
 }
 
-# Estatistica Quanti
-  {
-    # Estatistica Quanti
-    {
-      anQuant <- function(resp, resp_exp,
-                          medida = c("me", "md"),
-                          m = c("linear", "linear2", "Exp", "Log"),
-                          y_min = NULL, y_max = NULL,
-                          conf.level = 0.95,
-                          nsim = 1000,
-                          shade_alpha = 0.2,
-                          rotulo = 0.5) {
-
-        suppressWarnings({
-          library(dplyr)
-          library(tibble)
-        })
-
-        medida <- match.arg(medida)
-        m <- match.arg(m)
-
-        df <- data.frame(resp = resp, resp_exp = resp_exp)
-        resumo <- df %>%
-          group_by(resp_exp) %>%
-          summarise(
-            media   = mean(resp),
-            mediana = median(resp),
-            sd      = sd(resp),
-            n       = n(),
-            se      = sd / sqrt(n),
-            cv      = (sd / mean(resp)) * 100,
-            .groups = "drop"
-          )
-
-        y_var <- if (medida == "me") resumo$media else resumo$mediana
-        df_modelo <- tibble(resp_exp = resumo$resp_exp, y = y_var)
-
-        if (m == "linear") {
-          modelo <- lm(y ~ resp_exp, data = df_modelo)
-        } else if (m == "linear2") {
-          modelo <- lm(y ~ resp_exp + I(resp_exp^2), data = df_modelo)
-        } else if (m == "Exp") {
-          start_list <- list(a = 1, b = 0.1)
-          if (all(y_var > 0)) {
-            lin0 <- lm(log(y) ~ resp_exp, data = df_modelo)
-            start_list$b <- unname(coef(lin0)[2])
-            start_list$a <- exp(unname(coef(lin0)[1]))
-          }
-          modelo <- nls(y ~ a * exp(b * resp_exp),
-                        data = df_modelo,
-                        start = start_list,
-                        control = nls.control(warnOnly = TRUE))
-        } else if (m == "Log") {
-          df_modelo$y_adj <- ifelse(df_modelo$y == 0, 0.01, df_modelo$y)
-          start_list <- list(A = max(df_modelo$y), x0 = median(df_modelo$resp_exp), s = 1)
-          if (all(df_modelo$y_adj > 0 & df_modelo$y_adj < max(df_modelo$y))) {
-            y_logit <- log(start_list$A / df_modelo$y_adj - 1)
-            lin0 <- lm(y_logit ~ resp_exp, data = df_modelo)
-            start_list$s <- -1 / coef(lin0)[2]
-            start_list$x0 <- -coef(lin0)[1] * start_list$s
-          }
-          modelo <- nls(y ~ A / (1 + exp(-(resp_exp - x0) / s)),
-                        data = df_modelo,
-                        start = start_list,
-                        control = nls.control(warnOnly = TRUE))
-        }
-
-        if (inherits(modelo, "lm")) {
-          smry <- summary(modelo)
-          R2  <- unname(smry$r.squared)
-          R2a <- unname(smry$adj.r.squared)
-        } else {
-          y_obs <- df_modelo$y
-          rss <- sum(residuals(modelo)^2)
-          tss <- sum((y_obs - mean(y_obs))^2)
-          n   <- length(y_obs)
-          p   <- length(coef(modelo))
-          R2  <- if (tss > 0) 1 - rss/tss else NA_real_
-          R2a <- if (tss > 0 && n > p) 1 - (rss/(n - p)) / (tss/(n - 1)) else NA_real_
-        }
-
-        x_vals <- df_modelo$resp_exp
-        y_vals <- y_var
-        y_lim_inf <- if (!is.null(y_min)) y_min else min(y_vals) * 0.95
-        y_lim_sup <- if (!is.null(y_max)) y_max else max(y_vals) * 1.05
-
-        plot(x_vals, y_vals,
-             pch = 20,
-             xlab = "",
-             ylab = ifelse(medida == "me", "Média", "Mediana"),
-             main = paste("Modelo:", m),
-             ylim = c(y_lim_inf, y_lim_sup),
-             xaxt = "n")   # <- desativa o eixo x automático
-
-        # agora cria eixo x somente com os valores de x_vals
-        axis(1, at = x_vals, labels = x_vals)
-
-
-        x_seq <- seq(min(x_vals), max(x_vals), length.out = 300)
-        pred  <- suppressWarnings(predict(modelo, newdata = data.frame(resp_exp = x_seq)))
-        lines(x_seq, pred, col = "black", lwd = 2)
-
-        alpha <- 1 - conf.level
-        draw_polygon_band <- function(x, lower, upper) {
-          col_band <- rgb(0, 0, 0, alpha = shade_alpha)
-          polygon(c(x, rev(x)), c(lower, rev(upper)),
-                  border = NA, col = col_band)
-        }
-
-        if (inherits(modelo, "lm")) {
-          ok <- isTRUE(try({
-            confbands(modelo,
-                      newdata = data.frame(resp_exp = seq(min(x_vals), max(x_vals), length.out = 200)),
-                      add = TRUE, conf.level = conf.level, col = "gray40")
-            TRUE
-          }, silent = TRUE))
-          if (!ok) {
-            sefit <- predict(modelo, newdata = data.frame(resp_exp = x_seq), se.fit = TRUE)
-            crit  <- qt(1 - alpha/2, df = df.residual(modelo))
-            upper <- sefit$fit + crit * sefit$se.fit
-            lower <- sefit$fit - crit * sefit$se.fit
-            draw_polygon_band(x_seq, lower, upper)
-          }
-        } else {
-          co <- coef(modelo)
-          V  <- try(vcov(modelo), silent = TRUE)
-          if (inherits(V, "try-error")) {
-            res_sd <- sd(residuals(modelo))
-            crit   <- qnorm(1 - alpha/2)
-            upper  <- pred + crit * res_sd
-            lower  <- pred - crit * res_sd
-            draw_polygon_band(x_seq, lower, upper)
-          } else {
-            k <- length(co)
-            L <- try(chol(V), silent = TRUE)
-            if (inherits(L, "try-error")) {
-              eig <- eigen((V + t(V)) / 2, symmetric = TRUE)
-              eig$values[eig$values < 0] <- 0
-              L <- t(eig$vectors %*% diag(sqrt(eig$values)))
-            }
-            z <- matrix(rnorm(k * nsim), nrow = k, ncol = nsim)
-            sim_par <- matrix(co, nrow = k, ncol = nsim)
-            sim_par <- sim_par + L %*% z
-            rownames(sim_par) <- names(co)
-            nx <- length(x_seq)
-            sim_mat <- matrix(NA_real_, nrow = nx, ncol = nsim)
-            for (j in seq_len(nsim)) {
-              if (m == "Exp") {
-                a <- sim_par["a", j]; b <- sim_par["b", j]
-                sim_mat[, j] <- a * exp(b * x_seq)
-              } else if (m == "Log") {
-                A <- sim_par["A", j]; x0 <- sim_par["x0", j]; s <- sim_par["s", j]
-                sim_mat[, j] <- A / (1 + exp(-(x_seq - x0) / s))
-              }
-            }
-            lower <- apply(sim_mat, 1, quantile, probs = alpha/2, na.rm = TRUE)
-            upper <- apply(sim_mat, 1, quantile, probs = 1 - alpha/2, na.rm = TRUE)
-            draw_polygon_band(x_seq, lower, upper)
-          }
-        }
-
-        box()
-        grid(col = "gray80")
-        resumo <- resumo %>% mutate(valor = y_var)
-
-        dentro <- function(x, lo, hi) pmin(pmax(x, lo), hi)
-        x_lo <- min(x_vals); x_hi <- max(x_vals)
-
-        if (m == "linear") {
-          b1 <- coef(modelo)["resp_exp"]
-          x_max <- if (is.na(b1) || b1 >= 0) x_hi else x_lo
-          y_max <- as.numeric(predict(modelo, newdata = data.frame(resp_exp = x_max)))
-        } else if (m == "linear2") {
-          cf <- coef(modelo)
-          a0 <- cf["(Intercept)"]; b1 <- cf["resp_exp"]; c2 <- cf["I(resp_exp^2)"]
-          if (!is.na(c2) && c2 < 0) {
-            xv <- -b1 / (2 * c2)
-            xv <- dentro(xv, x_lo, x_hi)
-            x_max <- xv
-            y_max <- a0 + b1 * xv + c2 * xv^2
-          } else {
-            cand_x <- c(x_lo, x_hi)
-            cand_y <- a0 + b1 * cand_x + c2 * cand_x^2
-            idx <- which.max(cand_y)
-            x_max <- cand_x[idx]; y_max <- cand_y[idx]
-          }
-        } else {
-          x_max <- x_hi
-          y_max <- as.numeric(predict(modelo, newdata = data.frame(resp_exp = x_max)))
-        }
-
-        abline(v = as.numeric(x_max), col = "darkorange", lwd = 2, lty = 3)
-        points(as.numeric(x_max), as.numeric(y_max),
-               col = "darkorange", lwd = 2, pch = 1, cex = 2.5)
-
-        label_txt <- paste0("PM = ", formatC(y_max, format = "f", digits = 2))
-        xr <- range(x_vals); yr <- c(y_lim_inf, y_lim_sup)
-        dx <- 0.00 * diff(xr)
-        dy <- 0.1 * diff(yr)
-
-        x_lab <- as.numeric(x_max) + dx
-        y_lab <- as.numeric(y_max) + dy
-        y_lab <- min(y_lab, y_lim_sup - rotulo * diff(yr))
-
-        cex_lab <- 0.7
-        tw <- strwidth(label_txt, cex = cex_lab)
-        th <- strheight(label_txt, cex = cex_lab)
-        pad_x <- 0.4 * th
-        pad_y <- 0.35 * th
-
-        x0 <- x_lab - tw/2 - pad_x
-        x1 <- x_lab + tw/2 + pad_x
-        y0 <- y_lab - th/2 - pad_y
-        y1 <- y_lab + th/2 + pad_y
-
-        op <- par(xpd = NA); on.exit(par(op), add = TRUE)
-        segments(as.numeric(x_max), as.numeric(y_max),
-                 x_lab, y_lab, col = "gray90", lty = 3)
-        rect(x0, y0, x1, y1, col = "white", border = "gray90")
-        text(x_lab, y_lab, labels = label_txt, cex = cex_lab, col = "gray20")
-
-        return(list(
-          Tabela       = resumo,
-          R2           = R2,
-          R2_ajustado  = R2a,
-          Maximo       = list(x = as.numeric(x_max), y = as.numeric(y_max), modelo = m),
-          Modelo       = modelo
-        ))
-      }
-
-
-    }
-  }
-
 
 
 
@@ -660,12 +433,17 @@ server <- function(input, output, session) {
               choices = c("0 graus" = 0, "90 graus" = 90)
             ),
 
-            selectInput(
+            sliderInput(
               "alfa", "Nível de confiança:",
-              choices = c("1%" = 0.01,"5%" = 0.05,"10%" = 0.10,"15%" = 0.15),
-              selected = 0.05
+              min = 0, max = 1,
+              value = 0.05, step = 0.01,
+              post = ""
             ),
-
+            sliderInput(
+              "fonte", "Tamanho da fonte:",
+              min = 0, max = 10,
+              value = 1.5, step = 0.1
+            ),
             numericInput("ylim_min", "Limite mínimo do eixo y:", value = 0, step = 1),
             numericInput("ylim_max", "Limite máximo do eixo y:", value = 100, step = 1),
             div(
@@ -864,7 +642,8 @@ server <- function(input, output, session) {
       angle.x   = angle_x,
       salve     = FALSE,
       quali_graf= 500,
-      nome_graf = NULL
+      nome_graf = NULL,
+      fonte = input$fonte
     )
   })
 
