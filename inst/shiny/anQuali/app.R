@@ -11,6 +11,7 @@ use_package <- function(pkg) {
 # Lista de pacotes (sem pacotes de imagem: jpeg, pixmap, EBImage)
 pacotes <- c(
   "shinycssloaders",
+  "ragg",
   "xfun",
   "highr",
   "renv",
