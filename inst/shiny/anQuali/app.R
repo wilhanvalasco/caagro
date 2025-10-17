@@ -111,59 +111,81 @@ invisible(lapply(pacotes, use_package))
     return(resultados)
   }
 
-  # Define a função grafics
   plot_Data <- function(Trat, Bloco, Resp,
                         ylim_min = 0, ylim_max = 100, test, conf.level = 0.95, rm = FALSE,
                         angle.x = 0, salve = FALSE, quali_graf = 30, nome_graf = NULL,
                         fonte = 1) {
+    # --- pacotes usados
+    suppressWarnings({
+      library(dplyr)
+      library(tibble)
+      library(ggplot2)
+      library(stringr)
+      library(rlang)
+      library(stats)
+      library(grid)
+    })
 
     alfa <- conf.level
 
-    # Definindo estrutura dos dados com lógica simplificada
-    if (exists("Bloco") && length(Bloco) > 0) {
+    # --- detectar se Bloco foi de fato informado e tem dados utilizáveis
+    has_bloco <- !(missing(Bloco) || is.null(Bloco)) &&
+      length(Bloco) > 0 && any(!is.na(Bloco))
+
+    # --- construir dat mantendo (ou não) Bloco
+    if (has_bloco) {
       dat <- data.frame(
-        Trat = as.factor(Trat),
+        Trat  = as.factor(Trat),
         Bloco = as.factor(Bloco),
-        Resp = as.numeric(Resp)
+        Resp  = as.numeric(Resp)
       )
-      dat <- na.omit(dat)
     } else {
       dat <- data.frame(
-        Trat = as.factor(Trat),
-        Resp = as.numeric(Resp)
+        Trat  = as.factor(Trat),
+        Resp  = as.numeric(Resp)
       )
-      dat <- na.omit(dat)
     }
-
-    # Remover valores ausentes (NA)
     dat <- na.omit(dat)
 
-    # Remover outliers se 'rm' for TRUE
-    if (rm == TRUE) {
-      dat <- rm.out.trt(dat$Trat, dat$Resp, remove_outliers = rm)
+    # --- remoção de outliers por tratamento preservando colunas
+    if (isTRUE(rm)) {
+      rm_out_by_trat <- function(df, resp = "Resp", trt = "Trat", k = 1.5) {
+        resp_sym <- rlang::sym(resp)
+        trt_sym  <- rlang::sym(trt)
+        df %>%
+          group_by(!!trt_sym) %>%
+          filter({
+            x  <- !!resp_sym
+            Q1 <- quantile(x, 0.25, na.rm = TRUE)
+            Q3 <- quantile(x, 0.75, na.rm = TRUE)
+            I  <- Q3 - Q1
+            (x >= (Q1 - k*I)) & (x <= (Q3 + k*I))
+          }) %>%
+          ungroup() %>%
+          as.data.frame()
+      }
+      dat <- rm_out_by_trat(dat)
       dat <- na.omit(dat)
-      dat <- data.frame(Trat = dat[, 2], Resp = dat[, 1])
     }
 
-    # Escolher o modelo apropriado baseado na presença de 'Bloco'
-    if (!"Bloco" %in% colnames(dat)) {
-      mod <- aov(Resp ~ Trat, data = dat)
-    } else {
+    # --- escolha do modelo (DIC vs DBC) sem perder Bloco
+    if (has_bloco && "Bloco" %in% names(dat)) {
       mod <- aov(Resp ~ Trat + Bloco, data = dat)
+    } else {
+      mod <- aov(Resp ~ Trat, data = dat)
     }
 
-    # Teste de comparação múltipla
+    # --- testes de comparação múltipla
     comp <- switch(test,
                    "tk"  = { HSD.test(mod, "Trat", alpha = alfa) },
                    "snk" = { SNK.test(mod, "Trat", alpha = alfa, console = FALSE) },
                    "lsd" = { LSD.test(mod, "Trat", p.adj = "bonferroni", alpha = alfa) },
                    "md"  = {
-                     dat <- na.omit(dat)
-                     if (length(unique(dat$Trat)) > 1 && all(table(dat$Trat) > 0)) {
-                       mediana <- Median.test(dat$Resp, dat$Trat, alpha = alfa, console = FALSE)
+                     dat2 <- na.omit(dat)
+                     if (length(unique(dat2$Trat)) > 1 && all(table(dat2$Trat) > 0)) {
+                       mediana <- Median.test(dat2$Resp, dat2$Trat, alpha = alfa, console = FALSE)
                        colnames(mediana$groups) <- c("Resp", "groups")
-                       med <- mediana$groups
-                       result <- list(groups = med)
+                       list(groups = mediana$groups)
                      } else {
                        stop("Um ou mais grupos não têm observações suficientes.")
                      }
@@ -183,25 +205,52 @@ invisible(lapply(pacotes, use_package))
                        list(groups = media1)
                      }
                      combine_groups(sk_result)
+                   },
+                   {
+                     stop("Escolha um teste válido em 'test': 'tk', 'snk', 'lsd', 'md' ou 'sk'.")
                    }
     )
 
-    # Prepara o dataframe para o ggplot
+    # --- função de bigodes (IC por tratamento) - fallback interno se não houver uma externa
+    .calc_bigodes_fallback <- function(resp, trat, conf = 0.95) {
+      df <- data.frame(Resp = resp, Trat = trat) %>% na.omit()
+      z <- df %>%
+        group_by(Trat) %>%
+        summarise(
+          n   = sum(!is.na(Resp)),
+          m   = mean(Resp, na.rm = TRUE),
+          sd  = sd(Resp, na.rm = TRUE),
+          .groups = "drop"
+        )
+      z <- z %>%
+        mutate(
+          se  = sd / sqrt(pmax(n, 1)),
+          tcv = qt(1 - (1 - conf)/2, df = pmax(n - 1, 1)),
+          lwr = m - tcv * se,
+          upr = m + tcv * se
+        )
+      as.matrix(z[, c("Trat", "upr", "lwr")])
+    }
+
+    if (exists("calcular_limites_bigode")) {
+      conf_ints <- calcular_limites_bigode(dat$Resp, dat$Trat)
+    } else {
+      conf_ints <- .calc_bigodes_fallback(dat$Resp, dat$Trat, conf = alfa)
+    }
+
+    # --- preparar dados para o gráfico
     df <- comp$groups %>%
       rownames_to_column(var = "trt") %>%
       mutate(trt = reorder(trt, -Resp)) %>%
       arrange(desc(Resp))
 
-    # Bigodes
-    conf_ints <- calcular_limites_bigode(dat$Resp, dat$Trat)
     conf_ints_df <- data.frame(trt = conf_ints[, 1],
-                               upr = conf_ints[, 2],
-                               lwr = conf_ints[, 3])
+                               upr = as.numeric(conf_ints[, 2]),
+                               lwr = as.numeric(conf_ints[, 3]))
 
-    df <- df %>%
-      left_join(conf_ints_df, by = "trt")
+    df <- df %>% left_join(conf_ints_df, by = "trt")
 
-    # Construção do gráfico (aplicando 'fonte' nos tamanhos)
+    # --- gráfico
     grafico <- ggplot(df, aes(x = reorder(trt, -Resp), y = Resp, fill = groups)) +
       geom_bar(stat = "identity") +
       geom_point(data = dat, aes(x = Trat, y = Resp),
@@ -246,8 +295,8 @@ invisible(lapply(pacotes, use_package))
       geom_hline(yintercept = 0, color = "black", size = 0.5) +
       geom_vline(xintercept = 0, color = "black", size = 0.5)
 
-    # Verifica a condição e executa a ação correspondente
-    if (salve) {
+    # --- salvar ou imprimir
+    if (isTRUE(salve)) {
       if (is.null(nome_graf) || nome_graf == "") {
         stop("Preencha o nome do gráfico.")
       }
@@ -260,6 +309,7 @@ invisible(lapply(pacotes, use_package))
 
     return(grafico)
   }
+
 
   # Formatar data
   formatar_colunas <- function(df) {
