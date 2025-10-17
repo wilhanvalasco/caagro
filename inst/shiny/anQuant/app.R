@@ -50,7 +50,7 @@ invisible(lapply(pacotes, use_package))
 # Estatistica Quanti
 {
   anQuant <- function(resp, resp_exp,
-                      medida = c("me", "md"),
+                      medida = c("me", "md", "min", "max"),
                       m = c("linear", "linear2", "Exp", "Log"),
                       y_min = NULL, y_max = NULL,
                       conf.level = 0.95,
@@ -59,7 +59,7 @@ invisible(lapply(pacotes, use_package))
                       rotulo = 0.5,          # 0..1 controla quão alto fica o rótulo acima do PM
                       fator = NULL,          # vetor/coluna opcional de fator
                       PM = TRUE,             # exibir ponto de máximo
-                      fonte = 1,             # << controla tamanhos de texto
+                      fonte = 1,             # controla tamanhos de texto
                       ...) {
 
     suppressWarnings({
@@ -71,17 +71,15 @@ invisible(lapply(pacotes, use_package))
     fonte   <- as.numeric(fonte)
     if (!is.finite(fonte) || fonte <= 0) fonte <- 1
     .cex_pt <- fonte        # pontos dos dados
-    .cex_pm <- 1.2 * fonte  # marcador do ponto de máximo (um pouquinho maior)
-
+    .cex_pm <- 1.2 * fonte  # marcador do ponto de máximo
 
     medida <- match.arg(medida)
     m      <- match.arg(m)
 
     # -------------------------------
-    # Helpers
+    # Helpers (inalterados)
     # -------------------------------
     .fit_model <- function(df_modelo, modelo_tipo) {
-      # df_modelo: cols .exp, .y
       if (modelo_tipo == "linear") {
         modelo <- lm(.y ~ .exp, data = df_modelo)
 
@@ -155,7 +153,6 @@ invisible(lapply(pacotes, use_package))
         }
 
       } else {
-        # curvas crescentes típicas (Exp/Logístico): máximo no limite direito
         x_max <- x_hi
         y_max <- as.numeric(predict(modelo, newdata = data.frame(.exp = x_max)))
       }
@@ -173,11 +170,9 @@ invisible(lapply(pacotes, use_package))
         list(fit = fit, lower = lower, upper = upper)
 
       } else {
-        # simulação paramétrica via vcov
         co <- coef(modelo)
         V  <- try(vcov(modelo), silent = TRUE)
         if (inherits(V, "try-error")) {
-          # fallback simples: usa desvio dos resíduos
           pred <- as.numeric(predict(modelo, newdata = data.frame(.exp = x_seq)))
           res_sd <- stats::sd(residuals(modelo))
           crit   <- qnorm(1 - alpha/2)
@@ -185,7 +180,6 @@ invisible(lapply(pacotes, use_package))
           lower  <- pred - crit * res_sd
           return(list(fit = pred, lower = lower, upper = upper))
         }
-        # garantir matriz positiva
         k <- length(co)
         L <- try(chol(V), silent = TRUE)
         if (inherits(L, "try-error")) {
@@ -223,18 +217,28 @@ invisible(lapply(pacotes, use_package))
     }
 
     # -------------------------------
-    # Pré-processamento (com fator)
+    # Com fator (agora com min/max)
     # -------------------------------
     if (!is.null(fator)) {
       df <- data.frame(.y = resp, .exp = resp_exp, .fac = factor(fator))
       resumo <- df %>%
         group_by(.fac, .exp) %>%
         summarise(
-          media = mean(.y), mediana = median(.y),
+          media   = mean(.y),
+          mediana = median(.y),
+          min_v   = min(.y),
+          max_v   = max(.y),
           sd = sd(.y), n = n(), se = sd/sqrt(n),
-          cv = (sd/mean(.y)) * 100, .groups = "drop"
+          cv = (sd/mean(.y)) * 100,
+          .groups = "drop"
         )
-      y_ref <- if (medida == "me") resumo$media else resumo$mediana
+
+      # escolhe a série conforme a 'medida'
+      y_ref <- switch(medida,
+                      me  = resumo$media,
+                      md  = resumo$mediana,
+                      min = resumo$min_v,
+                      max = resumo$max_v)
 
       y_lim_inf <- if (!is.null(y_min)) y_min else min(y_ref, na.rm = TRUE) * 0.95
       y_lim_sup <- if (!is.null(y_max)) y_max else max(y_ref, na.rm = TRUE) * 1.05
@@ -243,18 +247,24 @@ invisible(lapply(pacotes, use_package))
       cores <- grDevices::rainbow(length(unique(resumo$.fac)))
       names(cores) <- levels(resumo$.fac)
       par(mar = c(5, 4, 4, 2) + 0.1)
-      opbg <- par(bg = NA); on.exit(par(opbg), add = TRUE)  # permite transparência
+      opbg <- par(bg = NA); on.exit(par(opbg), add = TRUE)
+
+      ylab_txt <- switch(medida,
+                         me  = "Média",
+                         md  = "Mediana",
+                         min = "Mínimo",
+                         max = "Máximo")
 
       plot(NA, NA,
            xlim = range(resumo$.exp, na.rm = TRUE),
            ylim = c(y_lim_inf, y_lim_sup),
            xlab = "",
-           ylab = ifelse(medida == "me", "Média", "Mediana"),
+           ylab = ylab_txt,
            main = paste("Modelo:", m),
            xaxt = "n",
-           cex.axis = fonte,   # <<< tamanhos dos ticks dos eixos
-           cex.lab  = fonte,   # <<< rótulos dos eixos
-           cex.main = fonte)   # <<< título
+           cex.axis = fonte,
+           cex.lab  = fonte,
+           cex.main = fonte)
 
       axis(1, at = sort(unique(resumo$.exp)),
            labels = sort(unique(resumo$.exp)),
@@ -267,7 +277,12 @@ invisible(lapply(pacotes, use_package))
         dat_n <- resumo[resumo$.fac == lv, , drop = FALSE]
         if (nrow(dat_n) < 2) next
 
-        y_var   <- if (medida == "me") dat_n$media else dat_n$mediana
+        y_var <- switch(medida,
+                        me  = dat_n$media,
+                        md  = dat_n$mediana,
+                        min = dat_n$min_v,
+                        max = dat_n$max_v)
+
         df_mod  <- tibble(.exp = dat_n$.exp, .y = y_var)
         modelo  <- try(.fit_model(df_mod, m), silent = TRUE)
         if (inherits(modelo, "try-error")) next
@@ -275,13 +290,11 @@ invisible(lapply(pacotes, use_package))
         # pontos
         points(df_mod$.exp, df_mod$.y, pch = 20, col = cores[lv], cex = .cex_pt)
 
-
         # seq + bandas
         x_seq <- seq(min(df_mod$.exp), max(df_mod$.exp), length.out = 300)
         cb <- .ci_bands(modelo, m, x_seq, conf.level, nsim)
         .draw_band(x_seq, cb$lower, cb$upper, shade_alpha)
         lines(x_seq, cb$fit, col = cores[lv], lwd = 2)
-
 
         # ponto de máximo
         pm <- .pm(modelo, m, min(df_mod$.exp), max(df_mod$.exp))
@@ -289,11 +302,10 @@ invisible(lapply(pacotes, use_package))
           abline(v = pm$x_max, col = cores[lv], lty = 3)
           points(pm$x_max, pm$y_max, col = cores[lv], pch = 21, bg = "white", cex = 1.8)
 
-          # rótulo
           xr <- range(resumo$.exp, na.rm = TRUE); yr <- c(y_lim_inf, y_lim_sup)
           y_lab <- min(pm$y_max + rotulo * diff(yr), y_lim_sup)
           lab <- sprintf("PM=%.2f | X=%.2f", pm$y_max, pm$x_max)
-          cex_lab <- 0.8 * fonte   # <<< tamanho do label proporcional à fonte
+          cex_lab <- 0.8 * fonte
           tw <- strwidth(lab, cex = cex_lab); th <- strheight(lab, cex = cex_lab)
           pad <- 0.3 * th
           rect(pm$x_max - tw/2 - pad, y_lab - th/2 - pad,
@@ -303,7 +315,6 @@ invisible(lapply(pacotes, use_package))
           segments(pm$x_max, pm$y_max, pm$x_max, y_lab, col = "gray80", lty = 3)
         }
 
-        # acumula saídas
         r2s <- .r2s(modelo, y_var)
         co  <- coef(modelo)
         params_list[[lv]] <- tibble(
@@ -319,35 +330,46 @@ invisible(lapply(pacotes, use_package))
 
       box(); grid(col = "gray85")
       legend("topleft", legend = names(cores), col = cores, lwd = 2, bty = "n",
-             cex = fonte)  # <<< legenda acompanha fonte
+             cex = fonte)
 
       grafico_record <- recordPlot()
-      Tabela     <- resumo %>% mutate(valor = if (medida == "me") media else mediana)
+      Tabela     <- resumo %>%
+        mutate(valor = switch(medida, me = media, md = mediana, min = min_v, max = max_v))
       Parametros <- dplyr::bind_rows(params_list)
       Predicoes  <- dplyr::bind_rows(pred_list)
 
       return(list(
-        Tabela      = Tabela,         # cols: .fac, .exp, valor, ...
-        Parametros  = Parametros,     # inclui lista Modelo por nível
-        Predicoes   = Predicoes,      # para reconstruir no ggplot
-        Grafico     = grafico_record, # recordedplot
-        R2          = NA_real_,       # (global não faz sentido com fator)
+        Tabela      = Tabela,
+        Parametros  = Parametros,
+        Predicoes   = Predicoes,
+        Grafico     = grafico_record,
+        R2          = NA_real_,
         R2_ajustado = NA_real_
       ))
     }
 
     # -------------------------------
-    # Sem fator
+    # Sem fator (agora com min/max)
     # -------------------------------
     df <- data.frame(.y = resp, .exp = resp_exp)
     resumo <- df %>%
       group_by(.exp) %>%
       summarise(
-        media = mean(.y), mediana = median(.y),
+        media   = mean(.y),
+        mediana = median(.y),
+        min_v   = min(.y),
+        max_v   = max(.y),
         sd = sd(.y), n = n(), se = sd/sqrt(n),
-        cv = (sd/mean(.y)) * 100, .groups = "drop"
+        cv = (sd/mean(.y)) * 100,
+        .groups = "drop"
       )
-    y_var <- if (medida == "me") resumo$media else resumo$mediana
+
+    y_var <- switch(medida,
+                    me  = resumo$media,
+                    md  = resumo$mediana,
+                    min = resumo$min_v,
+                    max = resumo$max_v)
+
     df_modelo <- tibble(.exp = resumo$.exp, .y = y_var)
 
     modelo <- .fit_model(df_modelo, m)
@@ -360,18 +382,24 @@ invisible(lapply(pacotes, use_package))
     y_lim_sup <- if (!is.null(y_max)) y_max else max(y_vals, na.rm = TRUE) * 1.05
 
     par(mar = c(5, 4, 4, 2) + 0.1)
-    opbg <- par(bg = NA); on.exit(par(opbg), add = TRUE)  # permite transparência
+    opbg <- par(bg = NA); on.exit(par(opbg), add = TRUE)
+
+    ylab_txt <- switch(medida,
+                       me  = "Média",
+                       md  = "Mediana",
+                       min = "Mínimo",
+                       max = "Máximo")
 
     plot(x_vals, y_vals, pch = 20,
          xlab = "",
-         ylab = ifelse(medida == "me", "Média", "Mediana"),
+         ylab = ylab_txt,
          main = paste("Modelo:", m),
          ylim = c(y_lim_inf, y_lim_sup),
          xaxt = "n",
          cex = .cex_pt,
-         cex.axis = fonte,   # <<< eixos
-         cex.lab  = fonte,   # <<< rótulos dos eixos
-         cex.main = fonte)   # <<< título
+         cex.axis = fonte,
+         cex.lab  = fonte,
+         cex.main = fonte)
 
     axis(1, at = sort(unique(x_vals)), labels = sort(unique(x_vals)),
          cex.axis = fonte)
@@ -386,11 +414,10 @@ invisible(lapply(pacotes, use_package))
       abline(v = pm$x_max, col = "darkorange", lty = 3)
       points(pm$x_max, pm$y_max, col = "darkorange", pch = 21, bg = "white", cex = 1.8)
 
-      # rótulo
       xr <- range(x_vals, na.rm = TRUE); yr <- c(y_lim_inf, y_lim_sup)
       y_lab <- min(pm$y_max + rotulo * diff(yr), y_lim_sup)
       lab <- sprintf("PM=%.2f | X=%.2f", pm$y_max, pm$x_max)
-      cex_lab <- 0.8 * fonte     # <<< texto interno proporcional à fonte
+      cex_lab <- 0.8 * fonte
       tw <- strwidth(lab, cex = cex_lab); th <- strheight(lab, cex = cex_lab)
       pad <- 0.3 * th
       rect(pm$x_max - tw/2 - pad, y_lab - th/2 - pad,
@@ -403,7 +430,8 @@ invisible(lapply(pacotes, use_package))
     box(); grid(col = "gray85")
 
     grafico_record <- recordPlot()
-    Tabela <- resumo %>% mutate(valor = y_var)
+    Tabela <- resumo %>%
+      mutate(valor = switch(medida, me = media, md = mediana, min = min_v, max = max_v))
     co <- coef(modelo)
     Parametros <- tibble(
       nivel = NA_character_, modelo = m,
@@ -416,14 +444,15 @@ invisible(lapply(pacotes, use_package))
                         fit = cb$fit, lower = cb$lower, upper = cb$upper)
 
     list(
-      Tabela      = Tabela,         # cols: .exp, valor, ...
-      Parametros  = Parametros,     # inclui Modelo
-      Predicoes   = Predicoes,      # para ggplot
-      Grafico     = grafico_record, # recordedplot
+      Tabela      = Tabela,
+      Parametros  = Parametros,
+      Predicoes   = Predicoes,
+      Grafico     = grafico_record,
       R2          = unname(r2s["R2"]),
       R2_ajustado = unname(r2s["R2a"])
     )
   }
+
 
 
 
@@ -464,7 +493,8 @@ server <- function(input, output, session) {
             uiOutput("column2"),
             uiOutput("column3"),
             selectInput("medida", "Tipo de medida:",
-                        choices = c("Média" = "me", "Mediana" = "md")),
+                        choices = c("Média" = "me", "Mediana" = "md",
+                                    "Máximo" = "max", "Mínimo"= "min")),
 
             selectInput("modelo", "Modelo:",
                         choices = c("Linear" = "linear",
@@ -473,7 +503,7 @@ server <- function(input, output, session) {
                                     "Logístico" = "Log")),
 
             sliderInput("alfa", "Nível de confiança:",
-                        min = 0.1, max = 1, step = 0.01,
+                        min = 0.001, max = 1, step = 0.01,
                         value = 0.95,   # valor inicial
                         ticks = TRUE),   # mostra as marcações
             sliderInput(
