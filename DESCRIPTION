@@ -1,9 +1,7 @@
-
 Package: caagro
 Type: Package
 Title: Applied Statistics for Agricultural Experimentation in a 'shiny' Application
 Version: 1.2.1
-
 Authors@R: c(
     person(
         given = "Wilhan",
@@ -25,60 +23,54 @@ Authors@R: c(
             affiliation = "Departamento de Estatística, Universidade Federal de Viçosa (UFV), Viçosa, Minas Gerais, Brasil"
         )
     )
-)
-
+    )
 Description: Provides an interactive platform for statistical analysis
     of agricultural and biological experiments through a 'shiny'
     application in Brazilian Portuguese. The application is launched
     using run_app() and offers an accessible graphical interface
     for experimental data analysis and interpretation.
-    
+ .
     Features include data import, validation and exploratory analysis;
     analysis of variance for completely randomized, randomized
     complete block and factorial designs; and assessment of
     statistical assumptions using Shapiro-Wilk and Bartlett tests.
-    
+ .
     Multiple comparison procedures include Tukey-Kramer,
     Student-Newman-Keuls, Fisher's LSD, Scott-Knott, Dunnett,
     Bonferroni and Holm adjustments, with compact letter displays
     following Piepho (2004) <doi:10.1198/1061860043515>.
-    
+ .
     Regression tools support linear, polynomial, nonlinear and
     binomial models, confidence bands, model selection using
     information criteria described by Akaike (1974)
     <doi:10.1109/TAC.1974.1100705>, and estimation of
     agronomically optimal doses.
-    
+ .
     Additional methods include nonparametric tests
     (Kruskal-Wallis, Friedman, Mood's median and Dunn),
     classical and bootstrap confidence intervals based on
     Efron (1987) <doi:10.1080/01621459.1987.10478410>,
     principal component analysis, clustering and
     correlation analysis.
-    
+ .
     The application also provides a graphical editor,
     publication-quality figure export, and generation of
     results in 'Excel', HTML and 'Word' formats, including
     reproducible R scripts. Each module includes practical
     examples to support learning and application.
-    
+ .
     Documentation and a comprehensive user guide in
     Portuguese are available on the package website.
-
+ .
 License: MIT + file LICENSE
-
 URL: https://wilhanvalasco.github.io/caagro/,
     https://github.com/wilhanvalasco/caagro
-
 BugReports: https://github.com/wilhanvalasco/caagro/issues
-
 Encoding: UTF-8
 Language: en-GB
 LazyData: true
-
 Depends:
     R (>= 4.1.0)
-
 Imports:
     bslib (>= 0.6.0),
     cluster,
@@ -94,7 +86,6 @@ Imports:
     stats,
     tools,
     utils
-
 Suggests:
     boot,
     car,
@@ -107,7 +98,6 @@ Suggests:
     rstatix,
     svglite,
     testthat (>= 3.0.0)
-
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
