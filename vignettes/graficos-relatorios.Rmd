@@ -1,0 +1,80 @@
+---
+title: "Gráficos, relatórios e reprodutibilidade"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Gráficos, relatórios e reprodutibilidade}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6.5, fig.height = 4.2, dpi = 96)
+library(caagro)
+```
+
+## Um único objeto de estilo
+
+```{r}
+fit <- anova_exp(sim_dic, "produtividade", "cultivar")
+mc <- compare_means(fit, "tukey")
+plot_types(mc)
+estilo <- caagro_style(
+  theme = "bw", title = "Produtividade de cultivares", subtitle = "",
+  x = axis_spec(title = "Cultivar"),
+  y = axis_spec(title = "Produtividade", unit = "t/ha", min = 0, decimals = 1),
+  geoms = geom_spec(show_values = TRUE, label_decimals = 2, colors = caagro_palette(5))
+)
+plot(mc, "bars", style = estilo)
+```
+
+Temas disponíveis:
+
+```{r, fig.height = 3}
+for (t in c("light", "minimal", "dark")) print(plot(mc, "points", style = caagro_style(theme = t, title = t)))
+```
+
+O estilo pode ser salvo, recarregado e convertido em código R:
+
+```{r}
+f <- tempfile(fileext = ".json")
+style_to_json(estilo, f)
+identical(style_from_json(f)$theme, "bw")
+cat(style_code(estilo))
+```
+
+## Exportação de figuras
+
+`save_plot()` re-renderiza a figura no tamanho final; nada é capturado da
+tela.
+
+```{r}
+png <- tempfile(fileext = ".png")
+save_plot(plot(mc, style = estilo), png, width = 17, height = 12, units = "cm", dpi = 300)
+file.exists(png)
+```
+
+## Excel, relatório e script
+
+```{r}
+x <- tempfile(fileext = ".xlsx")
+export_excel(list(fit, mc, check_assumptions(fit)), x)
+readxl::excel_sheets(x)
+
+h <- tempfile(fileext = ".html")
+export_report(list(fit, mc), h, title = "Ensaio de cultivares")
+
+s <- tempfile(fileext = ".R")
+export_script(list(fit, mc), s, data_file = "ensaio.xlsx", style = estilo)
+cat(readLines(s), sep = "\n")
+```
+
+## Como interpretar os relatórios
+
+Cada análise traz:
+
+* **Resultado** — o que foi calculado (estatística, graus de liberdade, p).
+* **Interpretação** — o significado estatístico, sem conclusões causais
+  automáticas.
+* **Cuidados** — pressupostos, limitações e advertências específicas.
+
+Resultados não significativos não demonstram igualdade entre tratamentos.

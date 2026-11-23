@@ -1,2 +1,15 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^README\.Rmd$
+^data-raw$
+^AUDITORIA\.md$
+^man/figures/app-.*\.jpg$
+^\.git$
+^\.gitignore$
+^renv$
+^renv\.lock$
+^\.DS_Store$
+^.*\.Rhistory$
+^.*\.RData$
+^doc$
+^Meta$

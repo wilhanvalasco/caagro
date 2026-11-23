@@ -1,0 +1,63 @@
+---
+title: "Testes não paramétricos e intervalos de confiança"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Testes não paramétricos e intervalos de confiança}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6.5, fig.height = 4.2, dpi = 96)
+library(caagro)
+```
+
+## Kruskal-Wallis e Dunn
+
+```{r}
+kw <- np_test(PlantGrowth, "weight", "group", "kruskal")
+result_table(kw)
+ph <- np_posthoc(kw, "dunn", p_adjust = "holm")
+result_table(ph, "pairs")
+plot(ph, "dots")
+```
+
+## Friedman (blocos completos)
+
+```{r}
+wb <- subset(warpbreaks, wool == "A"); wb$bloco <- rep(1:9, 3)
+fr <- np_test(wb, "breaks", "tension", "friedman", block = "bloco")
+result_table(fr)
+result_table(np_posthoc(fr, "conover"), "pairs")
+```
+
+## Mediana de Mood, Mann-Whitney, sinais e permutação
+
+```{r}
+result_table(np_test(PlantGrowth, "weight", "group", "mood"))
+result_table(np_test(subset(PlantGrowth, group != "trt2"), "weight", "group", "mann_whitney"))
+result_table(np_test(sleep, "extra", "group", "sign", id = "ID"))
+result_table(np_test(PlantGrowth, "weight", "group", "permutation", R = 1999, seed = 1))
+```
+
+Testes não paramétricos não são substitutos automáticos da ANOVA: testam
+hipóteses diferentes e, em geral, não acomodam delineamentos complexos.
+
+## Intervalos de confiança
+
+```{r}
+ic <- conf_int_groups(PlantGrowth, "weight", "group")
+result_table(ic)
+plot(ic, "forest")
+```
+
+A sobreposição de intervalos individuais **não** é um teste de diferença.
+Para diferenças, use intervalos de diferenças:
+
+```{r}
+result_table(conf_int(subset(PlantGrowth, group != "trt2"), "weight", "diff_means_welch", group = "group"))
+result_table(conf_int(PlantGrowth, "weight", "sd"))
+result_table(conf_int(data.frame(g = c(rep(1, 18), rep(0, 32))), "g", "proportion"))
+bt <- conf_int_boot(PlantGrowth, "weight", "median", R = 2000, seed = 7)
+result_table(bt)
+```

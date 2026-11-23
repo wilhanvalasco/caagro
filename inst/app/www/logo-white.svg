@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="caagro">
+  <rect x="4" y="4" width="112" height="112" rx="26" fill="none"/>
+  <g stroke="#FFFFFF" stroke-width="1.2" opacity="0.18">
+    <line x1="24" y1="92" x2="96" y2="92"/><line x1="24" y1="74" x2="96" y2="74"/><line x1="24" y1="56" x2="96" y2="56"/><line x1="24" y1="38" x2="96" y2="38"/>
+  </g>
+  <rect x="30" y="66" width="10" height="26" rx="2.5" fill="#75AE97"/>
+  <rect x="46" y="54" width="10" height="38" rx="2.5" fill="#75AE97"/>
+  <rect x="62" y="46" width="10" height="46" rx="2.5" fill="#218568"/>
+  <rect x="78" y="50" width="10" height="42" rx="2.5" fill="#218568"/>
+  <path d="M26 84 C 44 52, 66 34, 92 40" fill="none" stroke="#F28C28" stroke-width="4" stroke-linecap="round"/>
+  <path d="M84 22 C 98 22, 102 34, 98 44 C 88 44, 80 36, 84 22 Z" fill="#F28C28"/>
+  <path d="M85 25 L 96 41" stroke="#14283F" stroke-width="1.6" stroke-linecap="round"/>
+</svg>

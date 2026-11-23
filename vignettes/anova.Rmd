@@ -1,0 +1,103 @@
+---
+title: "ANOVA, comparação de médias e diagnósticos"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ANOVA, comparação de médias e diagnósticos}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6.5, fig.height = 4.2, dpi = 96)
+library(caagro)
+```
+
+## DIC
+
+Modelo: $y_{ij} = \mu + \tau_i + \varepsilon_{ij}$, $\varepsilon_{ij} \sim N(0, \sigma^2)$ independentes.
+
+```{r}
+dic <- anova_exp(PlantGrowth, "weight", "group")
+result_table(dic, "anova")
+result_table(dic, "precision")
+```
+
+O CV experimental é $100\sqrt{QM_{res}}/\bar{y}$.
+
+## DBC
+
+Modelo: $y_{ij} = \mu + \tau_i + \beta_j + \varepsilon_{ij}$. Os blocos entram
+antes dos tratamentos. Se uma coluna de blocos for informada, a análise como
+DIC é recusada.
+
+```{r}
+dbc <- anova_exp(sim_dbc, "produtividade", "tratamento", block = "bloco")
+result_table(dbc, "anova")
+```
+
+Com parcelas perdidas, as médias apresentadas são **médias marginais
+estimadas** (ajustadas para blocos) e o tipo de soma de quadrados é
+informado:
+
+```{r}
+dbc2 <- anova_exp(sim_dbc[-c(2, 9), ], "produtividade", "tratamento", block = "bloco")
+dbc2$warnings
+head(result_table(dbc2, "means"))
+```
+
+## Fatorial
+
+```{r}
+fat <- anova_exp(sim_fatorial, "altura", "cultivar", block = "bloco", factors = "adubacao")
+result_table(fat, "anova")
+```
+
+Com interação significativa, compare os níveis de um fator **dentro** de cada
+nível do outro (efeitos simples):
+
+```{r}
+simples <- compare_means(fat, "tukey", factor = "cultivar", by = "adubacao")
+result_table(simples, "means")[, c("cultivar", "adubacao", "emmean", "letras")]
+plot(simples)
+```
+
+## Comparações múltiplas
+
+| Método | Controla FWER? | Observação |
+|---|---|---|
+| Tukey (Tukey-Kramer) | Sim | Todas as comparações par a par |
+| SNK | Não (k > 3) | Passo a passo; regra de fechamento aplicada |
+| LSD | Só protegido e k = 3 | Use `protected = TRUE` |
+| Scott-Knott | — | Agrupamento sem sobreposição |
+| Dunnett | Sim | Apenas versus controle |
+| Bonferroni / Holm | Sim | t par a par com QM do resíduo |
+| Games-Howell | Aproximadamente | Variâncias heterogêneas (DIC) |
+
+```{r}
+for (m in c("tukey", "snk", "lsd", "scott_knott")) {
+  r <- compare_means(dbc, m)
+  cat(m, ":", paste(result_table(r, "means")$tratamento, result_table(r, "means")$letras, collapse = "  "), "\n")
+}
+result_table(compare_means(dbc, "dunnett", control = "T1"), "pairs")[, c("contrast", "diff", "lower", "upper", "p_adj")]
+```
+
+## Diagnósticos
+
+```{r}
+dg <- check_assumptions(dbc)
+result_table(dg, "tests")
+plot(dg, "qq")
+plot(dg, "resid_fitted")
+```
+
+A independência depende da casualização e do planejamento; nenhum teste
+automático a garante. Testes de normalidade não devem, sozinhos, decidir o
+método.
+
+## Testes t, Welch e contrastes
+
+```{r}
+mean_test(sleep, "extra", "group", type = "paired", id = "ID")$tables$test
+result_table(welch_anova(PlantGrowth, "weight", "group"))
+contrast_test(dic, list("controle vs tratados" = c(1, -0.5, -0.5)))$tables$contrasts
+```

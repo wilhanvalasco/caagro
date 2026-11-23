@@ -1,62 +1,68 @@
 Package: caagro
 Type: Package
-Title: Ciência Aplicada em Análises Agro
-Version: 0.1.1
+Title: Applied Statistics for Agricultural Experimentation with 'shiny' Interfaces
+Version: 1.0.0
 Authors@R: 
-    c(person("Wilhan", "Valasco dos Santos", 
-             email = "wilhanvalasco@hotmail.com", 
-             role = c("aut", "cre")))
-Description: O pacote caagro (Ciência Aplicada em Análises do Agro) 
-    fornece funções e aplicações interativas em Shiny para análises 
-    estatísticas aplicadas ao setor agrícola. Inclui métodos para 
-    comparação de médias e medianas em distribuições Gaussianas e 
-    não-Gaussianas, identificação e tratamento de valores atípicos 
-    (outliers), além de visualizações gráficas como boxplots, gráficos 
-    de dispersão e distribuições baseadas em quartis (Q1 e Q3). 
-    Também disponibiliza três interfaces principais: 
-    `anQuali()` para análises de fatores qualitativos, 
-    `anQuant()` para análises de fatores quantitativos, 
-    e `anIC()` para construção de gráficos com intervalos de confiança, 
-    retornando análise de variância (ANOVA), coeficiente de variação (CV%) 
-    e teste de homocedasticidade (Bartlett). 
-    Os módulos incluem ajuste de modelos de regressão (linear, quadrático, 
-    exponencial e logístico), cálculo de métricas estatísticas, exportação 
-    de tabelas (Excel) e gráficos (PNG). 
-    O objetivo é simplificar análises experimentais e fornecer 
-    recursos acessíveis para pesquisadores, estudantes e profissionais 
-    do agro.
+    person("Wilhan", "Valasco dos Santos",
+           email = "wilhanvalasco@hotmail.com",
+           role = c("aut", "cre"))
+Description: A statistical analysis platform for agricultural and
+    biological experimentation, usable through scriptable R functions or
+    point-and-click 'shiny' applications that call the same functions.
+    Provides data import and validation; analysis of variance for completely
+    randomised, randomised complete block and factorial designs with type
+    I, II or III sums of squares and estimated marginal means; multiple
+    comparisons (Tukey-Kramer, Student-Newman-Keuls, Fisher's LSD,
+    Scott-Knott, Dunnett, Games-Howell, Bonferroni and Holm) with compact
+    letter displays (Piepho, 2004 <doi:10.1198/1061860043515>); residual
+    diagnostics; t tests, Welch's ANOVA and planned contrasts; linear,
+    polynomial, non-linear (exponential, logarithmic, power, logistic,
+    Gompertz, Michaelis-Menten, Mitscherlich, log-logistic, linear-plateau)
+    and binomial regression, with confidence and prediction bands, model
+    comparison by information criteria (Akaike, 1974
+    <doi:10.1109/TAC.1974.1100705>) and agronomic quantities such as maximum
+    technical efficiency, economic optimum dose and effective dose;
+    non-parametric tests (Kruskal-Wallis, Friedman, Mood's median, Dunn,
+    Conover, Wilcoxon, sign and permutation tests); classical and bootstrap
+    confidence intervals (Efron, 1987 <doi:10.1080/01621459.1987.10478410>);
+    principal component analysis, hierarchical clustering, k-means and
+    correlation matrices; and a common, fully customisable 'ggplot2'
+    graphics editor with high-resolution export, 'Excel' workbooks,
+    HTML reports and reproducible R scripts.
 License: MIT + file LICENSE
 Encoding: UTF-8
+Language: en-GB
 LazyData: true
 Depends: 
     R (>= 4.1.0)
 Imports: 
-    shiny,
-    shinyWidgets,
-    shinythemes,
-    shinydashboard,
-    shinyauthr,
-    shinycssloaders,
-    tibble,
-    sodium,
-    plotly,
-    dplyr,
-    ggplot2,
+    bslib (>= 0.6.0),
+    cluster,
     DT,
-    httr,
-    curl,
+    ggplot2 (>= 3.4.0),
+    grDevices,
+    jsonlite,
+    mvtnorm,
     openxlsx,
-    stringr,
-    broom,
-    agricolae,
-    progress,
-    ScottKnott,
-    writexl,
     readxl,
-    bslib,
-    xfun,
-    highr,
-    renv,
-    ragg
+    rlang,
+    shiny (>= 1.7.0),
+    stats,
+    tools,
+    utils
+Suggests: 
+    boot,
+    car,
+    emmeans,
+    knitr,
+    multcompView,
+    png,
+    ragg,
+    rmarkdown,
+    rstatix,
+    svglite,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.1

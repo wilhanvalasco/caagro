@@ -1,0 +1,94 @@
+---
+title: "Introdução ao caagro"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introdução ao caagro}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6.5, fig.height = 4.2, dpi = 96)
+library(caagro)
+```
+
+O **caagro** oferece dois caminhos para a mesma análise: os aplicativos Shiny
+(`run_app()` e os módulos individuais) e as funções R. Os aplicativos chamam
+as mesmas funções descritas nas vinhetas; a aba **Exportação** de cada
+aplicativo gera o script R que reproduz a análise.
+
+## Como organizar os dados
+
+Use o **formato longo**: uma linha por unidade experimental (parcela, vaso,
+planta) e uma coluna por variável.
+
+| bloco | tratamento | produtividade |
+|-------|------------|---------------|
+| B1    | T1         | 4.80          |
+| B1    | T2         | 5.15          |
+| ...   | ...        | ...           |
+
+Se cada repetição está em uma coluna (formato largo), converta com
+`to_long()`:
+
+```{r}
+largo <- data.frame(trat = c("A", "B"), R1 = c(10, 12), R2 = c(11, 13), R3 = c(9.8, 12.4))
+to_long(largo, value_cols = c("R1", "R2", "R3"), names_to = "rep", values_to = "y")
+```
+
+Arquivos `.xlsx`, `.xls`, `.csv` e `.txt` são lidos com `read_data()`, que
+detecta delimitador e separador decimal:
+
+```{r}
+d <- read_data(system.file("extdata", "dose_resposta.csv", package = "caagro"))
+str(d)
+```
+
+## Validação antes da análise
+
+`check_data()` verifica tipos, ausentes, falta de variabilidade, tratamentos
+sem repetição, combinações ausentes e incompatibilidade com o delineamento.
+
+```{r}
+check_data(sim_dbc, "produtividade", "tratamento", block = "bloco", design = "DBC")
+check_data(sim_dbc, "produtividade", "tratamento", block = "bloco", design = "DIC")
+```
+
+Valores atípicos são apenas **sinalizados**:
+
+```{r}
+d2 <- PlantGrowth; d2$weight[4] <- 9
+fo <- flag_outliers(d2, "weight", "group")
+fo[fo$flag, ]
+```
+
+Para excluir observações, informe-as explicitamente (`exclude`); a exclusão
+fica registrada no resultado e no script exportado.
+
+```{r}
+a <- anova_exp(d2, "weight", "group", exclude = 4)
+a$warnings
+```
+
+## O objeto de resultado
+
+Todas as funções retornam um `caagro_result`:
+
+```{r}
+fit <- anova_exp(PlantGrowth, "weight", "group")
+names(fit)
+names(fit$tables)
+summary(fit)
+cat(fit$code)
+```
+
+## Assistente de análise
+
+```{r}
+suggest_method("compare", "continuous", n_groups = 6, blocked = TRUE)
+```
+
+## Dados de exemplo
+
+Os conjuntos `sim_*` são simulados (ver `?"caagro-datasets"`).
+`PlantGrowth`, `npk`, `warpbreaks` e `sleep` são dados reais do R.

@@ -4,42 +4,35 @@
 \name{caagro-package}
 \alias{caagro}
 \alias{caagro-package}
-\title{caagro: Ciência Aplicada em Análises Agro}
+\title{caagro: Applied Science for Agricultural Data Analysis}
 \description{
-O pacote \strong{caagro} (Ciência Aplicada em Análises do Agro)
-fornece funções e aplicações interativas em Shiny para análises
-estatísticas aplicadas a experimentos agrícolas. O pacote integra
-diferentes abordagens estatísticas, contemplando fatores qualitativos,
-quantitativos e intervalos de confiança.
+\code{caagro} (Ciencia Aplicada em Analises do Agro) is a statistical analysis
+platform for agricultural experimentation. Every analysis is available both
+as a plain R function (scriptable and testable) and through Shiny
+applications that call exactly the same functions.
 }
-\details{
+\section{Main entry points}{
+
 \itemize{
-\item Para fatores qualitativos: oferece testes de comparações múltiplas
-paramétricos (ex.: Tukey, Scott-Knott, SNK) e não-paramétricos
-(ex.: Kruskal-Wallis), permitindo identificar diferenças entre
-tratamentos.
-\item Para fatores quantitativos: disponibiliza ajuste de modelos lineares
-e não lineares (linear, quadrático, exponencial, logístico), com
-estimação de parâmetros, ANOVA de regressão e medidas de ajuste
-(R² e R² ajustado).
-\item Para análise de intervalos de confiança: implementa métodos que
-consideram tanto a hipótese de variâncias homogêneas quanto
-heterogêneas, retornando estimativas de médias, limites inferiores
-e superiores (LCL/UCL), coeficiente de variação (CV\\%) e teste de
-homocedasticidade de Bartlett.
+\item Applications: \code{\link[=run_app]{run_app()}}, \code{\link[=run_anova]{run_anova()}}, \code{\link[=run_regression]{run_regression()}},
+\code{\link[=run_nonparametric]{run_nonparametric()}}, \code{\link[=run_confidence]{run_confidence()}}, \code{\link[=run_multivariate]{run_multivariate()}},
+\code{\link[=run_exploratory]{run_exploratory()}}. Legacy launchers \code{\link[=anQuali]{anQuali()}}, \code{\link[=anQuant]{anQuant()}} and
+\code{\link[=anIC]{anIC()}} are kept.
+\item Data: \code{\link[=read_data]{read_data()}}, \code{\link[=check_data]{check_data()}}, \code{\link[=flag_outliers]{flag_outliers()}}, \code{\link[=to_long]{to_long()}}.
+\item Parametric: \code{\link[=anova_exp]{anova_exp()}}, \code{\link[=compare_means]{compare_means()}}, \code{\link[=check_assumptions]{check_assumptions()}},
+\code{\link[=mean_test]{mean_test()}}, \code{\link[=welch_anova]{welch_anova()}}, \code{\link[=contrast_test]{contrast_test()}}.
+\item Regression: \code{\link[=fit_regression]{fit_regression()}}, \code{\link[=compare_curves]{compare_curves()}}, \code{\link[=optimum_dose]{optimum_dose()}}.
+\item Non-parametric: \code{\link[=np_test]{np_test()}}, \code{\link[=np_posthoc]{np_posthoc()}}.
+\item Confidence intervals: \code{\link[=conf_int]{conf_int()}}, \code{\link[=conf_int_groups]{conf_int_groups()}}, \code{\link[=conf_int_boot]{conf_int_boot()}}.
+\item Multivariate: \code{\link[=pca_exp]{pca_exp()}}, \code{\link[=cluster_exp]{cluster_exp()}}, \code{\link[=kmeans_exp]{kmeans_exp()}},
+\code{\link[=cor_matrix]{cor_matrix()}}.
+\item Exploratory: \code{\link[=describe_data]{describe_data()}}.
+\item Graphics: \code{\link[=caagro_style]{caagro_style()}}, \code{\link[=theme_caagro]{theme_caagro()}}, \code{\link[=save_plot]{save_plot()}}.
+\item Export: \code{\link[=export_excel]{export_excel()}}, \code{\link[=export_report]{export_report()}}, \code{\link[=export_script]{export_script()}}.
+\item Guidance: \code{\link[=suggest_method]{suggest_method()}}.
+}
 }
 
-Os módulos permitem também visualizações gráficas, exportação de tabelas
-(Excel) e gráficos (PNG), facilitando a interpretação e a comunicação dos
-resultados experimentais.
-
-Interfaces principais:
-\itemize{
-\item \code{anQuali()} – análises de fatores qualitativos.
-\item \code{anQuant()} – análises de fatores quantitativos.
-\item \code{anIC()} – análises baseadas em intervalos de confiança.
-}
-}
 \author{
 \strong{Maintainer}: Wilhan Valasco dos Santos \email{wilhanvalasco@hotmail.com}
 
