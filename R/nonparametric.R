@@ -62,7 +62,7 @@
 #' kw <- np_test(PlantGrowth, "weight", "group", "kruskal")
 #' kw
 #' np_posthoc(kw, "dunn")
-#' @export
+#' @noRd
 np_test <- function(data, response, group, test = c("kruskal", "friedman", "mood", "mann_whitney",
                                                      "wilcoxon_paired", "sign", "permutation"),
                     block = NULL, id = NULL, conf_level = 0.95, R = 4999, seed = 123, exclude = NULL) {
@@ -169,7 +169,7 @@ np_test <- function(data, response, group, test = c("kruskal", "friedman", "mood
              notes = list(Resultado = sprintf("%s: estat\u00edstica = %s, p %s.", labels[[test]], fmt_num(tb$statistic), fmt_p_eq(tb$p)),
                           Interpretacao = "p pequeno indica que ao menos um grupo tende a apresentar valores sistematicamente maiores ou menores. Use compara\u00e7\u00f5es post-hoc com corre\u00e7\u00e3o de multiplicidade para localizar as diferen\u00e7as.",
                           Cuidados = "Testes de postos n\u00e3o s\u00e3o substitutos autom\u00e1ticos da ANOVA: testam hip\u00f3teses diferentes e perdem informa\u00e7\u00e3o de magnitude. Escolha o m\u00e9todo pelo delineamento e pela natureza da vari\u00e1vel, n\u00e3o apenas por um teste de normalidade."),
-             code = code_call("caagro::np_test", list(data = as.name("dados"), response = response, group = group, test = test,
+             code = code_call("caagro:::np_test", list(data = as.name("dados"), response = response, group = group, test = test,
                                                       block = block, id = id, R = if (test == "permutation") R,
                                                       seed = if (test == "permutation") seed, exclude = exclude)))
 }
@@ -202,7 +202,7 @@ np_test <- function(data, response, group, test = c("kruskal", "friedman", "mood
 #' @examples
 #' kw <- np_test(PlantGrowth, "weight", "group", "kruskal")
 #' np_posthoc(kw, "dunn", p_adjust = "holm")
-#' @export
+#' @noRd
 np_posthoc <- function(x, method = c("dunn", "conover", "wilcoxon"), p_adjust = "holm", alpha = 0.05) {
   if (!inherits(x, "caagro_np") || !x$settings$test %in% c("kruskal", "friedman")) {
     abort_caagro("`x` deve ser resultado de np_test() com Kruskal-Wallis ou Friedman.")
@@ -258,6 +258,6 @@ np_posthoc <- function(x, method = c("dunn", "conover", "wilcoxon"), p_adjust = 
   out$tables <- list(test = x$tables$test, descriptives = desc, pairs = pr)
   out$main <- "pairs"
   out$notes$Interpretacao <- "Grupos com a mesma letra n\u00e3o diferem pelo post-hoc (valores de p ajustados); letras ordenadas pelo posto medio."
-  out$code <- paste0(x$code, " |>\n  caagro::np_posthoc(", deparse(method), ", p_adjust = ", deparse(p_adjust), ", alpha = ", alpha, ")")
+  out$code <- paste0(x$code, " |>\n  caagro:::np_posthoc(", deparse(method), ", p_adjust = ", deparse(p_adjust), ", alpha = ", alpha, ")")
   out
 }

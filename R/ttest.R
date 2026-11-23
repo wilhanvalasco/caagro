@@ -30,7 +30,7 @@
 #' d <- subset(PlantGrowth, group != "trt2")
 #' mean_test(d, "weight", "group", type = "welch")
 #' mean_test(sleep, "extra", "group", type = "paired", id = "ID")
-#' @export
+#' @noRd
 mean_test <- function(data, response, group = NULL,
                       type = c("welch", "independent", "paired", "one_sample"),
                       id = NULL, mu = 0, alternative = c("two.sided", "less", "greater"),
@@ -94,7 +94,7 @@ mean_test <- function(data, response, group = NULL,
                                               label, tb$statistic, tb$df, fmt_p_eq(tb$p), 100 * conf_level, tb$lower, tb$upper),
                           Interpretacao = "O intervalo de confian\u00e7a descreve os valores plaus\u00edveis da diferen\u00e7a (ou m\u00e9dia). O tamanho de efeito (d de Cohen / g de Hedges) descreve a magnitude em unidades de desvio-padr\u00e3o.",
                           Cuidados = if (type == "independent") "O teste de Student pressup\u00f5e vari\u00e2ncias iguais; na d\u00favida, prefira Welch." else "Pressup\u00f5e normalidade aproximada (da diferen\u00e7a, no caso pareado) e independ\u00eancia entre unidades."),
-             code = code_call("caagro::mean_test", list(data = as.name("dados"), response = response, group = group,
+             code = code_call("caagro:::mean_test", list(data = as.name("dados"), response = response, group = group,
                                                         type = type, id = id, mu = mu, alternative = alternative,
                                                         conf_level = conf_level)))
 }

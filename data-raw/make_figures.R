@@ -1,7 +1,7 @@
 # Regenerates the README figures with the package itself.
 # Run from the package root after installing caagro: Rscript data-raw/make_figures.R
 # App screenshots (man/figures/app-*.jpg) are real captures of run_app().
-library(caagro)
+suppressMessages(devtools::load_all(".", quiet = TRUE))  # analysis functions are internal
 fd <- "man/figures"
 fit <- anova_exp(sim_dbc, "produtividade", "tratamento", block = "bloco")
 save_plot(plot(compare_means(fit, "scott_knott"), "bars",

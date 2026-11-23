@@ -1,3 +1,20 @@
+# caagro 1.2.0
+
+* Autoria: Walter Baida Garcia Coutinho (Universidade Federal de Viçosa)
+  incluído como autor; afiliações e ORCID dos autores no DESCRIPTION,
+  CITATION e README.
+* Interface de programação reduzida a uma única função exportada:
+  `run_app()`. O módulo pode ser escolhido com
+  `run_app(modulo = "anova")` (também `"regressao"`, `"nao_parametrica"`,
+  `"intervalos"`, `"multivariada"`, `"exploratoria"`).
+* Removidos da exportação: `run_anova()`, `run_regression()`,
+  `run_nonparametric()`, `run_confidence()`, `run_multivariate()`,
+  `run_exploratory()`, os lançadores antigos `anQuali()`, `anQuant()` e
+  `anIC()` e todas as funções de análise, gráficos e exportação. Elas
+  continuam no pacote como funções internas, usadas pelo aplicativo e pelos
+  scripts reproduzíveis exportados (`caagro:::anova_exp()` etc.).
+* Vinhetas substituídas por um único guia do aplicativo.
+
 # caagro 1.1.0
 
 Auditoria de usabilidade, interface e estatística.

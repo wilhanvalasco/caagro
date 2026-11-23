@@ -1,10 +1,11 @@
 bibentry(
   bibtype = "Manual",
-  title = "caagro: Applied Statistics for Agricultural Experimentation with 'shiny' Interfaces",
-  author = person("Wilhan", "Valasco dos Santos"),
+  title = "caagro: Applied Statistics for Agricultural Experimentation in a 'shiny' Application",
+  author = c(person("Wilhan", "Valasco dos Santos", comment = c(ORCID = "0000-0002-6533-2407")),
+             person("Walter Baida", "Garcia Coutinho", comment = c(ORCID = "0000-0002-9894-6122"))),
   year = "2025",
   note = paste("R package version", utils::packageVersion("caagro")),
-  textVersion = paste0("Valasco dos Santos, W. (2025). caagro: Applied Statistics for Agricultural ",
-                       "Experimentation with 'shiny' Interfaces. R package version ",
+  textVersion = paste0("Valasco dos Santos, W. and Garcia Coutinho, W. B. (2025). caagro: Applied Statistics ",
+                       "for Agricultural Experimentation in a 'shiny' Application. R package version ",
                        utils::packageVersion("caagro"), ".")
 )

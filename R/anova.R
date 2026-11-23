@@ -74,7 +74,7 @@
 #' # Factorial in blocks (real data: npk)
 #' f <- anova_exp(npk, "yield", "N", block = "block", factors = c("P", "K"))
 #' result_table(f, "anova")
-#' @export
+#' @noRd
 anova_exp <- function(data, response, treatment, block = NULL, factors = NULL,
                       design = c("auto", "DIC", "DBC", "factorial"),
                       ss_type = c("I", "II", "III"), conf_level = 0.95,
@@ -160,7 +160,7 @@ anova_exp <- function(data, response, treatment, block = NULL, factors = NULL,
   if (!balanced) warns <- c(warns, sprintf("Dados desbalanceados: foram usadas somas de quadrados tipo %s e m\u00e9dias marginais estimadas (ajustadas).", ss_type))
   ptr <- tab$p[tab$term == treatment]
   notes <- anova_notes(tab, precision, treatment, design)
-  code <- code_call("caagro::anova_exp", list(
+  code <- code_call("caagro:::anova_exp", list(
     data = as.name("dados"), response = response, treatment = treatment,
     block = block, factors = factors, design = design, ss_type = ss_type,
     conf_level = conf_level, exclude = exclude))
@@ -271,7 +271,7 @@ welch_anova <- function(data, response, treatment, exclude = NULL) {
              data = data, data_used = d, tables = list(test = tb), warnings = prep$messages,
              notes = list(Resultado = sprintf("F de Welch(%.0f; %.2f) = %.3f, p %s.", tb$df1, tb$df2, tb$statistic, fmt_p_eq(tb$p)),
                           Cuidados = "N\u00e3o pressup\u00f5e vari\u00e2ncias iguais. Para compara\u00e7\u00f5es par a par, use Games-Howell."),
-             code = code_call("caagro::anova_exp", list(data = as.name("dados"), response = response, treatment = treatment, method = "welch")))
+             code = code_call("caagro:::anova_exp", list(data = as.name("dados"), response = response, treatment = treatment, method = "welch")))
 }
 
 # Planned contrasts (called by compare_means(x, contrasts = ...))

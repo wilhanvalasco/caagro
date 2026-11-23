@@ -1,34 +1,37 @@
 Package: caagro
 Type: Package
-Title: Applied Statistics for Agricultural Experimentation with 'shiny' Interfaces
-Version: 1.1.0
-Authors@R: 
+Title: Applied Statistics for Agricultural Experimentation in a 'shiny' Application
+Version: 1.2.0
+Authors@R: c(
     person("Wilhan", "Valasco dos Santos",
            email = "wilhanvalasco@hotmail.com",
-           role = c("aut", "cre"))
+           role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0002-6533-2407",
+                       affiliation = "Instituto Federal Goiano, Campus Rio Verde, Rio Verde, Goiás, Brasil")),
+    person("Walter Baida", "Garcia Coutinho",
+           email = "walterbgc1@gmail.com",
+           role = c("aut", "cph"),
+           comment = c(ORCID = "0000-0002-9894-6122",
+                       affiliation = "Departamento de Estatística, Universidade Federal de Viçosa (UFV), Viçosa, Minas Gerais, Brasil"))
+  )
 Description: A statistical analysis platform for agricultural and
-    biological experimentation, usable through scriptable R functions or
-    point-and-click 'shiny' applications that call the same functions.
-    Provides data import and validation; analysis of variance for completely
-    randomised, randomised complete block and factorial designs with type
-    I, II or III sums of squares and estimated marginal means; multiple
-    comparisons (Tukey-Kramer, Student-Newman-Keuls, Fisher's LSD,
-    Scott-Knott, Dunnett, Games-Howell, Bonferroni and Holm) with compact
-    letter displays (Piepho, 2004 <doi:10.1198/1061860043515>); residual
-    diagnostics; t tests, Welch's ANOVA and planned contrasts; linear,
-    polynomial, non-linear (exponential, logarithmic, power, logistic,
-    Gompertz, Michaelis-Menten, Mitscherlich, log-logistic, linear-plateau)
-    and binomial regression, with confidence and prediction bands, model
-    comparison by information criteria (Akaike, 1974
-    <doi:10.1109/TAC.1974.1100705>) and agronomic quantities such as maximum
-    technical efficiency, economic optimum dose and effective dose;
-    non-parametric tests (Kruskal-Wallis, Friedman, Mood's median, Dunn,
-    Conover, Wilcoxon, sign and permutation tests); classical and bootstrap
-    confidence intervals (Efron, 1987 <doi:10.1080/01621459.1987.10478410>);
-    principal component analysis, hierarchical clustering, k-means and
-    correlation matrices; and a common, fully customisable 'ggplot2'
-    graphics editor with high-resolution export, 'Excel' workbooks,
-    HTML reports and reproducible R scripts.
+    biological experimentation, opened with a single function, run_app(),
+    as a point-and-click 'shiny' application in Brazilian Portuguese. It
+    covers data import and validation; Fisher analysis of variance for
+    completely randomised, randomised complete block and factorial designs,
+    with Shapiro-Wilk and Bartlett assumption checks; multiple comparisons
+    (Tukey-Kramer, Student-Newman-Keuls, Fisher's LSD, Scott-Knott, Dunnett,
+    Bonferroni and Holm) with compact letter displays (Piepho, 2004
+    <doi:10.1198/1061860043515>); linear, polynomial, non-linear and binomial
+    regression with confidence bands, model comparison by information
+    criteria (Akaike, 1974 <doi:10.1109/TAC.1974.1100705>) and agronomic
+    optimum doses; non-parametric tests (Kruskal-Wallis, Friedman, Mood's
+    median, Dunn); classical and bootstrap confidence intervals (Efron, 1987
+    <doi:10.1080/01621459.1987.10478410>); principal component analysis,
+    clustering and correlation matrices; a graphics editor with
+    publication-quality export; and export of results to 'Excel', HTML or
+    'Word' reports and reproducible R scripts. Every module includes a
+    worked example.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-GB

@@ -57,11 +57,12 @@ test_that("other module examples run", {
   })
 })
 
-test_that("apps build and legacy launchers keep working", {
-  for (f in list(run_app, run_anova, run_regression, run_nonparametric, run_confidence, run_multivariate, run_exploratory)) {
-    expect_s3_class(f(launch.browser = "auto"), "shiny.appobj")
+test_that("run_app() is the only entry point and opens every module", {
+  expect_identical(getNamespaceExports("caagro"), "run_app")
+  for (m in c("todos", "anova", "regressao", "nao_parametrica", "intervalos", "multivariada", "exploratoria")) {
+    expect_s3_class(run_app(m, launch.browser = "auto"), "shiny.appobj")
   }
-  expect_message(anQuali(iniciar = FALSE)); expect_message(anQuant(iniciar = FALSE)); expect_message(anIC(iniciar = FALSE))
+  expect_error(run_app("xyz"))
 })
 
 test_that("interface tables use Portuguese headers and decimal comma", {

@@ -1,9 +1,9 @@
 #' Standardised caagro result object
 #'
-#' All analysis functions of caagro return an object of class
-#' `caagro_result` (plus a specific subclass such as `caagro_anova`). It is a
-#' list with a fixed set of fields, so that the Shiny applications, the
-#' exporters and the user's scripts read results in the same way.
+#' The analyses run by [run_app()] produce objects of class
+#' `caagro_result` (plus a specific subclass such as `caagro_anova`). They
+#' are returned by the reproducible R scripts exported by the application
+#' and can be printed, summarised and converted to data frames.
 #'
 #' @section Fields:
 #' \describe{
@@ -25,13 +25,12 @@
 #' }
 #'
 #' @param x,object A `caagro_result`.
-#' @param name Table name. Default: the main table.
 #' @param row.names,optional Ignored (S3 compatibility).
 #' @param digits Number of digits to print.
 #' @param ... Further arguments passed to methods.
 #' @return `print()` returns `x` invisibly; `summary()` returns a
-#'   `summary.caagro_result` list; `as.data.frame()` returns a data frame;
-#'   `result_table()` returns a data frame.
+#'   `summary.caagro_result` list; `as.data.frame()` returns the main
+#'   table as a data frame.
 #' @name caagro_result
 NULL
 
@@ -106,7 +105,7 @@ as.data.frame.caagro_result <- function(x, row.names = NULL, optional = FALSE, .
 }
 
 #' @rdname caagro_result
-#' @export
+#' @noRd
 result_table <- function(x, name = NULL) {
   if (!inherits(x, "caagro_result")) abort_caagro("`x` n\u00e3o \u00e9 um resultado caagro.")
   name <- name %||% x$main

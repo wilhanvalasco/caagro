@@ -18,7 +18,7 @@
 #' f <- system.file("extdata", "dose_resposta.csv", package = "caagro")
 #' d <- read_data(f)
 #' head(d)
-#' @export
+#' @noRd
 read_data <- function(path, sheet = 1, sep = NULL, dec = NULL, header = TRUE,
                       na = c("", "NA", "NaN", "N/A", "-", "."),
                       encoding = "UTF-8") {
@@ -76,7 +76,7 @@ data_sheets <- function(path) readxl::excel_sheets(path)
 #' @examples
 #' w <- data.frame(trat = c("A", "B"), R1 = c(10, 12), R2 = c(11, 13))
 #' to_long(w, value_cols = c("R1", "R2"), names_to = "bloco")
-#' @export
+#' @noRd
 to_long <- function(data, value_cols, names_to = "nome", values_to = "valor") {
   data <- check_data_frame(data)
   check_columns(data, value_cols)
@@ -111,7 +111,7 @@ to_long <- function(data, value_cols, names_to = "nome", values_to = "valor") {
 #'   `ok` is `TRUE` when there are no errors.
 #' @examples
 #' check_data(PlantGrowth, response = "weight", treatment = "group", design = "DIC")
-#' @export
+#' @noRd
 check_data <- function(data, response, treatment = NULL, block = NULL,
                        factors = NULL, x = NULL, design = "none") {
   data <- check_data_frame(data)
@@ -209,7 +209,7 @@ print.caagro_check <- function(x, ...) {
 #'   a logical `flag`.
 #' @examples
 #' flag_outliers(PlantGrowth, "weight", "group")
-#' @export
+#' @noRd
 flag_outliers <- function(data, response, group = NULL, method = c("iqr", "studentized"),
                           k = 1.5, model = NULL, alpha = 0.05) {
   method <- match.arg(method)

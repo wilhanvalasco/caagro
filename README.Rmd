@@ -18,7 +18,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 Plataforma de análise estatística para experimentação agrícola — em R e em aplicativos Shiny</p>
 
 <p align="center">
-<img src="https://img.shields.io/badge/vers%C3%A3o-1.1.0-218568" alt="versão">
+<img src="https://img.shields.io/badge/vers%C3%A3o-1.2.0-218568" alt="versão">
 <img src="https://img.shields.io/badge/R-%E2%89%A5%204.1-315775" alt="R >= 4.1">
 <img src="https://img.shields.io/badge/licen%C3%A7a-MIT-14283F" alt="MIT">
 <img src="https://img.shields.io/badge/testes-testthat-75AE97" alt="testthat">
@@ -31,9 +31,9 @@ experimentação agrícola: ANOVA em DIC, DBC e fatoriais, comparações múltip
 diagnóstico de resíduos, regressão linear, não linear e binomial, testes não
 paramétricos, intervalos de confiança, análises multivariadas e exploratórias.
 
-Cada análise pode ser feita **sem escrever código** (aplicativos Shiny) ou
-**por script** — e as duas formas chamam exatamente as mesmas funções, de modo
-que todo resultado obtido na interface pode ser reproduzido em R.
+Tudo é feito em um único aplicativo, aberto com `run_app()`, **sem
+escrever código**. Cada análise pode ser exportada como script R
+reprodutível.
 
 <p align="center"><img src="man/figures/app-home.jpg" width="92%" alt="Tela inicial do caagro"></p>
 
@@ -51,37 +51,30 @@ que todo resultado obtido na interface pode ser reproduzido em R.
 ## Instalação
 
 ```{r}
-# a partir do código-fonte (diretório do pacote)
 install.packages(c("shiny", "bslib", "ggplot2", "DT", "openxlsx", "readxl",
                    "jsonlite", "mvtnorm", "cluster", "rlang"))
-install.packages("caagro_1.1.0.tar.gz", repos = NULL, type = "source")
-
-# recomendados (exportação de alta qualidade e testes)
-install.packages(c("ragg", "svglite", "rmarkdown"))
+install.packages("caagro_1.2.0.tar.gz", repos = NULL, type = "source")
+install.packages(c("ragg", "svglite", "rmarkdown"))   # recomendados
 ```
 
-## Início rápido
+## Uso
+
+O caagro tem uma única função:
 
 ```{r}
 library(caagro)
-
-run_app()            # aplicação principal com todos os módulos
-
-run_exploratory()    # aplicativos individuais
-run_anova()
-run_regression()
-run_nonparametric()
-run_confidence()
-run_multivariate()
-
-anQuali(); anQuant(); anIC()   # lançadores legados continuam funcionando
+run_app()                # página inicial com todos os módulos
+run_app("anova")         # ou abra direto um módulo
 ```
 
-Cada aplicativo segue a mesma sequência: **Carregar exemplo** (ou importar
-planilha) → escolher as variáveis → **Executar análise**. Os resultados
-aparecem em **Análise** (resumo, tabela principal, comparações e
-pressupostos), com **Diagnósticos**, **Gráficos** e **Exportação** em abas
-próprias. Opções estatísticas avançadas ficam recolhidas.
+Módulos: `"anova"`, `"regressao"`, `"nao_parametrica"`, `"intervalos"`,
+`"multivariada"` e `"exploratoria"`.
+
+Em todos os módulos: **Carregar exemplo** (ou importar planilha) → escolher
+as variáveis → **Executar análise**. Os resultados aparecem em **Análise**
+(resumo, tabela principal, comparações e pressupostos); **Diagnósticos**,
+**Gráficos** e **Exportação** ficam em abas próprias. Opções avançadas ficam
+recolhidas.
 
 | Módulo | Exemplo incluído | Método padrão |
 |---|---|---|
@@ -92,149 +85,63 @@ próprias. Opções estatísticas avançadas ficam recolhidas.
 | Multivariada | 36 genótipos, 6 caracteres | PCA padronizada |
 | Exploratória | Altura de plantas | Estatística descritiva |
 
-## Análise paramétrica
+<p align="center"><img src="man/figures/app-example.jpg" width="92%" alt="Exemplo carregado no módulo ANOVA"></p>
+<p align="center"><img src="man/figures/app-anova.jpg" width="92%" alt="Resultado da ANOVA: resumo, quadro, Tukey e pressupostos"></p>
 
-```{r}
-fit <- anova_exp(sim_dbc, response = "produtividade",
-                 treatment = "tratamento", block = "bloco")   # DBC
-fit                                    # quadro da ANOVA, CV%, médias, efeitos
-compare_means(fit, "scott_knott")      # ou "tukey", "snk", "lsd", "dunnett", ...
-check_assumptions(fit)                 # Shapiro-Wilk e Bartlett (+ Levene, Cook...)
+## O que cada módulo faz
 
-# fatorial em blocos com somas de quadrados tipo III e efeitos simples
-f <- anova_exp(npk, "yield", "N", block = "block", factors = c("P", "K"), ss_type = "III")
-compare_means(f, "tukey", factor = "N", by = "P")
-
-mean_test(sleep, "extra", "group", type = "paired", id = "ID")
-anova_exp(PlantGrowth, "weight", "group", method = "welch")   # alternativa
-```
+**ANOVA.** Análise de variância convencional de Fisher em DIC, DBC e
+fatorial; Tukey, Scott-Knott, SNK, LSD (com DMS), Dunnett, Bonferroni e
+Holm; seção **Pressupostos da ANOVA** com Shapiro-Wilk e Bartlett; em
+fatoriais com interação significativa, comparação dentro de cada nível do
+outro fator. ANOVA de Welch e teste t como alternativas.
 
 <p align="center">
 <img src="man/figures/fig-anova.png" width="48%" alt="Médias com letras de Scott-Knott">
 <img src="man/figures/fig-qq.png" width="48%" alt="Q-Q dos resíduos">
 </p>
-<p align="center"><img src="man/figures/app-example.jpg" width="92%" alt="Exemplo carregado no módulo ANOVA"></p>
-<p align="center"><img src="man/figures/app-anova.jpg" width="92%" alt="Resultado da ANOVA: resumo, quadro, Tukey e pressupostos"></p>
 
-## Regressão
-
-Modelos disponíveis: linear, quadrático, cúbico, logarítmico, exponencial,
-potência, logístico (3 e 4 parâmetros), Gompertz, Michaelis-Menten,
-assintótico, Mitscherlich, log-logístico (dose-resposta), linear-platô e
-binomial (logit, em x ou em ln x).
-
-```{r}
-r <- fit_regression(sim_dose, x = "dose", y = "produtividade",
-                    model = c("linear", "quadratic", "linear_plateau", "mitscherlich"),
-                    group = "cultivar", band = "confidence")
-result_table(r, "comparison")      # R², pseudo-R², RMSE, AIC, AICc, BIC, pesos de Akaike
-result_table(r, "curve_test")      # as curvas dos grupos diferem?
-optimum_dose(r, "quadratic", price_ratio = 0.004)   # MET e dose econômica (método delta)
-
-b <- fit_regression(subset(sim_germinacao, dose > 0), "dose", "germinadas",
-                    model = "binomial_logdose", trials = "total", group = "produto")
-optimum_dose(b)                    # ED50 com IC
-```
+**Regressão.** Linear, quadrática, cúbica, logarítmica, exponencial,
+potência, logística (3 e 4 parâmetros), Gompertz, Michaelis-Menten,
+assintótica, Mitscherlich, log-logística, linear-platô e binomial; faixas de
+confiança e de predição; comparação por AICc; várias curvas com teste de
+igualdade; dose de máxima eficiência técnica, dose econômica e ED50.
 
 <p align="center">
 <img src="man/figures/fig-regression.png" width="48%" alt="Curvas quadráticas por cultivar">
 <img src="man/figures/fig-binomial.png" width="48%" alt="Regressão binomial">
 </p>
-<p align="center"><img src="man/figures/app-regression-plot.jpg" width="92%" alt="Módulo de regressão com editor gráfico"></p>
 
-## Não paramétrica
+**Não paramétrica.** Kruskal-Wallis, Friedman, mediana de Mood,
+Mann-Whitney, Wilcoxon pareado, sinais e permutação, com Dunn ou Conover.
 
-```{r}
-kw <- np_test(PlantGrowth, "weight", "group", test = "kruskal")
-np_posthoc(kw, "dunn", p_adjust = "holm")
-np_test(dados, "nota", "tratamento", test = "friedman", block = "bloco")
-np_test(PlantGrowth, "weight", "group", test = "mood")
-np_test(PlantGrowth, "weight", "group", test = "permutation", R = 4999, seed = 1)
-```
+**Intervalos de confiança.** Médias por tratamento, diferenças (variâncias
+iguais ou Welch), variância, desvio-padrão, proporção e bootstrap (BCa).
 
-## Intervalos de confiança
-
-```{r}
-conf_int(PlantGrowth, "weight", "group_means", group = "group")
-conf_int(PlantGrowth, "weight", "variance")
-conf_int(subset(PlantGrowth, group != "trt2"), "weight", "diff_means_welch", group = "group")
-conf_int(PlantGrowth, "weight", "median", method = "bootstrap", R = 5000, seed = 42)
-```
-
-<p align="center">
-<img src="man/figures/fig-np.png" width="48%" alt="Medianas e IQR com letras de Dunn">
-<img src="man/figures/fig-ci.png" width="48%" alt="Intervalos de confiança por tratamento">
-</p>
-
-## Multivariada
-
-```{r}
-p <- pca_exp(sim_multivariado, group = "grupo", label = "genotipo")
-plot(p, "biplot")
-cluster_exp(sim_multivariado, label = "genotipo", method = "ward.D2", k = 3)
-cluster_exp(sim_multivariado, method = "kmeans", k = 3, seed = 123)
-cor_matrix(sim_multivariado, method = "spearman", p_adjust = "holm")
-```
+**Multivariada.** PCA (biplot, círculo de correlações, contribuições),
+agrupamento hierárquico, k-means e matriz de correlações.
 
 <p align="center">
 <img src="man/figures/fig-pca.png" width="48%" alt="Biplot">
 <img src="man/figures/fig-dendro.png" width="48%" alt="Dendrograma">
 </p>
 
-## Gráficos personalizáveis
+**Gráficos e exportação.** Editor gráfico com cinco temas, títulos,
+eixos, unidades, cores e legenda; exportação em PNG, TIFF, SVG e PDF
+(300–1200 dpi). Resultados em Excel, relatório HTML/Word e script R
+reprodutível.
 
-Todos os gráficos usam o mesmo objeto de estilo — o mesmo que o editor dos
-aplicativos manipula — e podem ser salvos e recarregados em JSON.
+<p align="center"><img src="man/figures/app-editor.jpg" width="92%" alt="Editor gráfico"></p>
+<p align="center"><img src="man/figures/app-mobile.jpg" width="32%" alt="Uso no celular"></p>
 
-```{r}
-estilo <- caagro_style(
-  theme = "bw", title = "Produtividade de cultivares",
-  y = axis_spec(title = "Produtividade", unit = "t/ha", min = 0, decimals = 1),
-  legend = legend_spec(position = "bottom"),
-  geoms = geom_spec(show_values = TRUE, point_size = 2.5)
-)
-g <- plot(compare_means(fit, "tukey"), type = "bars", style = estilo)
-save_plot(g, "figura1.tiff", width = 17, height = 12, units = "cm", dpi = 600)
-style_to_json(estilo, "meu_estilo.json")
-```
+## Validação
 
-Temas: *Scientific Light* (padrão), *Scientific Minimal*, *Publication Black &
-White*, *Scientific Dark* e *caagro Corporate*.
-
-<p align="center"><img src="man/figures/app-editor.jpg" width="92%" alt="Editor gráfico universal"></p>
-
-## Funções do pacote
-
-A versão 1.1 reduziu a interface de programação a 41 funções exportadas
-(eram 53), agrupando variantes em argumentos: `anova_exp(method = "welch")`,
-`compare_means(contrasts = ...)`, `conf_int(parameter = "group_means")`,
-`conf_int(method = "bootstrap")`, `cluster_exp(method = "kmeans")`,
-`export_script(config = TRUE)`; o teste de igualdade de curvas é calculado
-automaticamente por `fit_regression()` (tabela `curve_test`).
-
-## Exportação e reprodutibilidade
-
-```{r}
-export_excel(list(fit, compare_means(fit), check_assumptions(fit)), "resultados.xlsx")
-export_report(list(fit, compare_means(fit)), "relatorio.html")   # .docx/.pdf com Pandoc
-export_script(list(fit, compare_means(fit)), "analise.R", data_file = "dados.xlsx", config = TRUE)
-```
-
-Todo resultado é um objeto `caagro_result` com dados usados, método, fórmula,
-configurações, tabelas, diagnósticos, advertências, código R e metadados
-(versões, data, semente), com métodos `print()`, `summary()`, `plot()` e
-`as.data.frame()`.
-
-## Métodos e validação
-
-Os resultados são verificados por testes automatizados contra implementações
-de referência: `stats::aov`/`lm`/`glm`/`nls`, `TukeyHSD`, `car::Anova`
-(SQ tipo II e III), `car::leveneTest`, `emmeans` (médias marginais e Dunnett),
-`rstatix` (Games-Howell e Dunn), `kruskal.test`, `friedman.test`,
-`wilcox.test`, `t.test`, `prcomp`, `hclust` e `boot` (BCa). SNK e Scott-Knott
-são verificados contra o cálculo manual das fórmulas originais (Newman, 1939;
-Keuls, 1952; Scott e Knott, 1974). Detalhes estão nas vinhetas
-(`browseVignettes("caagro")`).
+Os cálculos são conferidos por testes automatizados contra implementações de
+referência do R: `aov`/`lm`/`glm`, `TukeyHSD`, `shapiro.test`,
+`bartlett.test`, `car::Anova`, `car::leveneTest`, `emmeans`, `rstatix`,
+`kruskal.test`, `friedman.test`, `prcomp`, `hclust` e `boot`. SNK e
+Scott-Knott são verificados pelo cálculo manual das fórmulas originais.
+Os testes também simulam o uso do aplicativo com cada exemplo.
 
 ## Roadmap
 
@@ -250,17 +157,29 @@ Keuls, 1952; Scott e Knott, 1974). Detalhes estão nas vinhetas
 citation("caagro")
 ```
 
+Valasco dos Santos, W.; Garcia Coutinho, W. B. (2025). *caagro: Applied
+Statistics for Agricultural Experimentation in a 'shiny' Application*. Pacote
+R, versão 1.2.0.
+
 ## Licença
 
-MIT © Wilhan Valasco dos Santos. Veja `LICENSE`.
+MIT © Wilhan Valasco dos Santos e Walter Baida Garcia Coutinho. Veja `LICENSE`.
 
-## Autoria e contato
+## Autoria
 
-**Wilhan Valasco dos Santos** — autor e mantenedor
+**Wilhan Valasco dos Santos**<sup>1,\*</sup> · **Walter Baida Garcia Coutinho**<sup>2</sup>
+
+<sup>1</sup> Instituto Federal Goiano, Campus Rio Verde, Rodovia Sul Goiana, Km 01,
+Zona Rural, 75901-970, Rio Verde, Goiás, Brasil.
+ORCID: <https://orcid.org/0000-0002-6533-2407>
+
+<sup>2</sup> Departamento de Estatística, Universidade Federal de Viçosa (UFV),
+Avenida Peter Henry Rolfs, s/n, Campus Universitário, 36570-900, Viçosa,
+Minas Gerais, Brasil. ORCID: <https://orcid.org/0000-0002-9894-6122>.
+E-mail: walterbgc1@gmail.com
+
+<sup>\*</sup> Autor correspondente: Wilhan Valasco dos Santos.
 E-mail: wilhanvalasco@hotmail.com
-Site: <https://wilhanvalasco.github.io/meu-site/>
-LinkedIn: <https://www.linkedin.com/in/wilhan-valasco/>
 
 Os conjuntos `sim_*` são **simulados** e servem apenas para ilustração;
-`PlantGrowth`, `npk`, `warpbreaks` e `sleep` são dados reais do pacote
-`datasets` do R.
+`PlantGrowth` é um conjunto de dados real do pacote `datasets` do R.

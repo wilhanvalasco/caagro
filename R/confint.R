@@ -66,7 +66,7 @@
 #' r <- conf_int(PlantGrowth, "weight", "group_means", group = "group")
 #' plot(r)
 #' conf_int(PlantGrowth, "weight", "median", method = "bootstrap", R = 999, seed = 1)
-#' @export
+#' @noRd
 conf_int <- function(data, response,
                      parameter = c("mean", "variance", "sd", "proportion", "diff_means",
                                    "diff_means_welch", "var_ratio", "paired_diff", "group_means",
@@ -172,7 +172,7 @@ conf_int <- function(data, response,
              notes = list(Resultado = sprintf("%s: estimativa = %.4g; IC %g%% = [%.4g; %.4g].", labels[[parameter]], tb$estimate, 100 * conf_level, tb$lower, tb$upper),
                           Interpretacao = sprintf("Se o procedimento fosse repetido muitas vezes, cerca de %g%% dos intervalos conteriam o par\u00e2metro verdadeiro.", 100 * conf_level),
                           Cuidados = "O n\u00edvel de confian\u00e7a refere-se ao procedimento, n\u00e3o a probabilidade de o par\u00e2metro estar neste intervalo espec\u00edfico."),
-             code = code_call("caagro::conf_int", list(data = as.name("dados"), response = response, parameter = parameter,
+             code = code_call("caagro:::conf_int", list(data = as.name("dados"), response = response, parameter = parameter,
                                                        group = group, id = id, conf_level = conf_level, success = success,
                                                        prop_method = if (parameter == "proportion") prop_method)))
 }
@@ -229,7 +229,7 @@ conf_int_groups <- function(data, response, group, block = NULL,
                                               if (simultaneous == "bonferroni") "simultaneos (Bonferroni)" else "individuais", k),
                           Interpretacao = "Cada intervalo descreve a precis\u00e3o da m\u00e9dia do respectivo tratamento.",
                           Cuidados = "A sobreposi\u00e7\u00e3o (ou n\u00e3o) de intervalos individuais N\u00c3O e um teste de diferen\u00e7a entre tratamentos. Para isso, use intervalos para diferen\u00e7as ou compara\u00e7\u00f5es m\u00faltiplas."),
-             code = code_call("caagro::conf_int", list(data = as.name("dados"), response = response, parameter = "group_means", group = group,
+             code = code_call("caagro:::conf_int", list(data = as.name("dados"), response = response, parameter = "group_means", group = group,
                                                               block = block, variance = variance, simultaneous = simultaneous,
                                                               conf_level = conf_level, exclude = exclude)))
 }
@@ -288,6 +288,6 @@ conf_int_boot <- function(data, response, statistic = c("mean", "median", "sd", 
              model = list(replicates = reps), seed = seed,
              notes = list(Resultado = sprintf("Estimativa = %.4g; IC %g%% bootstrap = [%.4g; %.4g] (R = %d, semente = %s).", t0, 100 * conf_level, ci[1], ci[2], R, seed),
                           Cuidados = "Os resultados dependem da semente e do n\u00famero de reamostragens; o bootstrap pressup\u00f5e que a amostra representa bem a popula\u00e7\u00e3o."),
-             code = code_call("caagro::conf_int", list(data = as.name("dados"), response = response, parameter = statistic, method = "bootstrap",
+             code = code_call("caagro:::conf_int", list(data = as.name("dados"), response = response, parameter = statistic, method = "bootstrap",
                                                             group = group, R = R, boot_type = type, conf_level = conf_level, seed = seed)))
 }

@@ -51,7 +51,7 @@
 #' @examples
 #' fit <- anova_exp(PlantGrowth, "weight", "group")
 #' check_assumptions(fit)
-#' @export
+#' @noRd
 check_assumptions <- function(x, group = NULL, alpha = 0.05) {
   gvec <- NULL
   if (inherits(x, "caagro_anova")) {

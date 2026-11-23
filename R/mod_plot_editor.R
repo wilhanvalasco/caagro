@@ -211,7 +211,7 @@ mod_plot_editor_server <- function(id, result, extra = shiny::reactive(list())) 
     shiny::observeEvent(input$show_code, {
       r <- result(); shiny::req(r)
       code <- paste0(style_code(style()), "\n\ngrafico <- plot(resultado, type = ", deparse(input$type %||% plot_types(r)[[1]]), ", style = estilo)\n",
-                     "save_plot(gr\u00e1fico, \"", input$fname, ".", input$fmt, "\", width = ", input$width, ", height = ", input$height,
+                     "caagro:::save_plot(grafico, \"", input$fname, ".", input$fmt, "\", width = ", input$width, ", height = ", input$height,
                      ", units = \"", input$units, "\", dpi = ", input$dpi, ", bg = \"", input$bg, "\")")
       shiny::showModal(shiny::modalDialog(title = "C\u00f3digo R do gr\u00e1fico", size = "l", easyClose = TRUE,
                                           shiny::tags$pre(class = "caagro-code", code),

@@ -19,7 +19,7 @@
 #'   D*, 47(1), 183-189. \doi{10.1111/1467-9884.00122}
 #' @examples
 #' describe_data(PlantGrowth, "weight", group = "group")
-#' @export
+#' @noRd
 describe_data <- function(data, variables = NULL, group = NULL) {
   data <- check_data_frame(data)
   if (is.null(variables)) {
@@ -56,7 +56,7 @@ describe_data <- function(data, variables = NULL, group = NULL) {
                Resultado = "Medidas de posi\u00e7\u00e3o, dispers\u00e3o e forma da distribui\u00e7\u00e3o.",
                Interpretacao = "M\u00e9dia e mediana muito diferentes sugerem assimetria; o CV% compara variabilidade relativa; assimetria > 0 indica cauda a direita; curtose > 0 indica caudas mais pesadas que a normal.",
                Cuidados = "Estat\u00edsticas descritivas n\u00e3o testam hip\u00f3teses. Com amostras pequenas, assimetria e curtose s\u00e3o muito imprecisas."),
-             code = code_call("caagro::describe_data", list(data = as.name("dados"), variables = variables, group = group)))
+             code = code_call("caagro:::describe_data", list(data = as.name("dados"), variables = variables, group = group)))
 }
 
 describe_vec <- function(y) {

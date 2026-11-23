@@ -18,7 +18,7 @@
 #' f <- tempfile(fileext = ".png")
 #' save_plot(p, f, width = 12, height = 9, dpi = 150)
 #' file.exists(f)
-#' @export
+#' @noRd
 save_plot <- function(plot, file, width = 17, height = 12, units = c("cm", "mm", "in"), dpi = 300,
                       bg = c("white", "transparent")) {
   units <- match.arg(units); bg <- match.arg(bg)
@@ -83,7 +83,7 @@ as_result_list <- function(results) {
 #' fit <- anova_exp(PlantGrowth, "weight", "group")
 #' f <- tempfile(fileext = ".xlsx")
 #' export_excel(list(fit, compare_means(fit)), f)
-#' @export
+#' @noRd
 export_excel <- function(results, file, digits = 4) {
   results <- as_result_list(results)
   wb <- openxlsx::createWorkbook(creator = "caagro")
@@ -229,7 +229,7 @@ plot_data_uri <- function(p, width = 17, height = 11) {
 #' fit <- anova_exp(PlantGrowth, "weight", "group")
 #' f <- tempfile(fileext = ".html")
 #' export_report(list(fit, compare_means(fit), check_assumptions(fit)), f)
-#' @export
+#' @noRd
 export_report <- function(results, file, title = "Relat\u00f3rio de an\u00e1lise estat\u00edstica", author = NULL,
                           level = c("full", "summary"), plots = NULL, style = caagro_style()) {
   level <- match.arg(level)
@@ -285,7 +285,7 @@ pre{background:%s;padding:12px;font-size:12px;overflow:auto;border-radius:6px} i
            "Testes estat\u00edsticos n\u00e3o estabelecem causalidade por si; resultados n\u00e3o significativos n\u00e3o demonstram igualdade entre tratamentos.</p>")
   if (length(all_refs)) out <- c(out, "<h2>Referencias metodol\u00f3gicas</h2><ul>", paste0("<li>", html_escape(unique(all_refs)), "</li>"), "</ul>")
   codes <- unique(unlist(lapply(results, `[[`, "code")))
-  out <- c(out, "<h2>Reprodutibilidade</h2><pre>", html_escape(paste(c("library(caagro)", "# dados <- read_data(\"seu_arquivo.xlsx\")", codes), collapse = "\n\n")), "</pre>",
+  out <- c(out, "<h2>Reprodutibilidade</h2><pre>", html_escape(paste(c("library(caagro)", "# dados <- caagro:::read_data(\"seu_arquivo.xlsx\")", codes), collapse = "\n\n")), "</pre>",
            "<p class='muted'>", html_escape(paste("Plataforma:", R.version$platform, "| Semente(s):", paste(unique(unlist(lapply(results, function(r) r$meta$seed))), collapse = ", "))), "</p>",
            "</div></body></html>")
   html <- paste(out, collapse = "")
@@ -324,20 +324,20 @@ pre{background:%s;padding:12px;font-size:12px;overflow:auto;border-radius:6px} i
 #' f <- tempfile(fileext = ".R")
 #' export_script(fit, f, data_file = "dados.xlsx")
 #' cat(readLines(f), sep = "\n")
-#' @export
+#' @noRd
 export_script <- function(results, file, data_file = "dados.xlsx", style = NULL, config = FALSE) {
   results <- as_result_list(results)
   lines <- c("# Script gerado pelo caagro", paste("# Data:", format(Sys.time(), "%Y-%m-%d %H:%M")),
              paste("# caagro", caagro_version(), "|", R.version.string), "",
-             "library(caagro)", "", paste0("dados <- read_data(", deparse(data_file), ")"), "")
+             "library(caagro)", "", paste0("dados <- caagro:::read_data(", deparse(data_file), ")"), "")
   for (i in seq_along(results)) {
     r <- results[[i]]
     if (!is.null(r$meta$seed)) lines <- c(lines, paste0("# semente utilizada: ", r$meta$seed))
     lines <- c(lines, paste0("res", i, " <- ", r$code %||% "# (an\u00e1lise sem c\u00f3digo reproduz\u00edvel)"), paste0("print(res", i, ")"), "")
   }
-  if (!is.null(style)) lines <- c(lines, style_code(style), paste0("gr\u00e1fico <- plot(res", length(results), ", style = estilo)"),
-                                  "save_plot(gr\u00e1fico, \"gr\u00e1fico.png\", width = 17, height = 12, units = \"cm\", dpi = 600)", "")
-  lines <- c(lines, paste0("export_excel(list(", paste0("res", seq_along(results), collapse = ", "), "), \"resultados.xlsx\")"))
+  if (!is.null(style)) lines <- c(lines, style_code(style), paste0("grafico <- plot(res", length(results), ", style = estilo)"),
+                                  "caagro:::save_plot(grafico, \"grafico.png\", width = 17, height = 12, units = \"cm\", dpi = 600)", "")
+  lines <- c(lines, paste0("caagro:::export_excel(list(", paste0("res", seq_along(results), collapse = ", "), "), \"resultados.xlsx\")"))
   writeLines(lines, file, useBytes = TRUE)
   if (isTRUE(config)) export_config(results, paste0(sub("[.][Rr]$", "", file), ".json"))
   invisible(file)

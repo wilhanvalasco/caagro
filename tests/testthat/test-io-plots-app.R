@@ -67,9 +67,3 @@ test_that("assistant suggests appropriate methods", {
   expect_match(suggest_method("curve", "binary")$method[1], "binomial")
 })
 
-test_that("apps build and module servers run", {
-  for (f in list(run_app, run_anova, run_regression, run_nonparametric, run_confidence, run_multivariate, run_exploratory)) {
-    expect_s3_class(f(launch.browser = "auto"), "shiny.appobj")
-  }
-  expect_message(anQuali(iniciar = FALSE)); expect_message(anQuant(iniciar = FALSE)); expect_message(anIC(iniciar = FALSE))
-})

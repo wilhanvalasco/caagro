@@ -102,7 +102,7 @@
 #' b <- fit_regression(subset(sim_germinacao, dose > 0), "dose", "germinadas",
 #'                     model = "binomial_logdose", trials = "total", group = "produto")
 #' optimum_dose(b)
-#' @export
+#' @noRd
 fit_regression <- function(data, x, y, model = "quadratic", group = NULL, trials = NULL,
                            conf_level = 0.95, band = c("confidence", "prediction", "none"),
                            band_method = c("delta", "bootstrap"), nboot = 500, seed = 123,
@@ -203,7 +203,7 @@ fit_regression <- function(data, x, y, model = "quadratic", group = NULL, trials
       Resultado = paste(apply(tables$equations, 1, function(r) paste0("[", r[["model"]], if (!is.null(group)) paste0(" | ", r[["group"]]), "] ", r[["equation"]])), collapse = "; "),
       Interpretacao = "Os coeficientes descrevem a forma da resposta dentro da faixa experimental de x. Compare modelos por AICc/BIC, res\u00edduos e plausibilidade biol\u00f3gica, n\u00e3o apenas pelo R2.",
       Cuidados = "N\u00e3o extrapole alem da faixa de doses estudada. R2 de modelos n\u00e3o lineares e um pseudo-R2. A sobreposi\u00e7\u00e3o visual de curvas n\u00e3o prova igualdade: veja o teste de igualdade de curvas."),
-    code = code_call("caagro::fit_regression", list(data = as.name("dados"), x = x, y = y, model = model, group = group,
+    code = code_call("caagro:::fit_regression", list(data = as.name("dados"), x = x, y = y, model = model, group = group,
                                                     trials = trials, conf_level = conf_level, band = band,
                                                     band_method = band_method, nboot = if (band_method == "bootstrap") nboot,
                                                     seed = if (band_method == "bootstrap") seed,
@@ -388,7 +388,7 @@ compare_curves <- function(x, model = NULL) {
 #' @examples
 #' r <- fit_regression(sim_dose, "dose", "produtividade", "quadratic", group = "cultivar")
 #' optimum_dose(r, price_ratio = 0.004)
-#' @export
+#' @noRd
 optimum_dose <- function(x, model = NULL, price_ratio = NULL, at = NULL, conf_level = NULL) {
   if (!inherits(x, "caagro_regression")) abort_caagro("`x` deve ser resultado de fit_regression().")
   model <- model %||% names(x$model)[1]

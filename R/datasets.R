@@ -3,8 +3,7 @@
 #' **All datasets below are simulated** (see `data-raw/make_data.R` in the
 #' package sources) to illustrate the methods. They must not be cited as
 #' experimental results. Real classic datasets shipped with R
-#' (`datasets::PlantGrowth`, `datasets::npk`, `datasets::warpbreaks`,
-#' `datasets::sleep`) are also used in the examples.
+#' (`datasets::PlantGrowth`) is also used as an example in the application.
 #'
 #' * `sim_dic`: completely randomised design, 5 cultivars x 4 replicates;
 #'   `cultivar`, `rep`, `produtividade` (t/ha).
@@ -38,8 +37,8 @@
 #' @aliases sim_dic sim_dbc sim_fatorial sim_dose sim_germinacao sim_multivariado sim_soja sim_notas
 #' @keywords datasets
 #' @examples
+#' head(sim_soja)
 #' head(sim_dbc)
-#' anova_exp(sim_dbc, "produtividade", "tratamento", block = "bloco")
 "sim_dic"
 
 #' @rdname caagro-datasets

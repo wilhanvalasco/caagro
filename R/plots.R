@@ -30,8 +30,9 @@ plot_types <- function(x) {
 
 #' Plot methods for caagro results
 #'
-#' Every plot method returns a ggplot object styled with the given
-#' [caagro_style()]. Available `type`s:
+#' Plot methods for the result objects produced by the analyses of
+#' [run_app()] (and by the R scripts it exports). Every method returns a
+#' ggplot object. Available `type`s:
 #' * ANOVA: `"means"`, `"box"`, `"residuals"`.
 #' * Mean comparisons: `"bars"`, `"points"`, `"box"`, `"differences"`.
 #' * Diagnostics: `"qq"`, `"resid_fitted"`, `"scale_location"`, `"cooks"`, `"hist"`.
@@ -48,15 +49,10 @@ plot_types <- function(x) {
 #'
 #' @param x A caagro result.
 #' @param type Plot type (see Description).
-#' @param style A [caagro_style()].
+#' @param style A graphic style object created by the graphics editor of the application.
 #' @param ... Unused.
 #' @return A ggplot object.
 #' @name caagro_plots
-#' @examples
-#' fit <- anova_exp(PlantGrowth, "weight", "group")
-#' plot(fit)
-#' plot(compare_means(fit, "tukey"), type = "bars")
-#' plot(check_assumptions(fit), type = "qq")
 NULL
 
 #' @rdname caagro_plots

@@ -39,7 +39,7 @@ mv_matrix <- function(data, variables, label = NULL, group = NULL) {
 #' p <- pca_exp(sim_multivariado, group = "grupo", label = "genotipo")
 #' result_table(p, "eigenvalues")
 #' plot(p, "biplot")
-#' @export
+#' @noRd
 pca_exp <- function(data, variables = NULL, group = NULL, label = NULL, center = TRUE, scale = TRUE) {
   mv <- mv_matrix(data, variables, label, group)
   pc <- stats::prcomp(mv$M, center = center, scale. = scale)
@@ -66,7 +66,7 @@ pca_exp <- function(data, variables = NULL, group = NULL, label = NULL, center =
              notes = list(Resultado = sprintf("PC1 e PC2 explicam %.1f%% e %.1f%% da vari\u00e2ncia (acumulado %.1f%%).", eig$variance[1], eig$variance[2], eig$cumulative[2]),
                           Interpretacao = sprintf("Cargas (loadings) indicam o peso de cada vari\u00e1vel no componente; correla\u00e7\u00f5es vari\u00e1vel-componente mostram quanto cada vari\u00e1vel e representada. %d componente(s) com autovalor > 1 (crit\u00e9rio de Kaiser, apenas orientativo para matriz de correla\u00e7\u00e3o).", kaiser),
                           Cuidados = "PCA descreve a estrutura de correla\u00e7\u00e3o; n\u00e3o testa hip\u00f3teses. O sinal dos componentes e arbitr\u00e1rio. Elipses por grupo s\u00e3o descritivas."),
-             code = code_call("caagro::pca_exp", list(data = as.name("dados"), variables = mv$variables, group = group,
+             code = code_call("caagro:::pca_exp", list(data = as.name("dados"), variables = mv$variables, group = group,
                                                       label = label, center = center, scale = scale)))
 }
 
@@ -119,7 +119,7 @@ pca_exp <- function(data, variables = NULL, group = NULL, label = NULL, center =
 #' plot(h)
 #' km <- cluster_exp(sim_multivariado, method = "kmeans", k = 3, seed = 1)
 #' result_table(km, "selection")
-#' @export
+#' @noRd
 cluster_exp <- function(data, variables = NULL, label = NULL, distance = "euclidean", method = "ward.D2",
                         scale = TRUE, k = NULL, h = NULL, group = NULL, nstart = 25, k_max = 8, seed = 123) {
   method <- match.arg(method, c("ward.D2", "complete", "average", "single", "mcquitty", "kmeans"))
@@ -151,7 +151,7 @@ cluster_exp <- function(data, variables = NULL, label = NULL, distance = "euclid
              notes = list(Resultado = sprintf("Correla\u00e7\u00e3o cofen\u00e9tica = %.3f.", coph),
                           Interpretacao = "Indiv\u00edduos unidos a menor altura s\u00e3o mais semelhantes. O corte (k ou altura) define grupos; avalie a estabilidade com outros m\u00e9todos.",
                           Cuidados = "O agrupamento sempre produz grupos, mesmo sem estrutura real. Resultados dependem da padroniza\u00e7\u00e3o, da dist\u00e2ncia e do m\u00e9todo de liga\u00e7\u00e3o."),
-             code = code_call("caagro::cluster_exp", list(data = as.name("dados"), variables = mv$variables, label = label,
+             code = code_call("caagro:::cluster_exp", list(data = as.name("dados"), variables = mv$variables, label = label,
                                                           distance = distance, method = method, scale = scale, k = k, h = h)))
 }
 
@@ -186,7 +186,7 @@ kmeans_exp <- function(data, variables = NULL, k = 3, label = NULL, scale = TRUE
              notes = list(Resultado = sprintf("SQ entre / SQ total = %.1f%%; silhueta m\u00e9dia = %.2f.", 100 * km$betweenss / km$totss, mean(sil[, 3])),
                           Interpretacao = "Silhueta pr\u00f3xima de 1 indica indiv\u00edduos bem alocados; pr\u00f3xima de 0, na fronteira; negativa, possivelmente no grupo errado. O cotovelo e a silhueta orientam a escolha de k.",
                           Cuidados = "K-means pressup\u00f5e grupos aproximadamente esf\u00e9ricos e de tamanho semelhante; o resultado depende da semente e da padroniza\u00e7\u00e3o."),
-             code = code_call("caagro::cluster_exp", list(data = as.name("dados"), variables = mv$variables, method = "kmeans", k = k, label = label,
+             code = code_call("caagro:::cluster_exp", list(data = as.name("dados"), variables = mv$variables, method = "kmeans", k = k, label = label,
                                                          scale = scale, nstart = nstart, seed = seed)))
 }
 
@@ -212,7 +212,7 @@ kmeans_exp <- function(data, variables = NULL, k = 3, label = NULL, scale = TRUE
 #' 30(1/2), 81-93. \doi{10.2307/2332226}
 #' @examples
 #' cor_matrix(sim_multivariado, method = "spearman")
-#' @export
+#' @noRd
 cor_matrix <- function(data, variables = NULL, method = c("pearson", "spearman", "kendall"),
                        p_adjust = "holm", conf_level = 0.95) {
   method <- match.arg(method); valid_p_adjust(p_adjust)
@@ -238,5 +238,5 @@ cor_matrix <- function(data, variables = NULL, method = c("pearson", "spearman",
              warnings = if (anyNA(X)) "Valores ausentes tratados par a par (pairwise)." else character(),
              notes = list(Interpretacao = "Pearson mede associa\u00e7\u00e3o linear; Spearman e Kendall, associa\u00e7\u00e3o monot\u00f4nica baseada em postos.",
                           Cuidados = "Correla\u00e7\u00e3o n\u00e3o implica causalidade. Valores de p ajustados para m\u00faltiplas compara\u00e7\u00f5es."),
-             code = code_call("caagro::cor_matrix", list(data = as.name("dados"), variables = variables, method = method, p_adjust = p_adjust)))
+             code = code_call("caagro:::cor_matrix", list(data = as.name("dados"), variables = variables, method = method, p_adjust = p_adjust)))
 }

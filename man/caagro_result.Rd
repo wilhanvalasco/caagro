@@ -6,7 +6,6 @@
 \alias{summary.caagro_result}
 \alias{print.summary.caagro_result}
 \alias{as.data.frame.caagro_result}
-\alias{result_table}
 \title{Standardised caagro result object}
 \usage{
 \method{print}{caagro_result}(x, digits = 4, ...)
@@ -16,8 +15,6 @@
 \method{print}{summary.caagro_result}(x, ...)
 
 \method{as.data.frame}{caagro_result}(x, row.names = NULL, optional = FALSE, ...)
-
-result_table(x, name = NULL)
 }
 \arguments{
 \item{x, object}{A \code{caagro_result}.}
@@ -27,19 +24,17 @@ result_table(x, name = NULL)
 \item{...}{Further arguments passed to methods.}
 
 \item{row.names, optional}{Ignored (S3 compatibility).}
-
-\item{name}{Table name. Default: the main table.}
 }
 \value{
 \code{print()} returns \code{x} invisibly; \code{summary()} returns a
-\code{summary.caagro_result} list; \code{as.data.frame()} returns a data frame;
-\code{result_table()} returns a data frame.
+\code{summary.caagro_result} list; \code{as.data.frame()} returns the main
+table as a data frame.
 }
 \description{
-All analysis functions of caagro return an object of class
-\code{caagro_result} (plus a specific subclass such as \code{caagro_anova}). It is a
-list with a fixed set of fields, so that the Shiny applications, the
-exporters and the user's scripts read results in the same way.
+The analyses run by \code{\link[=run_app]{run_app()}} produce objects of class
+\code{caagro_result} (plus a specific subclass such as \code{caagro_anova}). They
+are returned by the reproducible R scripts exported by the application
+and can be printed, summarised and converted to data frames.
 }
 \section{Fields}{
 

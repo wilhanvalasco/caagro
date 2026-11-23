@@ -45,7 +45,7 @@ mod_export_server <- function(id, results, data_name, style = shiny::reactive(NU
         if (is.null(res)) writeLines(paste("N\u00e3o foi poss\u00edvel gerar o relat\u00f3rio neste formato. Use HTML."), file)
       })
     output$code_preview <- shiny::renderText({
-      paste(c("library(caagro)", paste0("dados <- read_data(\"", data_name(), "\")"), vapply(res_list(), function(r) r$code %||% "", "")), collapse = "\n\n")
+      paste(c("library(caagro)", paste0("dados <- caagro:::read_data(\"", data_name(), "\")"), vapply(res_list(), function(r) r$code %||% "", "")), collapse = "\n\n")
     })
     output$script <- shiny::downloadHandler(filename = function() paste0("caagro_script_", stamp(), ".R"),
                                             content = function(file) export_script(res_list(), file, data_file = data_name(), style = style()))

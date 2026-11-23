@@ -92,7 +92,7 @@
 #' compare_means(fit, "tukey")
 #' compare_means(fit, "scott_knott")
 #' compare_means(fit, "dunnett", control = "ctrl")
-#' @export
+#' @noRd
 compare_means <- function(x, method = c("tukey", "snk", "lsd", "scott_knott", "dunnett",
                                         "bonferroni", "holm", "pairwise", "games_howell"),
                           factor = NULL, by = NULL, alpha = 0.05, control = NULL,
@@ -205,7 +205,7 @@ compare_means <- function(x, method = c("tukey", "snk", "lsd", "scott_knott", "d
       Interpretacao = "M\u00e9dias seguidas pela mesma letra n\u00e3o diferem significativamente pelo procedimento utilizado. Diferen\u00e7as n\u00e3o significativas n\u00e3o provam igualdade.",
       Cuidados = "As compara\u00e7\u00f5es dependem dos pressupostos do modelo (normalidade e homogeneidade dos res\u00edduos)."
     ),
-    code = paste0(x$code, " |>\n  caagro::compare_means(", deparse(method),
+    code = paste0(x$code, " |>\n  caagro:::compare_means(", deparse(method),
                   if (!is.null(by)) paste0(", by = ", deparse(by)), ", alpha = ", alpha,
                   if (method == "dunnett") paste0(", control = ", deparse(control %||% em[[factor]][1])),
                   if (method == "lsd") paste0(", protected = ", protected, ", p_adjust = ", deparse(p_adjust)), ")")

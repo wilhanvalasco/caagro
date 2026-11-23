@@ -10,7 +10,7 @@
 #' @examples
 #' caagro_palette()
 #' caagro_palette(4)
-#' @export
+#' @noRd
 caagro_palette <- function(n = NULL, type = c("qualitative", "sequential", "diverging")) {
   type <- match.arg(type)
   brand <- c(azul_profundo = "#14283F", azul_secundario = "#315775", verde_cientifico = "#218568",
@@ -38,7 +38,7 @@ caagro_palette <- function(n = NULL, type = c("qualitative", "sequential", "dive
 #' @examples
 #' library(ggplot2)
 #' ggplot(PlantGrowth, aes(group, weight)) + geom_boxplot() + theme_caagro()
-#' @export
+#' @noRd
 theme_caagro <- function(style = c("light", "minimal", "bw", "dark", "corporate"),
                          base_size = 11, base_family = "") {
   style <- match.arg(style)
@@ -111,7 +111,7 @@ theme_caagro <- function(style = c("light", "minimal", "bw", "dark", "corporate"
 #'                    y = axis_spec(title = "Produtividade", unit = "t/ha", decimals = 1))
 #' fit <- anova_exp(PlantGrowth, "weight", "group")
 #' plot(compare_means(fit), style = st)
-#' @export
+#' @noRd
 caagro_style <- function(theme = "light", base_size = 11, font_family = "",
                          title = NULL, subtitle = NULL, caption = NULL, show_title = TRUE,
                          title_size = 1, title_color = NULL, title_align = 0,
@@ -132,7 +132,7 @@ caagro_style <- function(theme = "light", base_size = 11, font_family = "",
 #' @param angle Rotation of tick labels (degrees).
 #' @param text_size Tick label size multiplier.
 #' @param trans Scale transformation: `"identity"`, `"log10"`, `"sqrt"`.
-#' @export
+#' @noRd
 axis_spec <- function(title = NULL, unit = NULL, min = NA, max = NA, breaks_by = NA,
                       decimals = NA, angle = 0, text_size = 1, trans = "identity") {
   list(title = title, unit = unit, min = min, max = max, breaks_by = breaks_by, decimals = decimals,
@@ -146,7 +146,7 @@ axis_spec <- function(title = NULL, unit = NULL, min = NA, max = NA, breaks_by =
 #' @param size Legend text size multiplier.
 #' @param order Character vector with the desired order of groups.
 #' @param labels Named character vector: new labels for groups.
-#' @export
+#' @noRd
 legend_spec <- function(show = TRUE, position = "right", ncol = NA, size = 1, title = NULL,
                         order = NULL, labels = NULL) {
   list(show = show, position = position, ncol = ncol, size = size, title = title,
@@ -175,7 +175,7 @@ legend_spec <- function(show = TRUE, position = "right", ncol = NA, size = 1, ti
 #' @param eq_metrics Metrics printed with equations: any of `"r2"`, `"p"`,
 #'   `"aic"`, `"rmse"`, `"n"`.
 #' @param show_optimum Mark the dose of maximum response (when available).
-#' @export
+#' @noRd
 geom_spec <- function(point_size = 2.2, point_shape = 21, line_width = 0.8, line_type = "solid",
                       alpha = 0.55, colors = NULL, fill = "#315775", bar_width = 0.62,
                       errorbar_width = 0.18, band_alpha = 0.18, label_size = 3.6,
@@ -200,7 +200,7 @@ geom_spec <- function(point_size = 2.2, point_shape = 21, line_width = 0.8, line
 #' @examples
 #' js <- style_to_json(caagro_style(theme = "bw"))
 #' style_from_json(js)$theme
-#' @export
+#' @noRd
 style_to_json <- function(style, file = NULL) {
   txt <- jsonlite::toJSON(unclass(style), auto_unbox = TRUE, null = "null", na = "null", pretty = TRUE)
   if (is.null(file)) return(txt)
@@ -208,7 +208,7 @@ style_to_json <- function(style, file = NULL) {
 }
 
 #' @rdname style_to_json
-#' @export
+#' @noRd
 style_from_json <- function(json) {
   if (length(json) == 1 && file.exists(json)) json <- paste(readLines(json, warn = FALSE), collapse = "\n")
   lst <- jsonlite::fromJSON(json, simplifyVector = TRUE)
@@ -238,10 +238,10 @@ style_code <- function(style) {
     if (length(dd)) {
       fn <- c(x = "axis_spec", y = "axis_spec", legend = "legend_spec", geoms = "geom_spec")[[comp]]
       inner <- paste(vapply(dd, function(n) paste0(n, " = ", paste(deparse(s[[comp]][[n]]), collapse = "")), character(1)), collapse = ", ")
-      args[[length(args) + 1]] <- paste0(comp, " = caagro::", fn, "(", inner, ")")
+      args[[length(args) + 1]] <- paste0(comp, " = caagro:::", fn, "(", inner, ")")
     }
   }
-  paste0("estilo <- caagro::caagro_style(", if (length(args)) paste0("\n  ", paste(unlist(args), collapse = ",\n  "), "\n") else "", ")")
+  paste0("estilo <- caagro:::caagro_style(", if (length(args)) paste0("\n  ", paste(unlist(args), collapse = ",\n  "), "\n") else "", ")")
 }
 
 axis_title <- function(spec, default) {

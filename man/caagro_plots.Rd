@@ -86,7 +86,7 @@
 
 \item{type}{Plot type (see Description).}
 
-\item{style}{A \code{\link[=caagro_style]{caagro_style()}}.}
+\item{style}{A graphic style object created by the graphics editor of the application.}
 
 \item{...}{Unused.}
 
@@ -102,8 +102,9 @@
 A ggplot object.
 }
 \description{
-Every plot method returns a ggplot object styled with the given
-\code{\link[=caagro_style]{caagro_style()}}. Available \code{type}s:
+Plot methods for the result objects produced by the analyses of
+\code{\link[=run_app]{run_app()}} (and by the R scripts it exports). Every method returns a
+ggplot object. Available \code{type}s:
 \itemize{
 \item ANOVA: \code{"means"}, \code{"box"}, \code{"residuals"}.
 \item Mean comparisons: \code{"bars"}, \code{"points"}, \code{"box"}, \code{"differences"}.
@@ -119,10 +120,4 @@ Every plot method returns a ggplot object styled with the given
 \code{"contrib"}; clustering: \code{"dendrogram"}; k-means: \code{"clusters"},
 \code{"elbow"}, \code{"silhouette"}; correlation: \code{"heatmap"}.
 }
-}
-\examples{
-fit <- anova_exp(PlantGrowth, "weight", "group")
-plot(fit)
-plot(compare_means(fit, "tukey"), type = "bars")
-plot(check_assumptions(fit), type = "qq")
 }

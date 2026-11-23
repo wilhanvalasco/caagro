@@ -87,90 +87,47 @@ launch <- function(app, launch.browser, ...) {
   shiny::runApp(app, launch.browser = if (identical(launch.browser, "auto")) TRUE else launch.browser, ...)
 }
 
-#' Launch the caagro applications
+#' Open the caagro application
 #'
-#' `run_app()` opens the main application with all modules and the analysis
-#' assistant. The other functions open a single module with the same visual
-#' identity, navigation and export features. All computations are done
-#' locally by the same R functions available for scripting.
+#' `run_app()` is the single entry point of caagro. It opens the analysis
+#' platform in the browser, with the modules Exploratory analysis, ANOVA
+#' (Fisher analysis of variance for completely randomised, randomised block
+#' and factorial designs, with Tukey, Scott-Knott, SNK, LSD, Dunnett,
+#' Shapiro-Wilk and Bartlett), Regression (linear, polynomial, non-linear and
+#' binomial models), Non-parametric tests, Confidence intervals and
+#' Multivariate analysis (PCA, clustering, correlation). Every module has a
+#' "Carregar exemplo" button, a graphics editor and export to Excel, report
+#' and a reproducible R script. All computations run locally.
 #'
+#' @param modulo Module to open: `"todos"` (default, home page with all
+#'   modules), `"anova"`, `"regressao"`, `"nao_parametrica"`, `"intervalos"`,
+#'   `"multivariada"` or `"exploratoria"`.
 #' @param launch.browser Passed to [shiny::runApp()]. In non-interactive
 #'   sessions the default (`"auto"`) returns the `shiny.appobj` without
-#'   running it (useful for testing and deployment).
+#'   running it.
 #' @param ... Further arguments for [shiny::runApp()] (e.g. `port`).
 #' @return Runs the application; invisibly returns the app object when not
 #'   launched.
+#' @references
+#' Fisher, R. A. (1935). *The Design of Experiments*. Oliver and Boyd.
+#'
+#' Montgomery, D. C. (2017). *Design and Analysis of Experiments* (9th ed.).
+#' Wiley.
 #' @examples
 #' app <- run_app(launch.browser = "auto")
 #' class(app)
 #' \dontrun{
 #' run_app()
-#' run_anova()
+#' run_app("anova")
 #' }
 #' @export
-run_app <- function(launch.browser = "auto", ...) launch(caagro_app(), launch.browser, ...)
-
-#' @rdname run_app
-#' @export
-run_anova <- function(launch.browser = "auto", ...) launch(caagro_app("anova", home = FALSE), launch.browser, ...)
-
-#' @rdname run_app
-#' @export
-run_regression <- function(launch.browser = "auto", ...) launch(caagro_app("regression", home = FALSE), launch.browser, ...)
-
-#' @rdname run_app
-#' @export
-run_nonparametric <- function(launch.browser = "auto", ...) launch(caagro_app("nonparametric", home = FALSE), launch.browser, ...)
-
-#' @rdname run_app
-#' @export
-run_confidence <- function(launch.browser = "auto", ...) launch(caagro_app("confidence", home = FALSE), launch.browser, ...)
-
-#' @rdname run_app
-#' @export
-run_multivariate <- function(launch.browser = "auto", ...) launch(caagro_app("multivariate", home = FALSE), launch.browser, ...)
-
-#' @rdname run_app
-#' @export
-run_exploratory <- function(launch.browser = "auto", ...) launch(caagro_app("exploratory", home = FALSE), launch.browser, ...)
-
-#' Legacy launchers (caagro <= 0.2)
-#'
-#' Kept for backward compatibility. `anQuali()` opens the parametric module
-#' (qualitative factors: ANOVA and multiple comparisons), `anQuant()` the
-#' regression module (quantitative factors) and `anIC()` the confidence
-#' interval module. The argument `iniciar` keeps its original meaning.
-#'
-#' Differences from the legacy applications (intentional corrections):
-#' outliers are never removed or replaced automatically; the confidence level
-#' is used as entered (the legacy `anQuant` app used `1 - level`); curves are
-#' fitted to individual observations by default (fitting to means remains
-#' available as an option); the Shapiro-Wilk test is applied to model
-#' residuals.
-#'
-#' @param iniciar Logical. If `TRUE`, launches the application.
-#' @return Launches the application (or a message when `iniciar = FALSE`).
-#' @examples
-#' anQuali(iniciar = FALSE)
-#' @name legacy
-NULL
-
-#' @rdname legacy
-#' @export
-anQuali <- function(iniciar = TRUE) {
-  if (isTRUE(iniciar)) run_anova(launch.browser = TRUE) else message("Defina iniciar = TRUE para rodar o aplicativo Shiny (equivalente a run_anova()).")
-}
-
-#' @rdname legacy
-#' @export
-anQuant <- function(iniciar = TRUE) {
-  if (isTRUE(iniciar)) run_regression(launch.browser = TRUE) else message("Defina iniciar = TRUE para rodar o aplicativo Shiny (equivalente a run_regression()).")
-}
-
-#' @rdname legacy
-#' @export
-anIC <- function(iniciar = TRUE) {
-  if (isTRUE(iniciar)) run_confidence(launch.browser = TRUE) else message("Defina iniciar = TRUE para rodar o aplicativo Shiny (equivalente a run_confidence()).")
+run_app <- function(modulo = c("todos", "anova", "regressao", "nao_parametrica", "intervalos", "multivariada", "exploratoria"),
+                    launch.browser = "auto", ...) {
+  modulo <- match.arg(modulo)
+  key <- c(anova = "anova", regressao = "regression", nao_parametrica = "nonparametric", intervalos = "confidence",
+           multivariada = "multivariate", exploratoria = "exploratory")
+  app <- if (modulo == "todos") caagro_app() else caagro_app(key[[modulo]], home = FALSE)
+  launch(app, launch.browser, ...)
 }
 
 app_label <- function(x) {

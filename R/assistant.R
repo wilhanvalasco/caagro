@@ -20,7 +20,7 @@
 #' @examples
 #' suggest_method("compare", "continuous", n_groups = 5, blocked = TRUE)
 #' suggest_method("curve", "binary")
-#' @export
+#' @noRd
 suggest_method <- function(goal = c("compare", "curve", "relationship", "explore", "multivariate"),
                            response = c("continuous", "binary", "count", "ordinal"),
                            n_groups = 2, related = FALSE, blocked = FALSE, factorial = FALSE) {

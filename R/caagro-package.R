@@ -1,29 +1,10 @@
-#' caagro: Applied Science for Agricultural Data Analysis
+#' caagro: Applied Statistics for Agricultural Experimentation
 #'
 #' `caagro` (Ciencia Aplicada em Analises do Agro) is a statistical analysis
-#' platform for agricultural experimentation. Every analysis is available both
-#' as a plain R function (scriptable and testable) and through Shiny
-#' applications that call exactly the same functions.
-#'
-#' @section Main entry points:
-#' * Applications: [run_app()], [run_anova()], [run_regression()],
-#'   [run_nonparametric()], [run_confidence()], [run_multivariate()],
-#'   [run_exploratory()]. Legacy launchers [anQuali()], [anQuant()] and
-#'   [anIC()] are kept.
-#' * Data: [read_data()], [check_data()], [flag_outliers()], [to_long()].
-#' * ANOVA (Fisher, DIC/DBC/factorial; Welch as alternative): [anova_exp()],
-#'   [compare_means()] (also planned contrasts), [check_assumptions()],
-#'   [mean_test()].
-#' * Regression: [fit_regression()], [optimum_dose()].
-#' * Non-parametric: [np_test()], [np_posthoc()].
-#' * Confidence intervals (classic, per treatment and bootstrap): [conf_int()].
-#' * Multivariate: [pca_exp()], [cluster_exp()] (hierarchical or k-means),
-#'   [cor_matrix()].
-#' * Exploratory: [describe_data()].
-#' * Graphics: [caagro_style()], [theme_caagro()], [save_plot()],
-#'   [style_to_json()].
-#' * Export: [export_excel()], [export_report()], [export_script()].
-#' * Results and guidance: [result_table()], [suggest_method()].
+#' platform for agricultural experimentation used through a single function,
+#' [run_app()], which opens a point-and-click 'shiny' application. Results can
+#' be exported to Excel, to an HTML/Word report and to a reproducible R
+#' script.
 #'
 #' @keywords internal
 "_PACKAGE"

@@ -1,94 +1,86 @@
 ---
-title: "Introdução ao caagro"
+title: "Guia do aplicativo caagro"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introdução ao caagro}
+  %\VignetteIndexEntry{Guia do aplicativo caagro}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6.5, fig.height = 4.2, dpi = 96)
-library(caagro)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-O **caagro** oferece dois caminhos para a mesma análise: os aplicativos Shiny
-(`run_app()` e os módulos individuais) e as funções R. Os aplicativos chamam
-as mesmas funções descritas nas vinhetas; a aba **Exportação** de cada
-aplicativo gera o script R que reproduz a análise.
+O caagro tem uma única função: `run_app()`.
 
-## Como organizar os dados
+```{r}
+library(caagro)
+run_app()                 # página inicial com todos os módulos
+run_app("anova")          # abre direto um módulo
+```
 
-Use o **formato longo**: uma linha por unidade experimental (parcela, vaso,
-planta) e uma coluna por variável.
+Módulos disponíveis em `run_app(modulo = ...)`: `"anova"`, `"regressao"`,
+`"nao_parametrica"`, `"intervalos"`, `"multivariada"` e `"exploratoria"`.
+
+## Como fazer uma análise
+
+1. **Dados**: clique em **Carregar exemplo** ou em **Importar...** para abrir
+   uma planilha `.xlsx`, `.xls`, `.csv` ou `.txt`.
+2. **Variáveis**: escolha a variável-resposta e a coluna dos tratamentos (e
+   blocos ou outros fatores, se houver).
+3. **Método**: escolha o teste de comparação de médias ou o modelo.
+4. Clique em **Executar análise**.
+
+Os resultados aparecem na aba **Análise**, sempre na mesma ordem: resumo,
+tabela principal, comparações e pressupostos. As abas **Diagnósticos**,
+**Gráficos** e **Exportação** trazem os gráficos de resíduos, o editor
+gráfico e a exportação para Excel, relatório e script R.
+
+## Organização dos dados
+
+Use uma linha por parcela e uma coluna por variável (formato longo):
 
 | bloco | tratamento | produtividade |
 |-------|------------|---------------|
-| B1    | T1         | 4.80          |
-| B1    | T2         | 5.15          |
-| ...   | ...        | ...           |
+| B1    | T1         | 4,80          |
+| B1    | T2         | 5,15          |
 
-Se cada repetição está em uma coluna (formato largo), converta com
-`to_long()`:
+Se cada repetição estiver em uma coluna, use **Dados > Converter formato
+largo em longo**.
 
-```{r}
-largo <- data.frame(trat = c("A", "B"), R1 = c(10, 12), R2 = c(11, 13), R3 = c(9.8, 12.4))
-to_long(largo, value_cols = c("R1", "R2", "R3"), names_to = "rep", values_to = "y")
-```
+## ANOVA
 
-Arquivos `.xlsx`, `.xls`, `.csv` e `.txt` são lidos com `read_data()`, que
-detecta delimitador e separador decimal:
+* Padrão: ANOVA convencional de Fisher (teste F), em DIC, DBC ou fatorial.
+* Comparação de médias: Tukey, Scott-Knott, SNK, LSD (com DMS), Dunnett,
+  Bonferroni ou Holm.
+* **Pressupostos da ANOVA**: Shapiro-Wilk (normalidade dos resíduos) e
+  Bartlett (homogeneidade das variâncias), com interpretação.
+* Em fatoriais com interação significativa, os tratamentos são comparados
+  dentro de cada nível do outro fator.
+* ANOVA de Welch e teste t ficam em **Opções avançadas**.
 
-```{r}
-d <- read_data(system.file("extdata", "dose_resposta.csv", package = "caagro"))
-str(d)
-```
+## Demais módulos
 
-## Validação antes da análise
+* **Regressão**: linear, quadrática, cúbica, exponencial, logarítmica,
+  potência, logística, Gompertz, Michaelis-Menten, Mitscherlich,
+  log-logística, linear-platô e binomial; comparação por AICc; dose de
+  máxima eficiência técnica, dose econômica e ED50.
+* **Não paramétrica**: Kruskal-Wallis, Friedman, mediana de Mood,
+  Mann-Whitney, Wilcoxon, sinais e permutação, com comparações de Dunn ou
+  Conover.
+* **Intervalos**: médias por tratamento, diferenças, variâncias,
+  proporções e bootstrap.
+* **Multivariada**: PCA, agrupamento hierárquico, k-means e correlações.
+* **Exploratória**: estatísticas descritivas e gráficos.
 
-`check_data()` verifica tipos, ausentes, falta de variabilidade, tratamentos
-sem repetição, combinações ausentes e incompatibilidade com o delineamento.
+## Reprodutibilidade
 
-```{r}
-check_data(sim_dbc, "produtividade", "tratamento", block = "bloco", design = "DBC")
-check_data(sim_dbc, "produtividade", "tratamento", block = "bloco", design = "DIC")
-```
+A aba **Exportação** gera um script R com os mesmos parâmetros, sementes e
+exclusões usados na interface. O script chama as funções internas do
+pacote (`caagro:::anova_exp()`, por exemplo).
 
-Valores atípicos são apenas **sinalizados**:
+## Autoria
 
-```{r}
-d2 <- PlantGrowth; d2$weight[4] <- 9
-fo <- flag_outliers(d2, "weight", "group")
-fo[fo$flag, ]
-```
-
-Para excluir observações, informe-as explicitamente (`exclude`); a exclusão
-fica registrada no resultado e no script exportado.
-
-```{r}
-a <- anova_exp(d2, "weight", "group", exclude = 4)
-a$warnings
-```
-
-## O objeto de resultado
-
-Todas as funções retornam um `caagro_result`:
-
-```{r}
-fit <- anova_exp(PlantGrowth, "weight", "group")
-names(fit)
-names(fit$tables)
-summary(fit)
-cat(fit$code)
-```
-
-## Assistente de análise
-
-```{r}
-suggest_method("compare", "continuous", n_groups = 6, blocked = TRUE)
-```
-
-## Dados de exemplo
-
-Os conjuntos `sim_*` são simulados (ver `?"caagro-datasets"`).
-`PlantGrowth`, `npk`, `warpbreaks` e `sleep` são dados reais do R.
+Wilhan Valasco dos Santos (Instituto Federal Goiano, Campus Rio Verde) e
+Walter Baida Garcia Coutinho (Departamento de Estatística, Universidade
+Federal de Viçosa). Para citar: `citation("caagro")`.

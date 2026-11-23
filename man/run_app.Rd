@@ -2,32 +2,23 @@
 % Please edit documentation in R/app.R
 \name{run_app}
 \alias{run_app}
-\alias{run_anova}
-\alias{run_regression}
-\alias{run_nonparametric}
-\alias{run_confidence}
-\alias{run_multivariate}
-\alias{run_exploratory}
-\title{Launch the caagro applications}
+\title{Open the caagro application}
 \usage{
-run_app(launch.browser = "auto", ...)
-
-run_anova(launch.browser = "auto", ...)
-
-run_regression(launch.browser = "auto", ...)
-
-run_nonparametric(launch.browser = "auto", ...)
-
-run_confidence(launch.browser = "auto", ...)
-
-run_multivariate(launch.browser = "auto", ...)
-
-run_exploratory(launch.browser = "auto", ...)
+run_app(
+  modulo = c("todos", "anova", "regressao", "nao_parametrica", "intervalos",
+    "multivariada", "exploratoria"),
+  launch.browser = "auto",
+  ...
+)
 }
 \arguments{
+\item{modulo}{Module to open: \code{"todos"} (default, home page with all
+modules), \code{"anova"}, \code{"regressao"}, \code{"nao_parametrica"}, \code{"intervalos"},
+\code{"multivariada"} or \code{"exploratoria"}.}
+
 \item{launch.browser}{Passed to \code{\link[shiny:runApp]{shiny::runApp()}}. In non-interactive
 sessions the default (\code{"auto"}) returns the \code{shiny.appobj} without
-running it (useful for testing and deployment).}
+running it.}
 
 \item{...}{Further arguments for \code{\link[shiny:runApp]{shiny::runApp()}} (e.g. \code{port}).}
 }
@@ -36,16 +27,27 @@ Runs the application; invisibly returns the app object when not
 launched.
 }
 \description{
-\code{run_app()} opens the main application with all modules and the analysis
-assistant. The other functions open a single module with the same visual
-identity, navigation and export features. All computations are done
-locally by the same R functions available for scripting.
+\code{run_app()} is the single entry point of caagro. It opens the analysis
+platform in the browser, with the modules Exploratory analysis, ANOVA
+(Fisher analysis of variance for completely randomised, randomised block
+and factorial designs, with Tukey, Scott-Knott, SNK, LSD, Dunnett,
+Shapiro-Wilk and Bartlett), Regression (linear, polynomial, non-linear and
+binomial models), Non-parametric tests, Confidence intervals and
+Multivariate analysis (PCA, clustering, correlation). Every module has a
+"Carregar exemplo" button, a graphics editor and export to Excel, report
+and a reproducible R script. All computations run locally.
 }
 \examples{
 app <- run_app(launch.browser = "auto")
 class(app)
 \dontrun{
 run_app()
-run_anova()
+run_app("anova")
 }
+}
+\references{
+Fisher, R. A. (1935). \emph{The Design of Experiments}. Oliver and Boyd.
+
+Montgomery, D. C. (2017). \emph{Design and Analysis of Experiments} (9th ed.).
+Wiley.
 }

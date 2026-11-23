@@ -4,39 +4,21 @@
 \name{caagro-package}
 \alias{caagro}
 \alias{caagro-package}
-\title{caagro: Applied Science for Agricultural Data Analysis}
+\title{caagro: Applied Statistics for Agricultural Experimentation}
 \description{
 \code{caagro} (Ciencia Aplicada em Analises do Agro) is a statistical analysis
-platform for agricultural experimentation. Every analysis is available both
-as a plain R function (scriptable and testable) and through Shiny
-applications that call exactly the same functions.
+platform for agricultural experimentation used through a single function,
+\code{\link[=run_app]{run_app()}}, which opens a point-and-click 'shiny' application. Results can
+be exported to Excel, to an HTML/Word report and to a reproducible R
+script.
 }
-\section{Main entry points}{
-
-\itemize{
-\item Applications: \code{\link[=run_app]{run_app()}}, \code{\link[=run_anova]{run_anova()}}, \code{\link[=run_regression]{run_regression()}},
-\code{\link[=run_nonparametric]{run_nonparametric()}}, \code{\link[=run_confidence]{run_confidence()}}, \code{\link[=run_multivariate]{run_multivariate()}},
-\code{\link[=run_exploratory]{run_exploratory()}}. Legacy launchers \code{\link[=anQuali]{anQuali()}}, \code{\link[=anQuant]{anQuant()}} and
-\code{\link[=anIC]{anIC()}} are kept.
-\item Data: \code{\link[=read_data]{read_data()}}, \code{\link[=check_data]{check_data()}}, \code{\link[=flag_outliers]{flag_outliers()}}, \code{\link[=to_long]{to_long()}}.
-\item ANOVA (Fisher, DIC/DBC/factorial; Welch as alternative): \code{\link[=anova_exp]{anova_exp()}},
-\code{\link[=compare_means]{compare_means()}} (also planned contrasts), \code{\link[=check_assumptions]{check_assumptions()}},
-\code{\link[=mean_test]{mean_test()}}.
-\item Regression: \code{\link[=fit_regression]{fit_regression()}}, \code{\link[=optimum_dose]{optimum_dose()}}.
-\item Non-parametric: \code{\link[=np_test]{np_test()}}, \code{\link[=np_posthoc]{np_posthoc()}}.
-\item Confidence intervals (classic, per treatment and bootstrap): \code{\link[=conf_int]{conf_int()}}.
-\item Multivariate: \code{\link[=pca_exp]{pca_exp()}}, \code{\link[=cluster_exp]{cluster_exp()}} (hierarchical or k-means),
-\code{\link[=cor_matrix]{cor_matrix()}}.
-\item Exploratory: \code{\link[=describe_data]{describe_data()}}.
-\item Graphics: \code{\link[=caagro_style]{caagro_style()}}, \code{\link[=theme_caagro]{theme_caagro()}}, \code{\link[=save_plot]{save_plot()}},
-\code{\link[=style_to_json]{style_to_json()}}.
-\item Export: \code{\link[=export_excel]{export_excel()}}, \code{\link[=export_report]{export_report()}}, \code{\link[=export_script]{export_script()}}.
-\item Results and guidance: \code{\link[=result_table]{result_table()}}, \code{\link[=suggest_method]{suggest_method()}}.
-}
-}
-
 \author{
-\strong{Maintainer}: Wilhan Valasco dos Santos \email{wilhanvalasco@hotmail.com}
+\strong{Maintainer}: Wilhan Valasco dos Santos \email{wilhanvalasco@hotmail.com} (\href{https://orcid.org/0000-0002-6533-2407}{ORCID}) (Instituto Federal Goiano, Campus Rio Verde, Rio Verde, Goiás, Brasil) [copyright holder]
+
+Authors:
+\itemize{
+  \item Walter Baida Garcia Coutinho \email{walterbgc1@gmail.com} (\href{https://orcid.org/0000-0002-9894-6122}{ORCID}) (Departamento de Estatística, Universidade Federal de Viçosa (UFV), Viçosa, Minas Gerais, Brasil) [copyright holder]
+}
 
 }
 \keyword{internal}

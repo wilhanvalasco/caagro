@@ -53,8 +53,7 @@ sim_notas
 \strong{All datasets below are simulated} (see \code{data-raw/make_data.R} in the
 package sources) to illustrate the methods. They must not be cited as
 experimental results. Real classic datasets shipped with R
-(\code{datasets::PlantGrowth}, \code{datasets::npk}, \code{datasets::warpbreaks},
-\code{datasets::sleep}) are also used in the examples.
+(\code{datasets::PlantGrowth}) is also used as an example in the application.
 }
 \details{
 \itemize{
@@ -86,7 +85,7 @@ contains negative severity values and should be treated as illustrative
 only.
 }
 \examples{
+head(sim_soja)
 head(sim_dbc)
-anova_exp(sim_dbc, "produtividade", "tratamento", block = "bloco")
 }
 \keyword{datasets}
