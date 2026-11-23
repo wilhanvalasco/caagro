@@ -12,7 +12,7 @@ caagro
 estatística para experimentação agrícola — em R e em aplicativos Shiny
 </p>
 <p align="center">
-<img src="https://img.shields.io/badge/vers%C3%A3o-1.0.0-218568" alt="versão">
+<img src="https://img.shields.io/badge/vers%C3%A3o-1.1.0-218568" alt="versão">
 <img src="https://img.shields.io/badge/R-%E2%89%A5%204.1-315775" alt="R >= 4.1">
 <img src="https://img.shields.io/badge/licen%C3%A7a-MIT-14283F" alt="MIT">
 <img src="https://img.shields.io/badge/testes-testthat-75AE97" alt="testthat">
@@ -37,14 +37,14 @@ reproduzido em R.
 
 ## Destaques
 
-|                         |                                                                                                                                                                                                                                          |
-|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Rigor estatístico**   | Modelos corretos para cada delineamento (o DBC nunca é analisado como DIC), somas de quadrados tipo I/II/III, médias marginais estimadas para dados desbalanceados, comparação com implementações de referência em testes automatizados. |
-| **Transparência**       | Nenhuma observação é removida automaticamente; exclusões são explícitas e registradas. Falhas de convergência são relatadas, nunca mascaradas.                                                                                           |
-| **Didática**            | Cada resultado traz três níveis: *Resultado*, *Interpretação* e *Cuidados* (ocultáveis no “modo científico”). Assistente de análise baseado em regras transparentes.                                                                     |
-| **Gráficos editoriais** | Um único editor gráfico para todos os módulos, cinco temas, exportação re-renderizada em PNG, TIFF, SVG e PDF (300–1200 dpi).                                                                                                            |
-| **Reprodutibilidade**   | Script R, configuração JSON, versões e sementes exportados junto com relatórios Excel e HTML/Word.                                                                                                                                       |
-| **Local e privado**     | Tudo roda no seu computador; sem conta, telemetria ou envio de dados.                                                                                                                                                                    |
+|                         |                                                                                                                                                                                                                                                                                                                       |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Rigor estatístico**   | Modelos corretos para cada delineamento (o DBC nunca é analisado como DIC), ANOVA convencional de Fisher como padrão (somas de quadrados sequenciais, como `aov`; tipos II/III opcionais), médias marginais estimadas para dados desbalanceados, comparação com implementações de referência em testes automatizados. |
+| **Transparência**       | Nenhuma observação é removida automaticamente; exclusões são explícitas e registradas. Falhas de convergência são relatadas, nunca mascaradas.                                                                                                                                                                        |
+| **Didática**            | Cada resultado traz três níveis: *Resultado*, *Interpretação* e *Cuidados* (ocultáveis no “modo científico”). Assistente de análise baseado em regras transparentes.                                                                                                                                                  |
+| **Gráficos editoriais** | Um único editor gráfico para todos os módulos, cinco temas, exportação re-renderizada em PNG, TIFF, SVG e PDF (300–1200 dpi).                                                                                                                                                                                         |
+| **Reprodutibilidade**   | Script R, configuração JSON, versões e sementes exportados junto com relatórios Excel e HTML/Word.                                                                                                                                                                                                                    |
+| **Local e privado**     | Tudo roda no seu computador; sem conta, telemetria ou envio de dados.                                                                                                                                                                                                                                                 |
 
 ## Instalação
 
@@ -52,7 +52,7 @@ reproduzido em R.
 # a partir do código-fonte (diretório do pacote)
 install.packages(c("shiny", "bslib", "ggplot2", "DT", "openxlsx", "readxl",
                    "jsonlite", "mvtnorm", "cluster", "rlang"))
-install.packages("caagro_1.0.0.tar.gz", repos = NULL, type = "source")
+install.packages("caagro_1.1.0.tar.gz", repos = NULL, type = "source")
 
 # recomendados (exportação de alta qualidade e testes)
 install.packages(c("ragg", "svglite", "rmarkdown"))
@@ -75,8 +75,21 @@ run_multivariate()
 anQuali(); anQuant(); anIC()   # lançadores legados continuam funcionando
 ```
 
-Cada aplicativo segue a mesma navegação: **Dados → Análise →
-Diagnósticos → Gráficos → Exportação**.
+Cada aplicativo segue a mesma sequência: **Carregar exemplo** (ou
+importar planilha) → escolher as variáveis → **Executar análise**. Os
+resultados aparecem em **Análise** (resumo, tabela principal,
+comparações e pressupostos), com **Diagnósticos**, **Gráficos** e
+**Exportação** em abas próprias. Opções estatísticas avançadas ficam
+recolhidas.
+
+| Módulo          | Exemplo incluído                                           | Método padrão                |
+|-----------------|------------------------------------------------------------|------------------------------|
+| ANOVA           | Produtividade de soja (DIC), ensaio em DBC, fatorial 3 x 3 | ANOVA de Fisher + Tukey a 5% |
+| Regressão       | Resposta à dose; germinação x dose (binomial)              | Linear e quadrático          |
+| Não paramétrica | Notas de severidade (1 a 9)                                | Kruskal-Wallis + Dunn (Holm) |
+| Intervalos      | Peso de plantas (dados reais)                              | IC 95% por tratamento        |
+| Multivariada    | 36 genótipos, 6 caracteres                                 | PCA padronizada              |
+| Exploratória    | Altura de plantas                                          | Estatística descritiva       |
 
 ## Análise paramétrica
 
@@ -85,14 +98,14 @@ fit <- anova_exp(sim_dbc, response = "produtividade",
                  treatment = "tratamento", block = "bloco")   # DBC
 fit                                    # quadro da ANOVA, CV%, médias, efeitos
 compare_means(fit, "scott_knott")      # ou "tukey", "snk", "lsd", "dunnett", ...
-check_assumptions(fit)                 # Shapiro-Wilk, Bartlett, Levene, Cook...
+check_assumptions(fit)                 # Shapiro-Wilk e Bartlett (+ Levene, Cook...)
 
 # fatorial em blocos com somas de quadrados tipo III e efeitos simples
 f <- anova_exp(npk, "yield", "N", block = "block", factors = c("P", "K"), ss_type = "III")
 compare_means(f, "tukey", factor = "N", by = "P")
 
 mean_test(sleep, "extra", "group", type = "paired", id = "ID")
-welch_anova(PlantGrowth, "weight", "group")
+anova_exp(PlantGrowth, "weight", "group", method = "welch")   # alternativa
 ```
 
 <p align="center">
@@ -100,7 +113,10 @@ welch_anova(PlantGrowth, "weight", "group")
 <img src="man/figures/fig-qq.png" width="48%" alt="Q-Q dos resíduos">
 </p>
 <p align="center">
-<img src="man/figures/app-anova.jpg" width="92%" alt="Módulo ANOVA">
+<img src="man/figures/app-example.jpg" width="92%" alt="Exemplo carregado no módulo ANOVA">
+</p>
+<p align="center">
+<img src="man/figures/app-anova.jpg" width="92%" alt="Resultado da ANOVA: resumo, quadro, Tukey e pressupostos">
 </p>
 
 ## Regressão
@@ -115,7 +131,7 @@ r <- fit_regression(sim_dose, x = "dose", y = "produtividade",
                     model = c("linear", "quadratic", "linear_plateau", "mitscherlich"),
                     group = "cultivar", band = "confidence")
 result_table(r, "comparison")      # R², pseudo-R², RMSE, AIC, AICc, BIC, pesos de Akaike
-compare_curves(r, "quadratic")     # as curvas dos grupos diferem?
+result_table(r, "curve_test")      # as curvas dos grupos diferem?
 optimum_dose(r, "quadratic", price_ratio = 0.004)   # MET e dose econômica (método delta)
 
 b <- fit_regression(subset(sim_germinacao, dose > 0), "dose", "germinadas",
@@ -144,10 +160,10 @@ np_test(PlantGrowth, "weight", "group", test = "permutation", R = 4999, seed = 1
 ## Intervalos de confiança
 
 ``` r
-conf_int_groups(PlantGrowth, "weight", "group", variance = "pooled")
+conf_int(PlantGrowth, "weight", "group_means", group = "group")
 conf_int(PlantGrowth, "weight", "variance")
 conf_int(subset(PlantGrowth, group != "trt2"), "weight", "diff_means_welch", group = "group")
-conf_int_boot(PlantGrowth, "weight", "median", type = "bca", R = 5000, seed = 42)
+conf_int(PlantGrowth, "weight", "median", method = "bootstrap", R = 5000, seed = 42)
 ```
 
 <p align="center">
@@ -161,7 +177,7 @@ conf_int_boot(PlantGrowth, "weight", "median", type = "bca", R = 5000, seed = 42
 p <- pca_exp(sim_multivariado, group = "grupo", label = "genotipo")
 plot(p, "biplot")
 cluster_exp(sim_multivariado, label = "genotipo", method = "ward.D2", k = 3)
-kmeans_exp(sim_multivariado, k = 3, seed = 123)
+cluster_exp(sim_multivariado, method = "kmeans", k = 3, seed = 123)
 cor_matrix(sim_multivariado, method = "spearman", p_adjust = "holm")
 ```
 
@@ -194,13 +210,22 @@ Black & White*, *Scientific Dark* e *caagro Corporate*.
 <img src="man/figures/app-editor.jpg" width="92%" alt="Editor gráfico universal">
 </p>
 
+## Funções do pacote
+
+A versão 1.1 reduziu a interface de programação a 41 funções exportadas
+(eram 53), agrupando variantes em argumentos:
+`anova_exp(method = "welch")`, `compare_means(contrasts = ...)`,
+`conf_int(parameter = "group_means")`, `conf_int(method = "bootstrap")`,
+`cluster_exp(method = "kmeans")`, `export_script(config = TRUE)`; o
+teste de igualdade de curvas é calculado automaticamente por
+`fit_regression()` (tabela `curve_test`).
+
 ## Exportação e reprodutibilidade
 
 ``` r
 export_excel(list(fit, compare_means(fit), check_assumptions(fit)), "resultados.xlsx")
 export_report(list(fit, compare_means(fit)), "relatorio.html")   # .docx/.pdf com Pandoc
-export_script(list(fit, compare_means(fit)), "analise.R", data_file = "dados.xlsx")
-export_config(fit, "configuracao.json")
+export_script(list(fit, compare_means(fit)), "analise.R", data_file = "dados.xlsx", config = TRUE)
 ```
 
 Todo resultado é um objeto `caagro_result` com dados usados, método,

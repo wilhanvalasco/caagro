@@ -5,7 +5,7 @@
 emm_grid <- function(fit, specs) {
   xlev <- fit$xlevels
   if (!all(specs %in% names(xlev))) {
-    abort_caagro("Fator(es) nao presente(s) no modelo: ",
+    abort_caagro("Fator(es) n\u00e3o presente(s) no modelo: ",
                  paste(setdiff(specs, names(xlev)), collapse = ", "))
   }
   mf <- stats::model.frame(fit)

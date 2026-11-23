@@ -1,3 +1,55 @@
+# caagro 1.1.0
+
+Auditoria de usabilidade, interface e estatística.
+
+## Estatística
+
+* A ANOVA convencional de Fisher (somas de quadrados sequenciais, como
+  `aov()`) passou a ser o padrão de `anova_exp()`; tipos II e III continuam
+  disponíveis. A ANOVA de Welch virou alternativa (`method = "welch"`).
+* `check_assumptions()` apresenta Shapiro-Wilk (resíduos) e Bartlett como
+  testes principais, com interpretação em linguagem simples; Levene,
+  Brown-Forsythe e Fligner-Killeen ficam na tabela `robust`. Em fatoriais,
+  Bartlett passou a usar as combinações de tratamentos (antes usava apenas o
+  primeiro fator).
+* Dunnett deixou de exibir "letras" (`controle`, `*`, `ns`) na coluna de
+  grupos; agora há a coluna `vs_controle`.
+* Nova tabela `dms` (diferença mínima significativa) para Tukey e LSD.
+* Corrigido erro na ANOVA tipo I com termos confundidos (ex.: `npk`).
+* Em fatoriais com interação significativa, o aplicativo compara os níveis
+  de um fator dentro dos níveis do outro automaticamente.
+
+## API (menos funções)
+
+* 53 → 41 funções exportadas. Removidas da exportação (continuam internas):
+  `welch_anova()` → `anova_exp(method = "welch")`; `contrast_test()` →
+  `compare_means(contrasts = )`; `conf_int_groups()` →
+  `conf_int(parameter = "group_means")`; `conf_int_boot()` →
+  `conf_int(method = "bootstrap")`; `kmeans_exp()` →
+  `cluster_exp(method = "kmeans")`; `compare_curves()` → tabela
+  `curve_test` de `fit_regression()`; `export_config()` →
+  `export_script(config = TRUE)`; `apply_style()`, `style_code()`,
+  `plot_types()`, `regression_models()`, `data_sheets()`.
+
+## Interface
+
+* Português brasileiro com acentuação em toda a interface, mensagens,
+  tabelas, relatórios e planilhas exportadas; números com vírgula decimal.
+* Botão "Carregar exemplo" em todos os módulos, com descrição do
+  experimento, variáveis, configuração e o que observar; os campos são
+  preenchidos automaticamente.
+* Resultados reorganizados: resumo compacto → tabela principal (Fonte de
+  variação | GL | SQ | QM | F | Valor-p) → comparação de médias
+  (Tratamento | Média | Grupo) → Pressupostos da ANOVA. Textos explicativos e
+  detalhes em painéis recolhidos; opções avançadas recolhidas.
+* Corrigido: "Executar análise" não mostrava resultados até o usuário abrir a
+  aba Análise; tabelas com grande área vazia; menu de navegação quebrando em
+  1024 px; menu móvel que não fechava; controles escondidos em celulares;
+  campos de exportação comprimidos.
+* Removido o interruptor "Modo científico" (as explicações já ficam
+  recolhidas).
+* Novos conjuntos simulados: `sim_soja` e `sim_notas`.
+
 # caagro 1.0.0
 
 Reestruturação completa do pacote.

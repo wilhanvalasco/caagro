@@ -226,12 +226,7 @@ style_from_json <- function(json) {
   structure(out, class = "caagro_style")
 }
 
-#' R code that reproduces a style
-#' @param style A `caagro_style`.
-#' @return A character string with R code.
-#' @examples
-#' cat(style_code(caagro_style(theme = "dark")))
-#' @export
+# R code that reproduces a style (internal; used by the graphics editor)
 style_code <- function(style) {
   dflt <- unclass(caagro_style())
   s <- unclass(style)
@@ -261,15 +256,7 @@ num_labeller <- function(decimals) {
   function(v) formatC(v, format = "f", digits = decimals)
 }
 
-#' Apply a caagro style to a ggplot
-#'
-#' @param p A ggplot produced by caagro (or any ggplot; set attribute
-#'   `caagro_axes` to `c(x = "continuous"|"discrete", y = ...)`).
-#' @param style A `caagro_style`.
-#' @param defaults Named list of default texts (`title`, `subtitle`, `x`, `y`,
-#'   `legend`) produced by the analysis.
-#' @return A ggplot.
-#' @export
+# Apply a caagro style to a ggplot produced by caagro (internal)
 apply_style <- function(p, style = caagro_style(), defaults = list()) {
   if (!inherits(style, "caagro_style")) style <- do.call(caagro_style, style)
   axes <- attr(p, "caagro_axes") %||% c(x = "continuous", y = "continuous")

@@ -9,6 +9,8 @@
 \alias{sim_dose}
 \alias{sim_germinacao}
 \alias{sim_multivariado}
+\alias{sim_soja}
+\alias{sim_notas}
 \title{Simulated example datasets}
 \format{
 Data frames.
@@ -22,6 +24,10 @@ An object of class \code{data.frame} with 48 rows and 4 columns.
 An object of class \code{data.frame} with 56 rows and 5 columns.
 
 An object of class \code{data.frame} with 36 rows and 8 columns.
+
+An object of class \code{data.frame} with 20 rows and 3 columns.
+
+An object of class \code{data.frame} with 30 rows and 3 columns.
 }
 \source{
 Simulated with \code{set.seed(20251123)}.
@@ -38,6 +44,10 @@ sim_dose
 sim_germinacao
 
 sim_multivariado
+
+sim_soja
+
+sim_notas
 }
 \description{
 \strong{All datasets below are simulated} (see \code{data-raw/make_data.R} in the
@@ -58,6 +68,12 @@ experimental results. Real classic datasets shipped with R
 replicates; \code{cultivar}, \code{dose}, \code{rep}, \code{produtividade}.
 \item \code{sim_germinacao}: binomial dose-response (germinated seeds out of 50)
 for two products; \code{produto}, \code{dose}, \code{rep}, \code{germinadas}, \code{total}.
+\item \code{sim_soja}: completely randomised design, soybean yield (sc/ha) of 4
+treatments (Testemunha, Produto A, B, C) x 5 replicates; \code{tratamento},
+\code{repeticao}, \code{produtividade}. Used as the ANOVA example of the app.
+\item \code{sim_notas}: disease severity scores (ordinal scale 1-9) of 5
+treatments x 6 replicates; \code{tratamento}, \code{repeticao}, \code{nota}. Used as the
+Kruskal-Wallis example of the app.
 \item \code{sim_multivariado}: 36 genotypes from 3 groups, 6 traits; \code{genotipo},
 \code{grupo}, \code{altura}, \code{diam_colmo}, \code{massa_100}, \code{n_fileiras}, \code{ciclo},
 \code{produtividade}.

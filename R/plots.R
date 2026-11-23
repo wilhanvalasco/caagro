@@ -5,41 +5,49 @@ finish_plot <- function(p, axes = c(x = "continuous", y = "continuous"), groups 
   p
 }
 
-#' Plot types available for a caagro result
-#' @param x A `caagro_result`.
-#' @return Named character vector (labels in Portuguese, values = `type`).
-#' @examples
-#' plot_types(anova_exp(PlantGrowth, "weight", "group"))
-#' @export
+# Plot types available for a caagro result (internal; listed in ?caagro_plots)
 plot_types <- function(x) {
   cls <- class(x)[1]
   switch(cls,
-    caagro_anova = c("Medias e IC" = "means", "Boxplot" = "box", "Residuos" = "residuals"),
-    caagro_multcomp = c("Barras com letras" = "bars", "Pontos com letras" = "points", "Boxplot com letras" = "box", "Diferencas (IC)" = "differences"),
-    caagro_diagnostics = c("Q-Q dos residuos" = "qq", "Residuos x ajustados" = "resid_fitted", "Escala-locacao" = "scale_location", "Distancia de Cook" = "cooks", "Histograma dos residuos" = "hist"),
+    caagro_anova = c("M\u00e9dias e IC" = "means", "Boxplot" = "box", "Res\u00edduos" = "residuals"),
+    caagro_multcomp = c("Barras com letras" = "bars", "Pontos com letras" = "points", "Boxplot com letras" = "box", "Diferen\u00e7as (IC)" = "differences"),
+    caagro_diagnostics = c("Q-Q dos res\u00edduos" = "qq", "Res\u00edduos x ajustados" = "resid_fitted", "Escala-loca\u00e7\u00e3o" = "scale_location", "Dist\u00e2ncia de Cook" = "cooks", "Histograma dos res\u00edduos" = "hist"),
     caagro_ci_groups = c("Intervalos (vertical)" = "pointrange", "Intervalos (horizontal)" = "forest", "Barras com IC" = "bars"),
-    caagro_ci = c("Intervalo" = "pointrange", "Distribuicao bootstrap" = "bootstrap"),
-    caagro_test = c("Distribuicao por grupo" = "box", "Estimativa e IC" = "estimate"),
+    caagro_ci = c("Intervalo" = "pointrange", "Distribui\u00e7\u00e3o bootstrap" = "bootstrap"),
+    caagro_test = c("Distribui\u00e7\u00e3o por grupo" = "box", "Estimativa e IC" = "estimate"),
     caagro_describe = c("Histograma" = "hist", "Boxplot" = "box", "Densidade" = "density", "Q-Q" = "qq", "Violino" = "violin"),
-    caagro_regression = c("Curvas ajustadas" = "fit", "Painel por grupo" = "facet", "Residuos x ajustados" = "residuals", "Q-Q dos residuos" = "qq"),
-    caagro_model_comparison = c("Curvas sobrepostas" = "overlay", "Criterio de informacao" = "ic"),
+    caagro_regression = c("Curvas ajustadas" = "fit", "Painel por grupo" = "facet", "Res\u00edduos x ajustados" = "residuals", "Q-Q dos res\u00edduos" = "qq"),
+    caagro_model_comparison = c("Curvas sobrepostas" = "overlay", "Crit\u00e9rio de informa\u00e7\u00e3o" = "ic"),
     caagro_np = c(c("Boxplot" = "box", "Violino" = "violin", "Pontos e mediana/IQR" = "dots"),
-                  if (!is.null(x$tables$pairs)) c("Mapa de p (pares)" = "heatmap", "Estatistica das comparacoes" = "effect"),
+                  if (!is.null(x$tables$pairs)) c("Mapa de p (pares)" = "heatmap", "Estat\u00edstica das compara\u00e7\u00f5es" = "effect"),
                   if (!is.null(x$settings$block)) c("Perfis por bloco" = "blocks")),
-    caagro_pca = c("Scree plot" = "scree", "Biplot" = "biplot", "Scores" = "scores", "Loadings" = "loadings", "Circulo de correlacoes" = "circle", "Contribuicoes" = "contrib"),
+    caagro_pca = c("Scree plot" = "scree", "Biplot" = "biplot", "Scores" = "scores", "Loadings" = "loadings", "Circulo de correla\u00e7\u00f5es" = "circle", "Contribui\u00e7\u00f5es" = "contrib"),
     caagro_cluster = c("Dendrograma" = "dendrogram"),
     caagro_kmeans = c("Grupos (PCs)" = "clusters", "Cotovelo" = "elbow", "Silhueta" = "silhouette"),
     caagro_cor = c("Mapa de calor" = "heatmap"),
-    c("Grafico" = "default"))
+    c("Gr\u00e1fico" = "default"))
 }
 
 #' Plot methods for caagro results
 #'
-#' Every plot method returns a ggplot object styled with [apply_style()].
-#' Available `type`s are listed by [plot_types()].
+#' Every plot method returns a ggplot object styled with the given
+#' [caagro_style()]. Available `type`s:
+#' * ANOVA: `"means"`, `"box"`, `"residuals"`.
+#' * Mean comparisons: `"bars"`, `"points"`, `"box"`, `"differences"`.
+#' * Diagnostics: `"qq"`, `"resid_fitted"`, `"scale_location"`, `"cooks"`, `"hist"`.
+#' * Group intervals: `"pointrange"`, `"forest"`, `"bars"`; other intervals:
+#'   `"pointrange"`, `"bootstrap"`.
+#' * t tests: `"box"`, `"estimate"`. Descriptives: `"hist"`, `"box"`,
+#'   `"density"`, `"qq"`, `"violin"`.
+#' * Regression: `"fit"`, `"facet"`, `"residuals"`, `"qq"`, `"ic"`.
+#' * Non-parametric: `"box"`, `"violin"`, `"dots"`, `"heatmap"`, `"effect"`,
+#'   `"blocks"`.
+#' * PCA: `"biplot"`, `"scree"`, `"scores"`, `"loadings"`, `"circle"`,
+#'   `"contrib"`; clustering: `"dendrogram"`; k-means: `"clusters"`,
+#'   `"elbow"`, `"silhouette"`; correlation: `"heatmap"`.
 #'
 #' @param x A caagro result.
-#' @param type Plot type (see [plot_types()]).
+#' @param type Plot type (see Description).
 #' @param style A [caagro_style()].
 #' @param ... Unused.
 #' @return A ggplot object.
@@ -78,7 +86,7 @@ plot.caagro_multcomp <- function(x, type = c("bars", "points", "box", "differenc
   if (type == "differences") {
     pr <- x$tables$pairs
     if (all(is.na(pr$lower %||% NA))) {
-      p <- ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 0, label = "Este procedimento nao fornece intervalos para as diferencas.") + ggplot2::theme_void()
+      p <- ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 0, label = "Este procedimento n\u00e3o fornece intervalos para as diferen\u00e7as.") + ggplot2::theme_void()
       return(p)
     }
     pr$contrast <- factor(pr$contrast, levels = rev(pr$contrast))
@@ -87,10 +95,10 @@ plot.caagro_multcomp <- function(x, type = c("bars", "points", "box", "differenc
       ggplot2::geom_errorbarh(ggplot2::aes(xmin = .data$lower, xmax = .data$upper), height = g$errorbar_width,
                               colour = "#315775", linewidth = g$line_width) +
       ggplot2::geom_point(ggplot2::aes(colour = .data$significant), size = g$point_size + 0.6) +
-      ggplot2::scale_colour_manual(values = c(`TRUE` = "#F28C28", `FALSE` = "#315775"), labels = c(`TRUE` = "Significativa", `FALSE` = "Nao significativa"), name = NULL)
+      ggplot2::scale_colour_manual(values = c(`TRUE` = "#F28C28", `FALSE` = "#315775"), labels = c(`TRUE` = "Significativa", `FALSE` = "N\u00e3o significativa"), name = NULL)
     if (!is.null(by)) p <- p + ggplot2::facet_wrap(stats::as.formula(paste0("~`", by, "`")), scales = "free_y")
     return(apply_style(finish_plot(p, c(x = "continuous", y = "discrete"),
-                                   defaults = list(title = "Diferencas estimadas", subtitle = x$method, x = "Diferenca", y = "")), style))
+                                   defaults = list(title = "Diferen\u00e7as estimadas", subtitle = x$method, x = "Diferen\u00e7a", y = "")), style))
   }
   colour_var <- if (!is.null(by)) by else ".x"
   m$.col <- as.character(m[[colour_var]]); d$.col <- as.character(d[[colour_var]])
@@ -152,8 +160,8 @@ plot.caagro_multcomp <- function(x, type = c("bars", "points", "box", "differenc
   }
   if (type == "bars") p <- p + ggplot2::expand_limits(y = 0)
   p <- p + ggplot2::expand_limits(y = max(m$.lab_y, na.rm = TRUE) + 0.06 * yr)
-  ttl$caption <- paste0("Barras: IC de ", round(100 * (x$settings$conf_level %||% 0.95)), "% da media (erro do modelo).",
-                        if (isTRUE(g$show_letters) && !all(m$letras == "")) " Medias com a mesma letra nao diferem." else "")
+  ttl$caption <- paste0("Barras: IC de ", round(100 * (x$settings$conf_level %||% 0.95)), "% da m\u00e9dia (erro do modelo).",
+                        if (isTRUE(g$show_letters) && !all(m$letras == "")) " M\u00e9dias com a mesma letra n\u00e3o diferem." else "")
   p <- p + ggplot2::guides(colour = "none")
   if (is.null(by)) p <- p + ggplot2::guides(fill = "none")
   apply_style(finish_plot(p, c(x = "discrete", y = "continuous"), groups = groups, defaults = ttl), style)
@@ -181,29 +189,29 @@ plot.caagro_diagnostics <- function(x, type = c("qq", "resid_fitted", "scale_loc
       ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$lo, ymax = .data$hi), fill = pal[["verde_suave"]], alpha = g$band_alpha) +
       ggplot2::geom_abline(slope = 1, intercept = 0, colour = pal[["verde_cientifico"]], linewidth = g$line_width)
     p <- base_pts(p)
-    def <- list(title = "Grafico Q-Q dos residuos", subtitle = "Residuos padronizados versus quantis da normal (faixa: envelope aproximado de 95%)",
-                x = "Quantis teoricos", y = "Residuos padronizados")
+    def <- list(title = "Gr\u00e1fico Q-Q dos res\u00edduos", subtitle = "Res\u00edduos padronizados versus quantis da normal (faixa: envelope aproximado de 95%)",
+                x = "Quantis te\u00f3ricos", y = "Res\u00edduos padronizados")
   } else if (type == "resid_fitted") {
     p <- ggplot2::ggplot(inf, ggplot2::aes(.data$fitted, .data$residual)) +
       ggplot2::geom_hline(yintercept = 0, colour = pal[["cinza_tecnico"]], linetype = "dashed")
     p <- base_pts(p)
-    def <- list(title = "Residuos versus valores ajustados", subtitle = "Padroes (funil, curvatura) indicam heterocedasticidade ou falta de ajuste", x = "Valores ajustados", y = "Residuos")
+    def <- list(title = "Res\u00edduos versus valores ajustados", subtitle = "Padr\u00f5es (funil, curvatura) indicam heterocedasticidade ou falta de ajuste", x = "Valores ajustados", y = "Res\u00edduos")
   } else if (type == "scale_location") {
     inf$.sr <- sqrt(abs(inf$std_residual))
     p <- ggplot2::ggplot(inf, ggplot2::aes(.data$fitted, .data$.sr))
     p <- base_pts(p)
-    def <- list(title = "Escala-locacao", subtitle = "Tendencia crescente sugere variancia nao constante", x = "Valores ajustados", y = "Raiz de |residuos padronizados|")
+    def <- list(title = "Escala-loca\u00e7\u00e3o", subtitle = "Tend\u00eancia crescente sugere vari\u00e2ncia n\u00e3o constante", x = "Valores ajustados", y = "Raiz de |res\u00edduos padronizados|")
   } else if (type == "cooks") {
     inf$.i <- seq_len(nrow(inf))
     p <- ggplot2::ggplot(inf, ggplot2::aes(.data$.i, .data$cooks)) +
       ggplot2::geom_segment(ggplot2::aes(xend = .data$.i, yend = 0), colour = pal[["cinza_tecnico"]], linewidth = 0.4) +
       ggplot2::geom_hline(yintercept = 4 / nrow(inf), colour = pal[["laranja"]], linetype = "dashed")
     p <- base_pts(p)
-    def <- list(title = "Distancia de Cook", subtitle = "Linha tracejada: 4/n", x = "Observacao (ordem)", y = "Distancia de Cook")
+    def <- list(title = "Dist\u00e2ncia de Cook", subtitle = "Linha tracejada: 4/n", x = "Observa\u00e7\u00e3o (ordem)", y = "Dist\u00e2ncia de Cook")
   } else {
     p <- ggplot2::ggplot(inf, ggplot2::aes(.data$residual)) +
       ggplot2::geom_histogram(bins = max(5, min(30, ceiling(sqrt(nrow(inf))) + 2)), fill = pal[["azul_secundario"]], colour = "white", alpha = 0.9)
-    def <- list(title = "Distribuicao dos residuos", x = "Residuos", y = "Frequencia")
+    def <- list(title = "Distribui\u00e7\u00e3o dos res\u00edduos", x = "Res\u00edduos", y = "Frequ\u00eancia")
   }
   apply_style(finish_plot(p, defaults = def), style)
 }
@@ -220,8 +228,8 @@ plot.caagro_ci_groups <- function(x, type = c("pointrange", "forest", "bars"), s
   groups <- levels(it$.x)
   def <- list(title = resp, subtitle = x$method, x = grp, y = resp,
               caption = paste0(round(100 * x$settings$conf_level), "% ", if (x$settings$simultaneous == "bonferroni") "(simultaneos, Bonferroni)" else "(individuais)",
-                               "; variancia ", if (x$settings$variance == "pooled") "combinada (QM do residuo)." else "separada por grupo.",
-                               " Sobreposicao de intervalos nao e teste de diferenca."))
+                               "; vari\u00e2ncia ", if (x$settings$variance == "pooled") "combinada (QM do res\u00edduo)." else "separada por grupo.",
+                               " Sobreposi\u00e7\u00e3o de intervalos n\u00e3o \u00e9 teste de diferen\u00e7a."))
   if (type == "forest") {
     p <- ggplot2::ggplot(it, ggplot2::aes(y = .data$.x, x = .data$estimate)) +
       ggplot2::geom_errorbarh(ggplot2::aes(xmin = .data$lower, xmax = .data$upper, colour = .data$.x), height = g$errorbar_width, linewidth = g$line_width) +
@@ -258,7 +266,7 @@ plot.caagro_ci <- function(x, type = c("pointrange", "bootstrap"), style = caagr
       ggplot2::geom_histogram(bins = 40, fill = pal[["azul_secundario"]], colour = "white", alpha = 0.9) +
       ggplot2::annotate("rect", xmin = it$lower, xmax = it$upper, ymin = -Inf, ymax = Inf, fill = pal[["verde_suave"]], alpha = g$band_alpha) +
       ggplot2::geom_vline(xintercept = it$estimate, colour = pal[["laranja"]], linewidth = g$line_width)
-    return(apply_style(finish_plot(p, defaults = list(title = "Distribuicao bootstrap", subtitle = x$method, x = x$settings$statistic, y = "Frequencia")), style))
+    return(apply_style(finish_plot(p, defaults = list(title = "Distribui\u00e7\u00e3o bootstrap", subtitle = x$method, x = x$settings$statistic, y = "Frequ\u00eancia")), style))
   }
   it$.lab <- it$parameter
   p <- ggplot2::ggplot(it, ggplot2::aes(y = .data$.lab, x = .data$estimate)) +
@@ -276,7 +284,7 @@ plot.caagro_test <- function(x, type = c("box", "estimate"), style = caagro_styl
   if (is.null(resp) || is.null(x$data_used) || type == "estimate" || is.null(grp)) {
     tb <- x$tables$test %||% x$tables[[1]]
     if (!all(c("estimate", "lower", "upper") %in% names(tb))) {
-      p <- ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 0, label = "Sem grafico especifico para este resultado.") + ggplot2::theme_void()
+      p <- ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 0, label = "Sem gr\u00e1fico espec\u00edfico para este resultado.") + ggplot2::theme_void()
       return(p)
     }
     fake <- structure(list(tables = list(interval = transform(tb, parameter = "estimativa")), settings = list(parameter = "diff"), method = x$method),
@@ -307,7 +315,7 @@ plot.caagro_describe <- function(x, type = c("hist", "box", "density", "qq", "vi
   d$.g <- if (is.null(grp)) "(todos)" else as.character(d[[grp]])
   groups <- unique(d$.g)
   g <- style$geoms
-  def <- list(title = v, subtitle = "Analise exploratoria", x = v, y = NULL, legend = grp)
+  def <- list(title = v, subtitle = "An\u00e1lise explorat\u00f3ria", x = v, y = NULL, legend = grp)
   p <- switch(type,
     hist = ggplot2::ggplot(d, ggplot2::aes(.data$.v, fill = .data$.g)) +
       ggplot2::geom_histogram(bins = max(5, min(30, ceiling(log2(nrow(d)) + 1) * 2)), colour = "white", alpha = 0.85, position = "identity"),
@@ -324,9 +332,9 @@ plot.caagro_describe <- function(x, type = c("hist", "box", "density", "qq", "vi
       ggplot2::stat_qq(size = g$point_size * 0.8) + ggplot2::stat_qq_line(linewidth = g$line_width))
   axes <- c(x = "continuous", y = "continuous")
   if (type %in% c("box", "violin")) { axes["x"] <- "discrete"; def$x <- grp %||% ""; def$y <- v }
-  if (type == "hist") def$y <- "Frequencia"
+  if (type == "hist") def$y <- "Frequ\u00eancia"
   if (type == "density") def$y <- "Densidade"
-  if (type == "qq") { def$x <- "Quantis teoricos"; def$y <- v }
+  if (type == "qq") { def$x <- "Quantis te\u00f3ricos"; def$y <- v }
   if (is.null(grp)) p <- p + ggplot2::guides(fill = "none", colour = "none")
   apply_style(finish_plot(p, axes, groups, def), style)
 }

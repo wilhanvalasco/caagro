@@ -69,3 +69,18 @@ save(sim_multivariado, file = "data/sim_multivariado.rda", compress = "xz")
 dir.create("inst/extdata", showWarnings = FALSE, recursive = TRUE)
 utils::write.table(sim_dose, "inst/extdata/dose_resposta.csv", sep = ";", dec = ",", row.names = FALSE)
 utils::write.table(sim_dbc, "inst/extdata/dbc.txt", sep = "\t", row.names = FALSE)
+
+# ---- Exemplos dos aplicativos (caagro 1.1) ----
+set.seed(20260101)
+# DIC: produtividade de soja (sc/ha), 4 tratamentos x 5 repeticoes
+sim_soja <- data.frame(tratamento = factor(rep(c("Testemunha", "Produto A", "Produto B", "Produto C"), each = 5),
+                                           levels = c("Testemunha", "Produto A", "Produto B", "Produto C")),
+                       repeticao = rep(1:5, 4))
+sim_soja$produtividade <- round(c(Testemunha = 58, `Produto A` = 63, `Produto B` = 66, `Produto C` = 61)[as.character(sim_soja$tratamento)] +
+                                  rnorm(20, 0, 2.5), 1)
+# Notas de severidade (escala 1 a 9), 5 tratamentos x 6 repeticoes
+sim_notas <- data.frame(tratamento = factor(rep(paste0("T", 1:5), each = 6)), repeticao = rep(1:6, 5))
+loc <- c(T1 = 7, T2 = 6, T3 = 4, T4 = 3, T5 = 5)[as.character(sim_notas$tratamento)]
+sim_notas$nota <- as.integer(pmin(9, pmax(1, round(loc + rnorm(30, 0, 1.1)))))
+save(sim_soja, file = "data/sim_soja.rda", compress = "xz")
+save(sim_notas, file = "data/sim_notas.rda", compress = "xz")

@@ -22,7 +22,7 @@
 read_data <- function(path, sheet = 1, sep = NULL, dec = NULL, header = TRUE,
                       na = c("", "NA", "NaN", "N/A", "-", "."),
                       encoding = "UTF-8") {
-  if (!file.exists(path)) abort_caagro("Arquivo nao encontrado: ", path)
+  if (!file.exists(path)) abort_caagro("Arquivo n\u00e3o encontrado: ", path)
   ext <- tolower(tools::file_ext(path))
   out <- switch(
     ext,
@@ -44,10 +44,10 @@ read_data <- function(path, sheet = 1, sep = NULL, dec = NULL, header = TRUE,
       names(d) <- sub("^\ufeff", "", names(d))
       d
     },
-    abort_caagro("Formato nao suportado: '.", ext,
+    abort_caagro("Formato n\u00e3o suportado: '.", ext,
                  "'. Use .xlsx, .xls, .csv, .txt ou .tsv.")
   )
-  if (ncol(out) == 0 || nrow(out) == 0) abort_caagro("O arquivo nao contem dados.")
+  if (ncol(out) == 0 || nrow(out) == 0) abort_caagro("O arquivo n\u00e3o contem dados.")
   attr(out, "source") <- basename(path)
   out
 }
@@ -62,13 +62,7 @@ detect_sep <- function(lines, ext = "csv") {
   cand[which.max(counts)]
 }
 
-#' Excel sheet names
-#' @param path Path to an Excel file.
-#' @return Character vector of sheet names.
-#' @export
-#' @examples
-#' f <- system.file("extdata", "severidade.xlsx", package = "caagro")
-#' data_sheets(f)
+# Excel sheet names (internal)
 data_sheets <- function(path) readxl::excel_sheets(path)
 
 #' Convert data from wide to long format
@@ -132,44 +126,44 @@ check_data <- function(data, response, treatment = NULL, block = NULL,
   y <- data[[response]]
   yn <- suppressWarnings(as.numeric(gsub(",", ".", as.character(y), fixed = TRUE)))
   nonnum <- sum(!is.na(y) & is.na(yn))
-  if (nonnum > 0) add("error", sprintf("A resposta '%s' tem %d valor(es) nao numerico(s).", response, nonnum))
+  if (nonnum > 0) add("error", sprintf("A resposta '%s' tem %d valor(es) n\u00e3o num\u00e9rico(s).", response, nonnum))
   nas <- vapply(cols, function(cl) sum(is.na(data[[cl]]) | (is.character(data[[cl]]) & !nzchar(trimws(data[[cl]])))), numeric(1))
   for (cl in names(nas)[nas > 0]) {
-    add("warning", sprintf("'%s' tem %d valor(es) ausente(s); as linhas correspondentes serao excluidas da analise (e registradas).", cl, nas[cl]))
+    add("warning", sprintf("'%s' tem %d valor(es) ausente(s); as linhas correspondentes ser\u00e3o exclu\u00eddas da an\u00e1lise (e registradas).", cl, nas[cl]))
   }
   ok_rows <- stats::complete.cases(data[, cols, drop = FALSE]) & !is.na(yn)
   yv <- yn[ok_rows]
-  if (length(yv) < 3) add("error", "Menos de 3 observacoes validas.")
-  if (length(yv) > 1 && isTRUE(stats::sd(yv) == 0)) add("error", "A resposta nao apresenta variabilidade (todos os valores iguais).")
+  if (length(yv) < 3) add("error", "Menos de 3 observa\u00e7\u00f5es validas.")
+  if (length(yv) > 1 && isTRUE(stats::sd(yv) == 0)) add("error", "A resposta n\u00e3o apresenta variabilidade (todos os valores iguais).")
   dups <- sum(duplicated(data[, cols, drop = FALSE]))
-  if (dups > 0) add("info", sprintf("%d linha(s) totalmente duplicada(s) nas colunas selecionadas. Verifique se nao ha digitacao repetida.", dups))
+  if (dups > 0) add("info", sprintf("%d linha(s) totalmente duplicada(s) nas colunas selecionadas. Verifique se n\u00e3o ha digita\u00e7\u00e3o repetida.", dups))
 
   if (!is.null(treatment)) {
     tr <- factor(data[[treatment]][ok_rows])
     tab <- table(tr)
-    if (nlevels(tr) < 2) add("error", "O fator de tratamentos precisa ter ao menos 2 niveis.")
+    if (nlevels(tr) < 2) add("error", "O fator de tratamentos precisa ter ao menos 2 n\u00edveis.")
     if (any(tab < 2) && is.null(block)) add("error", sprintf("Tratamento(s) sem repeticao: %s.", paste(names(tab)[tab < 2], collapse = ", ")))
-    if (length(unique(tab)) > 1) add("info", sprintf("Dados desbalanceados (repeticoes por tratamento: %s).", paste(range(tab), collapse = " a ")))
-    if (nlevels(tr) > 0.5 * length(yv) && is.null(x)) add("warning", "Numero de niveis do tratamento e alto em relacao ao numero de observacoes. Confirme se a coluna escolhida e realmente um fator.")
+    if (length(unique(tab)) > 1) add("info", sprintf("Dados desbalanceados (repeti\u00e7\u00f5es por tratamento: %s).", paste(range(tab), collapse = " a ")))
+    if (nlevels(tr) > 0.5 * length(yv) && is.null(x)) add("warning", "N\u00famero de n\u00edveis do tratamento e alto em rela\u00e7\u00e3o ao n\u00famero de observa\u00e7\u00f5es. Confirme se a coluna escolhida e realmente um fator.")
     if (is.numeric(data[[treatment]]) && length(unique(data[[treatment]])) > 6 && design %in% c("DIC", "DBC"))
-      add("info", "O tratamento e numerico com varios niveis: considere a analise de regressao, alem (ou no lugar) da comparacao de medias.")
+      add("info", "O tratamento e num\u00e9rico com v\u00e1rios n\u00edveis: considere a an\u00e1lise de regress\u00e3o, alem (ou no lugar) da compara\u00e7\u00e3o de m\u00e9dias.")
   }
   if (!is.null(block)) {
     bl <- factor(data[[block]][ok_rows])
-    if (nlevels(bl) < 2) add("error", "O bloco precisa ter ao menos 2 niveis.")
+    if (nlevels(bl) < 2) add("error", "O bloco precisa ter ao menos 2 n\u00edveis.")
     if (!is.null(treatment)) {
       tr <- factor(data[[treatment]][ok_rows])
       ct <- table(tr, bl)
-      if (any(ct == 0)) add("warning", sprintf("Ha %d combinacao(oes) tratamento x bloco sem observacao (blocos incompletos). As medias serao ajustadas (medias marginais estimadas).", sum(ct == 0)))
-      if (all(ct <= 1) && any(ct == 1) && design == "DIC") add("warning", "Existe uma coluna de bloco com um tratamento por bloco: os dados parecem de DBC. Nao analise como DIC.")
-      if (any(ct > 1) && design == "DBC") add("info", "Ha mais de uma observacao por tratamento em algum bloco. O modelo aditivo de DBC sera usado; avalie se ha interacao tratamento x bloco.")
+      if (any(ct == 0)) add("warning", sprintf("H\u00e1 %d combina\u00e7\u00e3o(\u00f5es) tratamento x bloco sem observa\u00e7\u00e3o (blocos incompletos). As m\u00e9dias ser\u00e3o ajustadas (m\u00e9dias marginais estimadas).", sum(ct == 0)))
+      if (all(ct <= 1) && any(ct == 1) && design == "DIC") add("warning", "Existe uma coluna de bloco com um tratamento por bloco: os dados parecem de DBC. N\u00e3o an\u00e1lise como DIC.")
+      if (any(ct > 1) && design == "DBC") add("info", "H\u00e1 mais de uma observa\u00e7\u00e3o por tratamento em algum bloco. O modelo aditivo de DBC ser\u00e1 usado; avalie se ha intera\u00e7\u00e3o tratamento x bloco.")
     }
   }
   if (design == "DBC" && is.null(block)) add("error", "DBC exige a coluna de blocos.")
   if (!is.null(x)) {
     xv <- suppressWarnings(as.numeric(data[[x]][ok_rows]))
-    if (anyNA(xv)) add("error", sprintf("A variavel explicativa '%s' precisa ser numerica.", x))
-    else if (length(unique(xv)) < 3) add("warning", "Menos de 3 niveis distintos da variavel explicativa: modelos com mais de 2 parametros nao sao estimaveis.")
+    if (anyNA(xv)) add("error", sprintf("A vari\u00e1vel explicativa '%s' precisa ser num\u00e9rica.", x))
+    else if (length(unique(xv)) < 3) add("warning", "Menos de 3 n\u00edveis distintos da vari\u00e1vel explicativa: modelos com mais de 2 par\u00e2metros n\u00e3o s\u00e3o estim\u00e1veis.")
   }
   if (length(yv) >= 4) {
     q <- stats::quantile(yv, c(.25, .75)); iq <- diff(q)
@@ -189,7 +183,7 @@ finish_check <- function(issues) {
 
 #' @export
 print.caagro_check <- function(x, ...) {
-  if (nrow(x) == 0) { cat("Dados validos: nenhum problema encontrado.\n"); return(invisible(x)) }
+  if (nrow(x) == 0) { cat("Dados v\u00e1lidos: nenhum problema encontrado.\n"); return(invisible(x)) }
   icon <- c(error = "[ERRO]", warning = "[ALERTA]", info = "[INFO]")
   for (i in seq_len(nrow(x))) cat(icon[x$level[i]], x$message[i], "\n")
   invisible(x)
@@ -235,7 +229,7 @@ flag_outliers <- function(data, response, group = NULL, method = c("iqr", "stude
     out <- do.call(rbind, res)
   } else {
     if (is.null(model)) {
-      if (is.null(group)) abort_caagro("Informe `group` ou `model` para o criterio studentizado.")
+      if (is.null(group)) abort_caagro("Informe `group` ou `model` para o crit\u00e9rio studentizado.")
       d <- data.frame(y = y, g = factor(g))
       model <- stats::lm(y ~ g, data = d)
     }
@@ -265,8 +259,8 @@ prepare_data <- function(data, response = NULL, factors = NULL, numeric_cols = N
   if (!is.null(exclude) && length(exclude)) {
     exclude <- as.integer(exclude)
     bad <- exclude[exclude < 1 | exclude > nrow(data)]
-    if (length(bad)) abort_caagro("Indices de exclusao fora do intervalo: ", paste(bad, collapse = ", "))
-    msgs <- c(msgs, sprintf("%d observacao(oes) excluida(s) explicitamente pelo usuario (linhas %s).",
+    if (length(bad)) abort_caagro("\u00cdndices de exclus\u00e3o fora do intervalo: ", paste(bad, collapse = ", "))
+    msgs <- c(msgs, sprintf("%d observa\u00e7\u00e3o(\u00f5es) exclu\u00edda(s) explicitamente pelo usu\u00e1rio (linhas %s).",
                             length(exclude), paste(exclude, collapse = ", ")))
     data <- data[!data$.row %in% exclude, , drop = FALSE]
   }

@@ -25,11 +25,11 @@ plot.caagro_regression <- function(x, type = c("fit", "facet", "residuals", "qq"
       p <- ggplot2::ggplot(rr, ggplot2::aes(.data$fitted, .data$resid, fill = .data$.col)) +
         ggplot2::geom_hline(yintercept = 0, linetype = "dashed", colour = pal[["cinza_tecnico"]]) +
         ggplot2::geom_point(shape = 21, colour = "white", size = g$point_size, alpha = 0.9)
-      def <- list(title = "Residuos versus ajustados", subtitle = x$method, x = "Valores ajustados", y = "Residuos", legend = s$group %||% "Modelo")
+      def <- list(title = "Res\u00edduos versus ajustados", subtitle = x$method, x = "Valores ajustados", y = "Res\u00edduos", legend = s$group %||% "Modelo")
     } else {
       p <- ggplot2::ggplot(rr, ggplot2::aes(sample = .data$resid, colour = .data$.col)) +
         ggplot2::stat_qq(size = g$point_size * 0.8) + ggplot2::stat_qq_line(linewidth = g$line_width * 0.8)
-      def <- list(title = "Q-Q dos residuos", subtitle = x$method, x = "Quantis teoricos", y = "Residuos", legend = s$group %||% "Modelo")
+      def <- list(title = "Q-Q dos res\u00edduos", subtitle = x$method, x = "Quantis te\u00f3ricos", y = "Res\u00edduos", legend = s$group %||% "Modelo")
     }
     if (multi_model) p <- p + ggplot2::facet_wrap(~model, scales = "free")
     return(apply_style(finish_plot(p, groups = groups, defaults = def), style))
@@ -42,7 +42,7 @@ plot.caagro_regression <- function(x, type = c("fit", "facet", "residuals", "qq"
     p <- ggplot2::ggplot(cmp, ggplot2::aes(x = .data$.v, y = stats::reorder(.data$.model, -.data$.v), fill = .data$group)) +
       ggplot2::geom_col(position = ggplot2::position_dodge(width = 0.8), width = 0.7)
     return(apply_style(finish_plot(p, c(x = "continuous", y = "discrete"), groups = unique(cmp$group),
-                                   list(title = paste("Comparacao de modelos por", crit), subtitle = "Diferenca em relacao ao melhor modelo de cada grupo (0 = melhor); valores < 2 indicam suporte semelhante", x = paste("Delta", crit), y = "", legend = s$group %||% "Grupo")), style))
+                                   list(title = paste("Compara\u00e7\u00e3o de modelos por", crit), subtitle = "Diferen\u00e7a em rela\u00e7\u00e3o ao melhor modelo de cada grupo (0 = melhor); valores < 2 indicam suporte semelhante", x = paste("Delta", crit), y = "", legend = s$group %||% "Grupo")), style))
   }
   groups <- unique(pr$.col)
   pts$.col <- if (grouped) pts$.col else if (multi_model) NA else groups[1]
@@ -93,7 +93,7 @@ plot.caagro_regression <- function(x, type = c("fit", "facet", "residuals", "qq"
     met <- g$eq_metrics %||% character()
     eq$label <- vapply(seq_len(nrow(eq)), function(i) {
       r <- eq[i, ]
-      parts <- c(if ("r2" %in% met && !is.na(r$r2)) sprintf("%s = %.3f", if (r$r2_type == "classico") r2_lab() else if (r$r2_type == "McFadden") r2_lab("pseudo-") else r2_lab("pseudo-"), r$r2),
+      parts <- c(if ("r2" %in% met && !is.na(r$r2)) sprintf("%s = %.3f", if (r$r2_type == "cl\u00e1ssico") r2_lab() else if (r$r2_type == "McFadden") r2_lab("pseudo-") else r2_lab("pseudo-"), r$r2),
                  if ("p" %in% met && !is.na(r$p_model)) paste0("p ", if (r$p_model < 0.001) "< 0,001" else paste("=", formatC(r$p_model, format = "f", digits = 3))),
                  if ("aic" %in% met) sprintf("AIC = %.1f", r$AIC),
                  if ("rmse" %in% met && !is.na(r$rmse)) sprintf("RMSE = %.3g", r$rmse),
@@ -118,11 +118,11 @@ plot.caagro_regression <- function(x, type = c("fit", "facet", "residuals", "qq"
     p <- p + ggplot2::geom_text(data = eq, ggplot2::aes(.data$x, .data$y, label = .data$label, colour = .data$.col),
                                 hjust = if (left) 0 else 1, size = g$label_size * 0.85, show.legend = FALSE)
   }
-  def <- list(title = s$y, subtitle = x$method, x = s$x, y = if (isTRUE(s$binomial)) "Proporcao" else s$y,
+  def <- list(title = s$y, subtitle = x$method, x = s$x, y = if (isTRUE(s$binomial)) "Propor\u00e7\u00e3o" else s$y,
               legend = s$group %||% "Modelo",
-              caption = paste0(if (s$band == "confidence") "Faixa: intervalo de confianca da resposta media" else if (s$band == "prediction") "Faixa: intervalo de predicao para novas observacoes" else "",
+              caption = paste0(if (s$band == "confidence") "Faixa: intervalo de confian\u00e7a da resposta m\u00e9dia" else if (s$band == "prediction") "Faixa: intervalo de predi\u00e7\u00e3o para novas observa\u00e7\u00f5es" else "",
                                if (s$band != "none") paste0(" (", round(100 * s$conf_level), "%", if (s$band_method == "bootstrap") ", bootstrap" else "", "). ") else "",
-                               if (isTRUE(g$show_means) && g$error_type != "none") paste0("Barras: ", c(se = "erro-padrao", sd = "desvio-padrao", ci = "IC 95% da media")[[g$error_type]], ".") else ""))
+                               if (isTRUE(g$show_means) && g$error_type != "none") paste0("Barras: ", c(se = "erro-padr\u00e3o", sd = "desvio-padr\u00e3o", ci = "IC 95% da m\u00e9dia")[[g$error_type]], ".") else ""))
   if (eq_in_caption) def$caption <- paste(c(def$caption, eq$label), collapse = "\n")
   if (!grouped && !multi_model) p <- p + ggplot2::guides(fill = "none", colour = "none")
   apply_style(finish_plot(p, groups = groups, defaults = def), style)
@@ -152,15 +152,15 @@ plot.caagro_np <- function(x, type = c("box", "violin", "dots", "heatmap", "effe
   }
   if (type == "effect") {
     pr <- x$tables$pairs
-    if (is.null(pr)) abort_caagro("Execute np_posthoc() para obter o grafico de efeitos par a par.")
+    if (is.null(pr)) abort_caagro("Execute np_posthoc() para obter o gr\u00e1fico de efeitos par a par.")
     pr$contrast <- factor(pr$contrast, levels = pr$contrast[order(pr$statistic)])
     p <- ggplot2::ggplot(pr, ggplot2::aes(.data$statistic, .data$contrast, fill = .data$significant)) +
       ggplot2::geom_vline(xintercept = 0, colour = pal[["cinza_tecnico"]]) + ggplot2::geom_col(width = 0.6) +
-      ggplot2::scale_fill_manual(values = c(`TRUE` = pal[["laranja"]], `FALSE` = pal[["azul_secundario"]]), labels = c(`TRUE` = "Significativa", `FALSE` = "Nao significativa"), name = NULL)
-    return(apply_style(finish_plot(p, c(x = "continuous", y = "discrete"), defaults = list(title = "Estatistica das comparacoes", subtitle = x$method, x = "Estatistica (z ou t)", y = "")), style))
+      ggplot2::scale_fill_manual(values = c(`TRUE` = pal[["laranja"]], `FALSE` = pal[["azul_secundario"]]), labels = c(`TRUE` = "Significativa", `FALSE` = "N\u00e3o significativa"), name = NULL)
+    return(apply_style(finish_plot(p, c(x = "continuous", y = "discrete"), defaults = list(title = "Estat\u00edstica das compara\u00e7\u00f5es", subtitle = x$method, x = "Estat\u00edstica (z ou t)", y = "")), style))
   }
   if (type == "blocks") {
-    if (is.null(s$block)) abort_caagro("Grafico por blocos exige um teste com blocos (Friedman).")
+    if (is.null(s$block)) abort_caagro("Gr\u00e1fico por blocos exige um teste com blocos (Friedman).")
     p <- ggplot2::ggplot(d, ggplot2::aes(.data$.g, .data[[resp]], group = .data[[s$block]])) +
       ggplot2::geom_line(colour = pal[["cinza_tecnico"]], alpha = 0.6, linewidth = g$line_width * 0.6) +
       ggplot2::geom_point(ggplot2::aes(fill = .data$.g), shape = 21, colour = "white", size = g$point_size + 0.5)
@@ -213,7 +213,7 @@ plot.caagro_pca <- function(x, type = c("biplot", "scree", "scores", "loadings",
       ggplot2::geom_line(ggplot2::aes(y = .data$cumulative, group = 1), colour = pal[["verde_cientifico"]], linewidth = g$line_width) +
       ggplot2::geom_point(ggplot2::aes(y = .data$cumulative), colour = pal[["verde_cientifico"]], size = g$point_size) +
       ggplot2::geom_text(ggplot2::aes(label = sprintf("%.1f%%", .data$variance)), vjust = -0.5, size = g$label_size * 0.8, colour = "#14283F")
-    return(apply_style(finish_plot(p, c(x = "discrete", y = "continuous"), defaults = list(title = "Variancia explicada", subtitle = "Barras: por componente; linha: acumulada", x = NULL, y = "Variancia (%)")), style))
+    return(apply_style(finish_plot(p, c(x = "discrete", y = "continuous"), defaults = list(title = "Vari\u00e2ncia explicada", subtitle = "Barras: por componente; linha: acumulada", x = NULL, y = "Vari\u00e2ncia (%)")), style))
   }
   cr <- x$tables$correlations
   if (type == "circle") {
@@ -224,7 +224,7 @@ plot.caagro_pca <- function(x, type = c("biplot", "scree", "scores", "loadings",
                             arrow = grid::arrow(length = grid::unit(0.18, "cm")), colour = pal[["azul_secundario"]], linewidth = g$line_width) +
       ggplot2::geom_text(data = cr, ggplot2::aes(x = .data[[pcs[1]]] * 1.1, y = .data[[pcs[2]]] * 1.1, label = .data$variable), size = g$label_size, colour = "#14283F") +
       ggplot2::coord_equal(xlim = c(-1.15, 1.15), ylim = c(-1.15, 1.15))
-    return(apply_style(finish_plot(p, defaults = list(title = "Circulo de correlacoes", subtitle = x$method, x = axlab[1], y = axlab[2])), style))
+    return(apply_style(finish_plot(p, defaults = list(title = "Circulo de correla\u00e7\u00f5es", subtitle = x$method, x = axlab[1], y = axlab[2])), style))
   }
   if (type == "loadings") {
     ld <- x$tables$loadings
@@ -241,8 +241,8 @@ plot.caagro_pca <- function(x, type = c("biplot", "scree", "scores", "loadings",
     lg$PC <- factor(lg$PC, levels = names(ct)[2:(k + 1)])
     p <- ggplot2::ggplot(lg, ggplot2::aes(.data$PC, .data$variable, fill = .data$contribution)) + ggplot2::geom_tile(colour = "white") +
       ggplot2::geom_text(ggplot2::aes(label = sprintf("%.0f", .data$contribution)), size = g$label_size * 0.8, colour = "#14283F") +
-      ggplot2::scale_fill_gradient(low = "#F5F7FA", high = pal[["verde_cientifico"]], name = "Contribuicao (%)")
-    return(apply_style(finish_plot(p, c(x = "discrete", y = "discrete"), defaults = list(title = "Contribuicao das variaveis", subtitle = x$method, x = "", y = "")), style))
+      ggplot2::scale_fill_gradient(low = "#F5F7FA", high = pal[["verde_cientifico"]], name = "Contribui\u00e7\u00e3o (%)")
+    return(apply_style(finish_plot(p, c(x = "discrete", y = "discrete"), defaults = list(title = "Contribui\u00e7\u00e3o das vari\u00e1veis", subtitle = x$method, x = "", y = "")), style))
   }
   p <- ggplot2::ggplot(sc, ggplot2::aes(.data[[pcs[1]]], .data[[pcs[2]]])) +
     ggplot2::geom_hline(yintercept = 0, colour = "#E7ECF0") + ggplot2::geom_vline(xintercept = 0, colour = "#E7ECF0")
@@ -260,7 +260,7 @@ plot.caagro_pca <- function(x, type = c("biplot", "scree", "scores", "loadings",
   if (!has_g) p <- p + ggplot2::guides(fill = "none", colour = "none")
   apply_style(finish_plot(p, groups = groups, defaults = list(
     title = if (type == "biplot") "Biplot" else "Escores", subtitle = x$method, x = axlab[1], y = axlab[2], legend = x$settings$group,
-    caption = if (has_g && ellipse) "Elipses: regioes de 95% de concentracao (t multivariada), descritivas." else NULL)), style)
+    caption = if (has_g && ellipse) "Elipses: regi\u00f5es de 95% de concentra\u00e7\u00e3o (t multivariada), descritivas." else NULL)), style)
 }
 
 dendro_segments <- function(hc) {
@@ -318,7 +318,7 @@ plot.caagro_cluster <- function(x, type = "dendrogram", style = caagro_style(), 
   attr_groups <- names(cols)
   p <- p + ggplot2::guides(fill = "none")
   out <- apply_style(finish_plot(p, c(x = "none", y = if (horizontal) "none" else "continuous"), attr_groups,
-                                 list(title = "Dendrograma", subtitle = x$method, x = "", y = "Altura (distancia de fusao)", legend = "Grupo")), st)
+                                 list(title = "Dendrograma", subtitle = x$method, x = "", y = "Altura (dist\u00e2ncia de fus\u00e3o)", legend = "Grupo")), st)
   out
 }
 
@@ -332,7 +332,7 @@ plot.caagro_kmeans <- function(x, type = c("clusters", "elbow", "silhouette"), s
     p <- ggplot2::ggplot(sel, ggplot2::aes(.data$k, .data$within_ss)) + ggplot2::geom_line(colour = pal[["azul_secundario"]], linewidth = g$line_width) +
       ggplot2::geom_point(size = g$point_size + 0.5, colour = pal[["azul_secundario"]]) +
       ggplot2::geom_vline(xintercept = x$settings$k, linetype = "dashed", colour = pal[["laranja"]])
-    return(apply_style(finish_plot(p, defaults = list(title = "Metodo do cotovelo", subtitle = "Soma de quadrados dentro dos grupos", x = "k", y = "SQ dentro")), style))
+    return(apply_style(finish_plot(p, defaults = list(title = "M\u00e9todo do cotovelo", subtitle = "Soma de quadrados dentro dos grupos", x = "k", y = "SQ dentro")), style))
   }
   cl <- x$tables$clusters
   cl$.g <- paste0("Grupo ", cl$cluster)
@@ -340,7 +340,7 @@ plot.caagro_kmeans <- function(x, type = c("clusters", "elbow", "silhouette"), s
     cl <- cl[order(cl$cluster, -cl$silhouette), ]; cl$.i <- seq_len(nrow(cl))
     p <- ggplot2::ggplot(cl, ggplot2::aes(.data$.i, .data$silhouette, fill = .data$.g)) + ggplot2::geom_col(width = 1) +
       ggplot2::geom_hline(yintercept = mean(cl$silhouette), linetype = "dashed", colour = pal[["cinza_tecnico"]])
-    return(apply_style(finish_plot(p, groups = sort(unique(cl$.g)), defaults = list(title = "Silhueta", subtitle = sprintf("Media = %.2f", mean(cl$silhouette)), x = "Individuos", y = "Largura da silhueta", legend = "Grupo")), style))
+    return(apply_style(finish_plot(p, groups = sort(unique(cl$.g)), defaults = list(title = "Silhueta", subtitle = sprintf("M\u00e9dia = %.2f", mean(cl$silhouette)), x = "Indiv\u00edduos", y = "Largura da silhueta", legend = "Grupo")), style))
   }
   M <- as.matrix(x$data_used); if (x$settings$scale) M <- scale(M)
   pc <- stats::prcomp(M)
@@ -350,7 +350,7 @@ plot.caagro_kmeans <- function(x, type = c("clusters", "elbow", "silhouette"), s
     ggplot2::stat_ellipse(geom = "polygon", alpha = g$band_alpha * 0.6, level = 0.95, linewidth = 0.3) +
     ggplot2::geom_point(shape = 21, colour = "white", size = g$point_size + 0.5)
   if (isTRUE(g$show_values)) p <- p + ggplot2::geom_text(ggplot2::aes(label = .data$label), size = g$label_size * 0.75, vjust = -0.8, colour = "#64748B")
-  apply_style(finish_plot(p, groups = sort(unique(sc$.g)), defaults = list(title = "Grupos k-means", subtitle = "Projecao nos dois primeiros componentes principais",
+  apply_style(finish_plot(p, groups = sort(unique(sc$.g)), defaults = list(title = "Grupos k-means", subtitle = "Proje\u00e7\u00e3o nos dois primeiros componentes principais",
                                                                      x = sprintf("PC1 (%.1f%%)", ve[1]), y = sprintf("PC2 (%.1f%%)", ve[2]), legend = "Grupo")), style)
 }
 
@@ -369,6 +369,6 @@ plot.caagro_cor <- function(x, type = "heatmap", style = caagro_style(), ...) {
                        size = g$label_size * 0.85, colour = "#14283F") +
     ggplot2::scale_fill_gradientn(colours = caagro_palette(7, "diverging"), limits = c(-1, 1), name = "r")
   apply_style(finish_plot(p, c(x = "discrete", y = "discrete"),
-                          defaults = list(title = "Matriz de correlacao", subtitle = paste0(x$method, " - * p ajustado (", x$settings$p_adjust, ") < 0,05"), x = "", y = "")),
+                          defaults = list(title = "Matriz de correla\u00e7\u00e3o", subtitle = paste0(x$method, " - * p ajustado (", x$settings$p_adjust, ") < 0,05"), x = "", y = "")),
               style) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
 }

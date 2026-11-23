@@ -38,7 +38,7 @@ nls_robust <- function(formula, data, start, lower = NULL, upper = NULL) {
       attempts[[length(attempts) + 1]] <- conditionMessage(res)
     }
   }
-  structure(list(message = paste("O ajuste nao convergiu:", attempts[[1]])), class = c("caagro_nonconv", "error", "condition"))
+  structure(list(message = paste("O ajuste n\u00e3o convergiu:", attempts[[1]])), class = c("caagro_nonconv", "error", "condition"))
 }
 
 model_registry <- function() {
@@ -50,19 +50,19 @@ model_registry <- function() {
       eq = function(th) paste0("y = ", fmt_coef(th[1]), sgn(th[2]), "x")
     ),
     quadratic = list(
-      label = "Polinomial de 2o grau", type = "lm", formula = "y = a + b x + c x^2", params = c("a", "b", "c"),
+      label = "Quadr\u00e1tico", type = "lm", formula = "y = a + b x + c x^2", params = c("a", "b", "c"),
       f = function(th, x) th[1] + th[2] * x + th[3] * x^2,
       fit = function(d) stats::lm(y ~ x + I(x^2), data = d),
       eq = function(th) paste0("y = ", fmt_coef(th[1]), sgn(th[2]), "x", sgn(th[3]), sup_x(2))
     ),
     cubic = list(
-      label = "Polinomial de 3o grau", type = "lm", formula = "y = a + b x + c x^2 + d x^3", params = c("a", "b", "c", "d"),
+      label = "C\u00fabico", type = "lm", formula = "y = a + b x + c x^2 + d x^3", params = c("a", "b", "c", "d"),
       f = function(th, x) th[1] + th[2] * x + th[3] * x^2 + th[4] * x^3,
       fit = function(d) stats::lm(y ~ x + I(x^2) + I(x^3), data = d),
       eq = function(th) paste0("y = ", fmt_coef(th[1]), sgn(th[2]), "x", sgn(th[3]), sup_x(2), sgn(th[4]), sup_x(3))
     ),
     logarithmic = list(
-      label = "Logaritmico", type = "lm", formula = "y = a + b ln(x)", params = c("a", "b"), x_positive = TRUE,
+      label = "Logar\u00edtmico", type = "lm", formula = "y = a + b ln(x)", params = c("a", "b"), x_positive = TRUE,
       f = function(th, x) th[1] + th[2] * log(x),
       fit = function(d) stats::lm(y ~ log(x), data = d),
       eq = function(th) paste0("y = ", fmt_coef(th[1]), sgn(th[2]), "ln(x)")
@@ -78,7 +78,7 @@ model_registry <- function() {
       eq = function(th) paste0("y = ", fmt_coef(th[1]), " exp(", fmt_coef(th[2]), "x)")
     ),
     power = list(
-      label = "Potencia", type = "nls", formula = "y = a x^b", params = c("a", "b"), x_positive = TRUE,
+      label = "Pot\u00eancia", type = "nls", formula = "y = a x^b", params = c("a", "b"), x_positive = TRUE,
       f = function(th, x) th[1] * x^th[2],
       fit = function(d) {
         st <- if (all(d$y > 0)) { l <- stats::coef(stats::lm(log(y) ~ log(x), d)); list(a = exp(l[[1]]), b = l[[2]]) } else list(a = mean(d$y), b = 0.5)
@@ -87,7 +87,7 @@ model_registry <- function() {
       eq = function(th) paste0("y = ", fmt_coef(th[1]), " x^", fmt_coef(th[2]))
     ),
     logistic3 = list(
-      label = "Logistico (3 parametros)", type = "nls", formula = "y = A / (1 + exp((x0 - x)/s))", params = c("A", "x0", "s"),
+      label = "Log\u00edstico (3 par\u00e2metros)", type = "nls", formula = "y = A / (1 + exp((x0 - x)/s))", params = c("A", "x0", "s"),
       f = function(th, x) th[1] / (1 + exp((th[2] - x) / th[3])),
       fit = function(d) {
         fit <- tryCatch(stats::nls(y ~ stats::SSlogis(x, A, x0, s), data = d, control = nls_ctrl()), error = function(e) e)
@@ -98,7 +98,7 @@ model_registry <- function() {
       eq = function(th) paste0("y = ", fmt_coef(th[1]), " / (1 + exp((", fmt_coef(th[2]), " - x)/", fmt_coef(th[3]), "))")
     ),
     logistic4 = list(
-      label = "Logistico (4 parametros)", type = "nls", formula = "y = B + (A - B)/(1 + exp((x0 - x)/s))", params = c("B", "A", "x0", "s"),
+      label = "Log\u00edstico (4 par\u00e2metros)", type = "nls", formula = "y = B + (A - B)/(1 + exp((x0 - x)/s))", params = c("B", "A", "x0", "s"),
       f = function(th, x) th[1] + (th[2] - th[1]) / (1 + exp((th[3] - x) / th[4])),
       fit = function(d) {
         fit <- tryCatch(stats::nls(y ~ stats::SSfpl(x, B, A, x0, s), data = d, control = nls_ctrl()), error = function(e) e)
@@ -130,7 +130,7 @@ model_registry <- function() {
       eq = function(th) paste0("y = ", fmt_coef(th[1]), "x / (", fmt_coef(th[2]), " + x)")
     ),
     asymptotic = list(
-      label = "Assintotico", type = "nls", formula = "y = A + (R0 - A) exp(-c x)", params = c("A", "R0", "c"),
+      label = "Assint\u00f3tico", type = "nls", formula = "y = A + (R0 - A) exp(-c x)", params = c("A", "R0", "c"),
       f = function(th, x) th[1] + (th[2] - th[1]) * exp(-th[3] * x),
       fit = function(d) {
         st <- tryCatch({ g <- stats::nls(y ~ stats::SSasymp(x, Asym, R0, lrc), data = d, control = nls_ctrl())
@@ -153,7 +153,7 @@ model_registry <- function() {
       eq = function(th) paste0("y = ", fmt_coef(th[1]), " (1 - exp(-", fmt_coef(th[2]), " (x", sgn(th[3]), ")))")
     ),
     loglogistic = list(
-      label = "Log-logistico (dose-resposta, 4 par.)", type = "nls", formula = "y = c + (d - c)/(1 + exp(b (ln x - ln e)))",
+      label = "Log-log\u00edstico (dose-resposta, 4 par.)", type = "nls", formula = "y = c + (d - c)/(1 + exp(b (ln x - ln e)))",
       params = c("b", "c", "d", "e"), x_nonneg = TRUE,
       f = function(th, x) th[2] + (th[3] - th[2]) / (1 + exp(th[1] * (log(x) - log(th[4])))),
       fit = function(d) {
@@ -166,11 +166,11 @@ model_registry <- function() {
       eq = function(th) paste0("y = ", fmt_coef(th[2]), " + (", fmt_coef(th[3]), sgn(-th[2]), ")/(1 + exp(", fmt_coef(th[1]), " (ln x - ln ", fmt_coef(th[4]), ")))")
     ),
     linear_plateau = list(
-      label = "Linear-plato (segmentado)", type = "nls", formula = "y = a + b min(x, x0)", params = c("a", "b", "x0"),
+      label = "Linear-plat\u00f4 (segmentado)", type = "nls", formula = "y = a + b min(x, x0)", params = c("a", "b", "x0"),
       f = function(th, x) th[1] + th[2] * pmin(x, th[3]),
       fit = function(d) {
         ux <- sort(unique(d$x))
-        if (length(ux) < 4) return(structure(list(message = "Linear-plato exige ao menos 4 niveis de x."), class = c("caagro_nonconv", "error", "condition")))
+        if (length(ux) < 4) return(structure(list(message = "Linear-plat\u00f4 exige ao menos 4 n\u00edveis de x."), class = c("caagro_nonconv", "error", "condition")))
         prof <- function(x0) sum(stats::residuals(stats::lm(y ~ pmin(x, x0), d))^2)
         o <- stats::optimize(prof, c(ux[2], ux[length(ux) - 1]))
         l <- stats::coef(stats::lm(y ~ pmin(x, o$minimum), d))
@@ -193,11 +193,7 @@ model_registry <- function() {
   )
 }
 
-#' Regression models available in caagro
-#' @return A data frame with model id, label, equation, type and parameters.
-#' @examples
-#' regression_models()
-#' @export
+# Regression models available in caagro (internal; listed in ?fit_regression)
 regression_models <- function() {
   reg <- model_registry()
   data.frame(model = names(reg), label = vapply(reg, `[[`, "", "label"),

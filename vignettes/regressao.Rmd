@@ -13,7 +13,7 @@ library(caagro)
 ```
 
 ```{r}
-regression_models()
+?fit_regression   # lista dos 16 modelos
 ```
 
 ## Ajuste e comparação de modelos
@@ -55,7 +55,7 @@ bootstrap de resíduos (`band_method = "bootstrap"`).
 ```{r}
 r2 <- fit_regression(sim_dose, "dose", "produtividade", "quadratic", group = "cultivar")
 result_table(optimum_dose(r2, price_ratio = 0.004))
-result_table(compare_curves(r2))
+result_table(r2, "curve_test")
 ```
 
 ## Regressão binomial e ED50

@@ -1,7 +1,7 @@
 Package: caagro
 Type: Package
 Title: Applied Statistics for Agricultural Experimentation with 'shiny' Interfaces
-Version: 1.0.0
+Version: 1.1.0
 Authors@R: 
     person("Wilhan", "Valasco dos Santos",
            email = "wilhanvalasco@hotmail.com",

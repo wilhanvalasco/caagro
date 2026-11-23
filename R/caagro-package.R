@@ -11,17 +11,19 @@
 #'   [run_exploratory()]. Legacy launchers [anQuali()], [anQuant()] and
 #'   [anIC()] are kept.
 #' * Data: [read_data()], [check_data()], [flag_outliers()], [to_long()].
-#' * Parametric: [anova_exp()], [compare_means()], [check_assumptions()],
-#'   [mean_test()], [welch_anova()], [contrast_test()].
-#' * Regression: [fit_regression()], [compare_curves()], [optimum_dose()].
+#' * ANOVA (Fisher, DIC/DBC/factorial; Welch as alternative): [anova_exp()],
+#'   [compare_means()] (also planned contrasts), [check_assumptions()],
+#'   [mean_test()].
+#' * Regression: [fit_regression()], [optimum_dose()].
 #' * Non-parametric: [np_test()], [np_posthoc()].
-#' * Confidence intervals: [conf_int()], [conf_int_groups()], [conf_int_boot()].
-#' * Multivariate: [pca_exp()], [cluster_exp()], [kmeans_exp()],
+#' * Confidence intervals (classic, per treatment and bootstrap): [conf_int()].
+#' * Multivariate: [pca_exp()], [cluster_exp()] (hierarchical or k-means),
 #'   [cor_matrix()].
 #' * Exploratory: [describe_data()].
-#' * Graphics: [caagro_style()], [theme_caagro()], [save_plot()].
+#' * Graphics: [caagro_style()], [theme_caagro()], [save_plot()],
+#'   [style_to_json()].
 #' * Export: [export_excel()], [export_report()], [export_script()].
-#' * Guidance: [suggest_method()].
+#' * Results and guidance: [result_table()], [suggest_method()].
 #'
 #' @keywords internal
 "_PACKAGE"

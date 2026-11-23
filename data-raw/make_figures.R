@@ -17,4 +17,4 @@ save_plot(plot(np_posthoc(np_test(PlantGrowth, "weight", "group"), "dunn"), "dot
 save_plot(plot(pca_exp(sim_multivariado, group = "grupo", label = "genotipo"), "biplot"), file.path(fd, "fig-pca.png"), 16, 12, dpi = 160)
 save_plot(plot(cluster_exp(sim_multivariado, label = "genotipo", k = 3)), file.path(fd, "fig-dendro.png"), 18, 11, dpi = 160)
 save_plot(plot(check_assumptions(fit), "qq"), file.path(fd, "fig-qq.png"), 14, 10, dpi = 160)
-save_plot(plot(conf_int_groups(PlantGrowth, "weight", "group"), "forest"), file.path(fd, "fig-ci.png"), 16, 10, dpi = 160)
+save_plot(plot(conf_int(PlantGrowth, "weight", "group_means", group = "group"), "forest"), file.path(fd, "fig-ci.png"), 16, 10, dpi = 160)

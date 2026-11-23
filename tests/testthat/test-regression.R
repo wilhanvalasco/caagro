@@ -48,7 +48,7 @@ test_that("MET and curve comparison", {
   op <- result_table(optimum_dose(r, price_ratio = 0.004))
   co <- result_table(r, "coefficients"); c1 <- co[co$group == "Cv1", ]
   expect_equal(op$estimate[1], -c1$estimate[2] / (2 * c1$estimate[3]))
-  ct <- result_table(compare_curves(r))
+  ct <- result_table(r, "curve_test")
   full <- lm(produtividade ~ cultivar * (dose + I(dose^2)), sim_dose)
   red <- lm(produtividade ~ dose + I(dose^2), sim_dose)
   expect_equal(ct$p, anova(red, full)$`Pr(>F)`[2], tolerance = 1e-10)

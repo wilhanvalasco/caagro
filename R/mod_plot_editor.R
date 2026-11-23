@@ -17,11 +17,11 @@ mod_plot_editor_ui <- function(id, height = "560px") {
       shiny::selectInput(ns("theme"), "Tema", c("Scientific Light" = "light", "Scientific Minimal" = "minimal",
                                                  "Publication Black & White" = "bw", "Scientific Dark" = "dark", "caagro Corporate" = "corporate")),
       shiny::sliderInput(ns("base_size"), "Tamanho base da fonte", 7, 22, 11, step = 0.5)),
-    bslib::accordion_panel("Titulo e subtitulo", icon = shiny::icon("heading"),
-      shiny::checkboxInput(ns("show_title"), "Exibir titulo e subtitulo", TRUE),
-      shiny::textInput(ns("title"), "Titulo", placeholder = "(automatico)"),
-      shiny::textInput(ns("subtitle"), "Subtitulo", placeholder = "(automatico)"),
-      shiny::textInput(ns("caption"), "Nota de rodape", placeholder = "(automatica)"),
+    bslib::accordion_panel("T\u00edtulo e subt\u00edtulo", icon = shiny::icon("heading"),
+      shiny::checkboxInput(ns("show_title"), "Exibir t\u00edtulo e subt\u00edtulo", TRUE),
+      shiny::textInput(ns("title"), "T\u00edtulo", placeholder = "(autom\u00e1tico)"),
+      shiny::textInput(ns("subtitle"), "Subt\u00edtulo", placeholder = "(autom\u00e1tico)"),
+      shiny::textInput(ns("caption"), "Nota de rodap\u00e9", placeholder = "(autom\u00e1tica)"),
       shiny::fluidRow(shiny::column(4, shiny::numericInput(ns("title_size"), "Tamanho", 1, 0.5, 3, 0.1)),
                       shiny::column(4, shiny::textInput(ns("title_color"), "Cor", "#14283F")),
                       shiny::column(4, shiny::selectInput(ns("title_align"), "Alinhar", c("Esquerda" = 0, "Centro" = 0.5, "Direita" = 1))))),
@@ -29,70 +29,71 @@ mod_plot_editor_ui <- function(id, height = "560px") {
     bslib::accordion_panel("Eixo Y", icon = shiny::icon("arrows-up-down"), axis_controls(ns, "y")),
     bslib::accordion_panel("Legenda", icon = shiny::icon("list"),
       shiny::checkboxInput(ns("leg_show"), "Exibir legenda", TRUE),
-      shiny::fluidRow(shiny::column(6, shiny::selectInput(ns("leg_pos"), "Posicao", c("Direita" = "right", "Abaixo" = "bottom", "Acima" = "top", "Esquerda" = "left", "Interna" = "inside"))),
+      shiny::fluidRow(shiny::column(6, shiny::selectInput(ns("leg_pos"), "Posi\u00e7\u00e3o", c("Direita" = "right", "Abaixo" = "bottom", "Acima" = "top", "Esquerda" = "left", "Interna" = "inside"))),
                       shiny::column(6, shiny::numericInput(ns("leg_ncol"), "Colunas", NA, 1, 10, 1))),
-      shiny::textInput(ns("leg_title"), "Titulo da legenda", placeholder = "(automatico)"),
+      shiny::textInput(ns("leg_title"), "T\u00edtulo da legenda", placeholder = "(autom\u00e1tico)"),
       shiny::numericInput(ns("leg_size"), "Tamanho do texto", 1, 0.5, 3, 0.1),
       shiny::textInput(ns("leg_order"), "Ordem dos grupos (separados por ;)", placeholder = "A; B; C"),
       shiny::textInput(ns("leg_labels"), "Nomes personalizados (grupo=nome; ...)", placeholder = "T1=Testemunha; T2=Produto")),
-    bslib::accordion_panel("Elementos graficos", icon = shiny::icon("shapes"),
+    bslib::accordion_panel("Elementos gr\u00e1ficos", icon = shiny::icon("shapes"),
       shiny::fluidRow(shiny::column(6, shiny::numericInput(ns("point_size"), "Tamanho dos pontos", 2.2, 0.2, 10, 0.2)),
                       shiny::column(6, shiny::selectInput(ns("point_shape"), "Formato", c("Circulo" = 21, "Quadrado" = 22, "Losango" = 23, "Triangulo" = 24)))),
       shiny::fluidRow(shiny::column(6, shiny::numericInput(ns("line_width"), "Espessura das linhas", 0.8, 0.1, 4, 0.1)),
-                      shiny::column(6, shiny::selectInput(ns("line_type"), "Tipo de linha", c("Continua" = "solid", "Tracejada" = "dashed", "Pontilhada" = "dotted", "Traco-ponto" = "dotdash")))),
-      shiny::sliderInput(ns("alpha"), "Transparencia dos pontos", 0, 1, 0.55, 0.05),
-      shiny::sliderInput(ns("band_alpha"), "Transparencia de bandas/elipses", 0, 1, 0.18, 0.02),
+                      shiny::column(6, shiny::selectInput(ns("line_type"), "Tipo de linha", c("Cont\u00ednua" = "solid", "Tracejada" = "dashed", "Pontilhada" = "dotted", "Traco-ponto" = "dotdash")))),
+      shiny::sliderInput(ns("alpha"), "Transpar\u00eancia dos pontos", 0, 1, 0.55, 0.05),
+      shiny::sliderInput(ns("band_alpha"), "Transpar\u00eancia de bandas/elipses", 0, 1, 0.18, 0.02),
       shiny::fluidRow(shiny::column(6, shiny::numericInput(ns("bar_width"), "Largura das barras", 0.62, 0.1, 1, 0.02)),
                       shiny::column(6, shiny::numericInput(ns("errorbar_width"), "Largura das barras de erro", 0.18, 0, 1, 0.02))),
-      shiny::fluidRow(shiny::column(6, shiny::numericInput(ns("label_size"), "Tamanho dos rotulos", 3.6, 1, 10, 0.2)),
-                      shiny::column(6, shiny::numericInput(ns("label_decimals"), "Casas decimais (rotulos)", 2, 0, 6, 1))),
+      shiny::fluidRow(shiny::column(6, shiny::numericInput(ns("label_size"), "Tamanho dos r\u00f3tulos", 3.6, 1, 10, 0.2)),
+                      shiny::column(6, shiny::numericInput(ns("label_decimals"), "Casas decimais (r\u00f3tulos)", 2, 0, 6, 1))),
       shiny::textInput(ns("colors"), "Cores (hex, separadas por ;)", placeholder = "#315775; #218568; #F28C28"),
-      shiny::checkboxInput(ns("show_points"), "Mostrar observacoes individuais", TRUE),
+      shiny::checkboxInput(ns("show_points"), "Mostrar observa\u00e7\u00f5es individuais", TRUE),
       shiny::checkboxInput(ns("show_letters"), "Mostrar letras dos testes", TRUE),
-      shiny::checkboxInput(ns("show_values"), "Mostrar valores / rotulos", FALSE)),
-    bslib::accordion_panel("Curvas (regressao)", icon = shiny::icon("chart-line"),
+      shiny::checkboxInput(ns("show_values"), "Mostrar valores / r\u00f3tulos", FALSE)),
+    bslib::accordion_panel("Curvas (regress\u00e3o)", icon = shiny::icon("chart-line"),
       shiny::checkboxInput(ns("show_band"), "Mostrar bandas", TRUE),
-      shiny::checkboxInput(ns("show_means"), "Mostrar medias por dose", TRUE),
-      shiny::selectInput(ns("error_type"), "Barras de erro das medias", c("Erro-padrao" = "se", "Desvio-padrao" = "sd", "IC 95%" = "ci", "Nenhuma" = "none")),
-      shiny::selectInput(ns("eq_position"), "Posicao das equacoes", c("Superior esquerda" = "topleft", "Superior direita" = "topright", "Inferior esquerda" = "bottomleft", "Inferior direita" = "bottomright", "Ocultar" = "none")),
-      shiny::checkboxGroupInput(ns("eq_metrics"), "Metricas junto as equacoes", c("R2" = "r2", "p" = "p", "AIC" = "aic", "RMSE" = "rmse", "n" = "n"), c("r2", "n"), inline = TRUE),
-      shiny::checkboxInput(ns("show_optimum"), "Marcar dose otima / ED50", FALSE)),
+      shiny::checkboxInput(ns("show_means"), "Mostrar m\u00e9dias por dose", TRUE),
+      shiny::selectInput(ns("error_type"), "Barras de erro das m\u00e9dias", c("Erro-padr\u00e3o" = "se", "Desvio-padr\u00e3o" = "sd", "IC 95%" = "ci", "Nenhuma" = "none")),
+      shiny::selectInput(ns("eq_position"), "Posi\u00e7\u00e3o das equa\u00e7\u00f5es", c("Superior esquerda" = "topleft", "Superior direita" = "topright", "Inferior esquerda" = "bottomleft", "Inferior direita" = "bottomright", "Ocultar" = "none")),
+      shiny::checkboxGroupInput(ns("eq_metrics"), "M\u00e9tricas junto as equa\u00e7\u00f5es", c("R2" = "r2", "p" = "p", "AIC" = "aic", "RMSE" = "rmse", "n" = "n"), c("r2", "n"), inline = TRUE),
+      shiny::checkboxInput(ns("show_optimum"), "Marcar dose \u00f3tima / ED50", FALSE)),
     bslib::accordion_panel("Estilos", icon = shiny::icon("floppy-disk"),
       shiny::div(class = "caagro-btn-row",
-        shiny::actionButton(ns("reset"), "Restaurar padrao", class = "btn-sm btn-outline-secondary"),
+        shiny::actionButton(ns("reset"), "Restaurar padr\u00e3o", class = "btn-sm btn-outline-secondary"),
         shiny::actionButton(ns("copy_style"), "Copiar estilo", class = "btn-sm btn-outline-primary"),
         shiny::actionButton(ns("paste_style"), "Aplicar estilo copiado", class = "btn-sm btn-outline-primary"),
-        shiny::actionButton(ns("show_code"), "Codigo R", class = "btn-sm btn-outline-primary")),
+        shiny::actionButton(ns("show_code"), "C\u00f3digo R", class = "btn-sm btn-outline-primary")),
       shiny::downloadButton(ns("save_style"), "Salvar estilo (.json)", class = "btn-sm"),
       shiny::fileInput(ns("load_style"), "Carregar estilo (.json)", accept = ".json"))
   )
   bslib::layout_sidebar(
-    sidebar = bslib::sidebar(acc, width = 330, position = "right", open = "desktop", title = "Editor grafico"),
+    class = "caagro-editor-layout",
+    sidebar = bslib::sidebar(acc, width = 330, position = "right", open = sidebar_open(), title = "Editor gr\u00e1fico"),
     bslib::card(full_screen = TRUE, class = "caagro-plot-card",
                 shiny::plotOutput(ns("plot"), height = height)),
-    bslib::card(bslib::card_header("Exportar grafico"),
-      shiny::fluidRow(
-        shiny::column(2, shiny::selectInput(ns("fmt"), "Formato", c("PNG" = "png", "TIFF" = "tiff", "SVG" = "svg", "PDF" = "pdf"))),
-        shiny::column(2, shiny::numericInput(ns("width"), "Largura", 17, 1, 200)),
-        shiny::column(2, shiny::numericInput(ns("height"), "Altura", 12, 1, 200)),
-        shiny::column(2, shiny::selectInput(ns("units"), "Unidade", c("cm", "mm", "in"))),
-        shiny::column(2, shiny::selectInput(ns("dpi"), "Resolucao", c("300 dpi" = 300, "600 dpi" = 600, "1200 dpi" = 1200, "150 dpi" = 150))),
-        shiny::column(2, shiny::selectInput(ns("bg"), "Fundo", c("Branco" = "white", "Transparente" = "transparent")))),
-      shiny::fluidRow(shiny::column(8, shiny::textInput(ns("fname"), "Nome do arquivo", "grafico_caagro")),
-                      shiny::column(4, shiny::div(style = "margin-top:1.9rem", shiny::downloadButton(ns("download"), "Baixar grafico", class = "btn-primary")))))
+    bslib::card(bslib::card_header("Exportar gr\u00e1fico"),
+      bslib::layout_columns(col_widths = bslib::breakpoints(sm = 6, lg = 4),
+        shiny::selectInput(ns("fmt"), "Formato", c("PNG" = "png", "TIFF" = "tiff", "SVG" = "svg", "PDF" = "pdf"), width = "100%"),
+        shiny::selectInput(ns("dpi"), "Resolu\u00e7\u00e3o", c("300 dpi" = 300, "600 dpi" = 600, "1200 dpi" = 1200, "150 dpi" = 150), width = "100%"),
+        shiny::selectInput(ns("bg"), "Fundo", c("Branco" = "white", "Transparente" = "transparent"), width = "100%"),
+        shiny::numericInput(ns("width"), "Largura", 17, 1, 200, width = "100%"),
+        shiny::numericInput(ns("height"), "Altura", 12, 1, 200, width = "100%"),
+        shiny::selectInput(ns("units"), "Unidade", c("cm", "mm", "in"), width = "100%")),
+      shiny::textInput(ns("fname"), "Nome do arquivo", "grafico_caagro", width = "100%"),
+      shiny::downloadButton(ns("download"), "Baixar gr\u00e1fico", class = "btn-primary"))
   )
 }
 
 axis_controls <- function(ns, ax) {
   p <- function(n) ns(paste0(ax, "_", n))
   shiny::tagList(
-    shiny::fluidRow(shiny::column(7, shiny::textInput(p("title"), "Titulo", placeholder = "(automatico)")),
+    shiny::fluidRow(shiny::column(7, shiny::textInput(p("title"), "T\u00edtulo", placeholder = "(autom\u00e1tico)")),
                     shiny::column(5, shiny::textInput(p("unit"), "Unidade", placeholder = "ex.: kg/ha"))),
-    shiny::fluidRow(shiny::column(4, shiny::numericInput(p("min"), "Minimo", NA)),
-                    shiny::column(4, shiny::numericInput(p("max"), "Maximo", NA)),
+    shiny::fluidRow(shiny::column(4, shiny::numericInput(p("min"), "M\u00ednimo", NA)),
+                    shiny::column(4, shiny::numericInput(p("max"), "M\u00e1ximo", NA)),
                     shiny::column(4, shiny::numericInput(p("by"), "Intervalo", NA, min = 0))),
     shiny::fluidRow(shiny::column(4, shiny::numericInput(p("dec"), "Decimais", NA, 0, 6, 1)),
-                    shiny::column(4, shiny::numericInput(p("angle"), "Rotacao", 0, 0, 90, 15)),
+                    shiny::column(4, shiny::numericInput(p("angle"), "Rota\u00e7\u00e3o", 0, 0, 90, 15)),
                     shiny::column(4, shiny::numericInput(p("tsize"), "Fonte", 1, 0.5, 3, 0.1))),
     shiny::selectInput(p("trans"), "Escala", c("Linear" = "identity", "Log10" = "log10", "Raiz quadrada" = "sqrt"))
   )
@@ -182,7 +183,7 @@ mod_plot_editor_server <- function(id, result, extra = shiny::reactive(list())) 
     clip <- style_clipboard(session)
     output$type_ui <- shiny::renderUI({
       r <- result(); shiny::req(r)
-      shiny::selectInput(ns("type"), "Tipo de grafico", plot_types(r))
+      shiny::selectInput(ns("type"), "Tipo de gr\u00e1fico", plot_types(r))
     })
     style <- shiny::debounce(shiny::reactive(style_from_inputs(input)), 350)
     plot_obj <- shiny::reactive({
@@ -191,12 +192,12 @@ mod_plot_editor_server <- function(id, result, extra = shiny::reactive(list())) 
       if (!tp %in% plot_types(r)) tp <- plot_types(r)[[1]]
       tryCatch(do.call(plot, c(list(r, type = tp, style = style()), extra())),
                error = function(e) {
-                 ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 0, label = paste("Grafico indisponivel:", conditionMessage(e)), colour = "#64748B") + ggplot2::theme_void()
+                 ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 0, label = paste("Gr\u00e1fico indispon\u00edvel:", conditionMessage(e)), colour = "#64748B") + ggplot2::theme_void()
                })
     })
     output$plot <- shiny::renderPlot(plot_obj(), res = 110)
     shiny::observeEvent(input$reset, update_inputs_from_style(session, caagro_style()))
-    shiny::observeEvent(input$copy_style, { clip(style()); shiny::showNotification("Estilo copiado. Use 'Aplicar estilo copiado' em outro grafico.", type = "message") })
+    shiny::observeEvent(input$copy_style, { clip(style()); shiny::showNotification("Estilo copiado. Use 'Aplicar estilo copiado' em outro gr\u00e1fico.", type = "message") })
     shiny::observeEvent(input$paste_style, {
       st <- clip()
       if (is.null(st)) shiny::showNotification("Nenhum estilo copiado ainda.", type = "warning") else update_inputs_from_style(session, st)
@@ -210,14 +211,14 @@ mod_plot_editor_server <- function(id, result, extra = shiny::reactive(list())) 
     shiny::observeEvent(input$show_code, {
       r <- result(); shiny::req(r)
       code <- paste0(style_code(style()), "\n\ngrafico <- plot(resultado, type = ", deparse(input$type %||% plot_types(r)[[1]]), ", style = estilo)\n",
-                     "save_plot(grafico, \"", input$fname, ".", input$fmt, "\", width = ", input$width, ", height = ", input$height,
+                     "save_plot(gr\u00e1fico, \"", input$fname, ".", input$fmt, "\", width = ", input$width, ", height = ", input$height,
                      ", units = \"", input$units, "\", dpi = ", input$dpi, ", bg = \"", input$bg, "\")")
-      shiny::showModal(shiny::modalDialog(title = "Codigo R do grafico", size = "l", easyClose = TRUE,
+      shiny::showModal(shiny::modalDialog(title = "C\u00f3digo R do gr\u00e1fico", size = "l", easyClose = TRUE,
                                           shiny::tags$pre(class = "caagro-code", code),
-                                          shiny::div(class = "caagro-muted", "Substitua 'resultado' pelo objeto retornado pela funcao de analise (veja a aba Exportacao > Script R).")))
+                                          shiny::div(class = "caagro-muted", "Substitua 'resultado' pelo objeto retornado pela fun\u00e7\u00e3o de an\u00e1lise (veja a aba Exporta\u00e7\u00e3o > Script R).")))
     })
     output$download <- shiny::downloadHandler(
-      filename = function() paste0(gsub("[^A-Za-z0-9_.-]", "_", input$fname %||% "grafico"), ".", input$fmt),
+      filename = function() paste0(gsub("[^A-Za-z0-9_.-]", "_", input$fname %||% "gr\u00e1fico"), ".", input$fmt),
       content = function(file) save_plot(plot_obj(), file, width = input$width, height = input$height, units = input$units,
                                          dpi = as.numeric(input$dpi), bg = input$bg)
     )

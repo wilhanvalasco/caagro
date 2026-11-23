@@ -11,9 +11,10 @@ anova_exp(
   block = NULL,
   factors = NULL,
   design = c("auto", "DIC", "DBC", "factorial"),
-  ss_type = c("II", "I", "III"),
+  ss_type = c("I", "II", "III"),
   conf_level = 0.95,
-  exclude = NULL
+  exclude = NULL,
+  method = c("fisher", "welch")
 )
 }
 \arguments{
@@ -29,12 +30,16 @@ anova_exp(
 
 \item{design}{\code{"auto"}, \code{"DIC"}, \code{"DBC"} or \code{"factorial"}.}
 
-\item{ss_type}{Type of sums of squares: \code{"I"}, \code{"II"} or \code{"III"}.}
+\item{ss_type}{Type of sums of squares: \code{"I"} (default, Fisher/aov),
+\code{"II"} or \code{"III"}.}
 
 \item{conf_level}{Confidence level for intervals of the means.}
 
 \item{exclude}{Integer vector of row numbers of \code{data} to exclude
 explicitly (e.g. confirmed outliers). Exclusions are recorded.}
+
+\item{method}{\code{"fisher"} (default, conventional F test) or \code{"welch"}
+(one-way ANOVA without the equal-variance assumption; DIC only).}
 }
 \value{
 An object of classes \code{caagro_anova} and \code{caagro_result}, with
@@ -58,11 +63,16 @@ Models:
 If a \code{block} column is supplied the analysis is \strong{never} carried out as
 DIC: \code{design = "DIC"} with a block column is an error.
 
-Sums of squares: \code{ss_type = "I"} (sequential; blocks entered first),
-\code{"II"} (each term adjusted for all terms not containing it; respects
-marginality) or \code{"III"} (each term adjusted for all others, sum-to-zero
-contrasts). For balanced data the three coincide. For unbalanced data
-type II is the default; the choice is reported in the result.
+The default is the conventional Fisher analysis of variance with
+sequential (type I) sums of squares, as in \code{\link[stats:aov]{stats::aov()}}: blocks are
+entered first, so in a DBC the treatment sum of squares is always
+adjusted for blocks. Types \code{"II"} (each term adjusted for all terms not
+containing it) and \code{"III"} (sum-to-zero contrasts) are available for
+unbalanced factorial experiments. For balanced data the three coincide;
+the type used is always reported.
+
+\code{method = "welch"} performs Welch's one-way ANOVA (Welch, 1951), which
+does not assume equal variances. It is an alternative for DIC only.
 
 CV (\%) = 100 x sqrt(MSE) / grand mean. Standard errors of the treatment
 means are model based, sqrt(MSE / n_i) for balanced DIC/DBC, and come
@@ -89,6 +99,10 @@ Fisher, R. A. (1935). \emph{The Design of Experiments}. Oliver and Boyd.
 
 Montgomery, D. C. (2017). \emph{Design and Analysis of Experiments} (9th ed.).
 Wiley.
+
+Welch, B. L. (1951). On the comparison of several mean values: an
+alternative approach. \emph{Biometrika}, 38(3/4), 330-336.
+\doi{10.2307/2332579}
 
 Olejnik, S. and Algina, J. (2003). Generalized eta and omega squared
 statistics. \emph{Psychological Methods}, 8(4), 434-447.

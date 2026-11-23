@@ -46,7 +46,7 @@ mean_test <- function(data, response, group = NULL,
     desc <- data.frame(group = "(amostra)", n = n, mean = mean(y), sd = stats::sd(y), se = stats::sd(y) / sqrt(n))
     g_eff <- d_eff * (1 - 3 / (4 * (n - 1) - 1))
   } else {
-    if (is.null(group)) abort_caagro("Informe a coluna `group` com dois niveis.")
+    if (is.null(group)) abort_caagro("Informe a coluna `group` com dois n\u00edveis.")
     prep <- prepare_data(data, response, c(group, id))
     d <- prep$data
     g <- droplevels(d[[group]])
@@ -64,7 +64,7 @@ mean_test <- function(data, response, group = NULL,
       d_eff <- mean(dif) / stats::sd(dif)
       n <- length(dif)
       g_eff <- d_eff * (1 - 3 / (4 * (n - 1) - 1))
-      desc <- data.frame(group = c(lv, "diferenca"), n = c(n, n, n), mean = c(mean(a), mean(b), mean(dif)),
+      desc <- data.frame(group = c(lv, "diferen\u00e7a"), n = c(n, n, n), mean = c(mean(a), mean(b), mean(dif)),
                          sd = c(stats::sd(a), stats::sd(b), stats::sd(dif)))
       desc$se <- desc$sd / sqrt(desc$n)
     } else {
@@ -83,8 +83,8 @@ mean_test <- function(data, response, group = NULL,
                    statistic = unname(tt$statistic), df = unname(tt$parameter), p = tt$p.value,
                    lower = tt$conf.int[1], upper = tt$conf.int[2], conf_level = conf_level,
                    cohen_d = d_eff, hedges_g = g_eff, alternative = alternative)
-  label <- c(one_sample = "Teste t para uma amostra", independent = "Teste t para amostras independentes (variancias iguais)",
-             welch = "Teste t de Welch (variancias desiguais)", paired = "Teste t pareado")[[type]]
+  label <- c(one_sample = "Teste t para uma amostra", independent = "Teste t para amostras independentes (vari\u00e2ncias iguais)",
+             welch = "Teste t de Welch (vari\u00e2ncias desiguais)", paired = "Teste t pareado")[[type]]
   new_result("ttest", label, "caagro_test",
              settings = list(response = response, group = group, type = type, id = id, mu = mu,
                              alternative = alternative, conf_level = conf_level),
@@ -92,8 +92,8 @@ mean_test <- function(data, response, group = NULL,
              warnings = prep$messages,
              notes = list(Resultado = sprintf("%s: t = %.3f, gl = %.2f, p %s; IC %g%% = [%.4g; %.4g].",
                                               label, tb$statistic, tb$df, fmt_p_eq(tb$p), 100 * conf_level, tb$lower, tb$upper),
-                          Interpretacao = "O intervalo de confianca descreve os valores plausiveis da diferenca (ou media). O tamanho de efeito (d de Cohen / g de Hedges) descreve a magnitude em unidades de desvio-padrao.",
-                          Cuidados = if (type == "independent") "O teste de Student pressupoe variancias iguais; na duvida, prefira Welch." else "Pressupoe normalidade aproximada (da diferenca, no caso pareado) e independencia entre unidades."),
+                          Interpretacao = "O intervalo de confian\u00e7a descreve os valores plaus\u00edveis da diferen\u00e7a (ou m\u00e9dia). O tamanho de efeito (d de Cohen / g de Hedges) descreve a magnitude em unidades de desvio-padr\u00e3o.",
+                          Cuidados = if (type == "independent") "O teste de Student pressup\u00f5e vari\u00e2ncias iguais; na d\u00favida, prefira Welch." else "Pressup\u00f5e normalidade aproximada (da diferen\u00e7a, no caso pareado) e independ\u00eancia entre unidades."),
              code = code_call("caagro::mean_test", list(data = as.name("dados"), response = response, group = group,
                                                         type = type, id = id, mu = mu, alternative = alternative,
                                                         conf_level = conf_level)))

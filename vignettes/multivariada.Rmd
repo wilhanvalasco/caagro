@@ -39,7 +39,7 @@ plot(h)
 ## K-means
 
 ```{r}
-km <- kmeans_exp(sim_multivariado, k = 3, seed = 123)
+km <- cluster_exp(sim_multivariado, method = "kmeans", k = 3, seed = 123)
 result_table(km, "selection")
 plot(km, "silhouette")
 ```

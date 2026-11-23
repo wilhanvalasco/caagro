@@ -55,7 +55,7 @@ test_that("insufficient data produce clear errors", {
   d2 <- data.frame(t = rep(c("a", "b"), each = 3), y = 5)
   expect_error(anova_exp(d2, "y", "t"), "variabilidade")
   d3 <- data.frame(t = rep(c("a", "b"), each = 3), y = c(1, 2, "x", 4, 5, 6))
-  expect_error(anova_exp(d3, "y", "t"), "nao numerico")
+  expect_error(anova_exp(d3, "y", "t"), "n\u00e3o num\u00e9rico")
 })
 
 test_that("explicit exclusions are recorded and missing values reported", {
@@ -67,7 +67,7 @@ test_that("explicit exclusions are recorded and missing values reported", {
 })
 
 test_that("Welch ANOVA, t tests and contrasts match stats", {
-  w <- welch_anova(PlantGrowth, "weight", "group")
+  w <- anova_exp(PlantGrowth, "weight", "group", method = "welch")
   ref <- oneway.test(weight ~ group, PlantGrowth)
   expect_equal(result_table(w)$p, ref$p.value)
   d <- subset(PlantGrowth, group != "trt2")
@@ -76,7 +76,38 @@ test_that("Welch ANOVA, t tests and contrasts match stats", {
   t2 <- mean_test(sleep, "extra", "group", type = "paired", id = "ID")
   expect_equal(result_table(t2)$p, t.test(sleep$extra[1:10], sleep$extra[11:20], paired = TRUE)$p.value)
   fit <- anova_exp(PlantGrowth, "weight", "group")
-  ct <- contrast_test(fit, list(a = c(0, 1, -1)))
+  ct <- compare_means(fit, contrasts = list(a = c(0, 1, -1)))
   ref2 <- t.test(weight ~ group, subset(PlantGrowth, group != "ctrl"), var.equal = TRUE)
   expect_equal(abs(result_table(ct)$estimate), abs(unname(diff(ref2$estimate))))
+})
+
+test_that("default is the conventional Fisher ANOVA (sequential SS, as aov)", {
+  d <- sim_fatorial[-c(1, 5, 9), ]
+  f <- anova_exp(d, "altura", "cultivar", block = "bloco", factors = "adubacao")
+  ref <- anova(aov(altura ~ bloco + cultivar * adubacao, d))
+  expect_equal(result_table(f)$ss, ref$`Sum Sq`, tolerance = 1e-10)
+  expect_equal(result_table(f)$p[1:4], ref$`Pr(>F)`[1:4], tolerance = 1e-10)
+  expect_equal(result_table(f, "precision")$ss_type, "I")
+  expect_error(anova_exp(sim_dbc, "produtividade", "tratamento", block = "bloco", method = "welch"), "DIC")
+})
+
+test_that("Shapiro-Wilk and Bartlett: values, grouping by design and interpretation", {
+  f <- anova_exp(sim_fatorial, "altura", "cultivar", block = "bloco", factors = "adubacao")
+  tb <- result_table(check_assumptions(f))
+  cells <- interaction(sim_fatorial$cultivar, sim_fatorial$adubacao)
+  expect_equal(tb$p[tb$test == "Bartlett"], bartlett.test(residuals(f$model), cells)$p.value)
+  expect_equal(tb$df[tb$test == "Bartlett"], "8")
+  expect_equal(tb$p[tb$test == "Shapiro-Wilk"], shapiro.test(residuals(f$model))$p.value)
+  expect_match(tb$interpretation[tb$test == "Shapiro-Wilk"], "não identificou evidência")
+  expect_match(tb$interpretation[tb$test == "Bartlett"], "identificou evidência de heterogeneidade")
+})
+
+test_that("DMS of Tukey and LSD follow the textbook formulas; Dunnett has no letters", {
+  f <- anova_exp(sim_soja, "produtividade", "tratamento")
+  mse <- result_table(f, "precision")$mse
+  expect_equal(result_table(compare_means(f, "tukey"), "dms")$dms, qtukey(0.95, 4, 16) * sqrt(mse / 5))
+  expect_equal(result_table(compare_means(f, "lsd"), "dms")$dms, qt(0.975, 16) * sqrt(2 * mse / 5))
+  dn <- result_table(compare_means(f, "dunnett", control = "Testemunha"), "means")
+  expect_true(all(is.na(dn$letras)))
+  expect_equal(dn$vs_controle[dn$tratamento == "Testemunha"], "controle")
 })

@@ -7,7 +7,7 @@ test_that("rank tests match stats", {
   d <- subset(PlantGrowth, group != "trt2")
   mw <- np_test(d, "weight", "group", "mann_whitney")
   expect_equal(result_table(mw)$p, suppressWarnings(wilcox.test(weight ~ group, d)$p.value))
-  expect_error(np_test(wb[-1, ], "breaks", "tension", "friedman", block = "blk"), "uma observacao")
+  expect_error(np_test(wb[-1, ], "breaks", "tension", "friedman", block = "blk"), "uma observa\u00e7\u00e3o")
 })
 
 test_that("Dunn test matches rstatix", {
@@ -34,8 +34,8 @@ test_that("PCA matches prcomp; clustering matches hclust", {
   ref_h <- hclust(dist(scale(sim_multivariado[, 3:8])), "average")
   expect_equal(h$model$height, ref_h$height)
   expect_error(cluster_exp(sim_multivariado, distance = "manhattan", method = "ward.D2"), "euclidianas")
-  km <- kmeans_exp(sim_multivariado, k = 3, seed = 1)
-  km2 <- kmeans_exp(sim_multivariado, k = 3, seed = 1)
+  km <- cluster_exp(sim_multivariado, method = "kmeans", k = 3, seed = 1)
+  km2 <- cluster_exp(sim_multivariado, method = "kmeans", k = 3, seed = 1)
   expect_identical(result_table(km, "clusters"), result_table(km2, "clusters"))
   cm <- cor_matrix(sim_multivariado, c("altura", "ciclo"))
   expect_equal(result_table(cm)$r, cor(sim_multivariado$altura, sim_multivariado$ciclo))

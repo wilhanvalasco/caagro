@@ -73,7 +73,7 @@ np_test <- function(data, response, group, test = c("kruskal", "friedman", "mood
   d <- prep$data
   warns <- prep$messages
   y <- d[[response]]; g <- droplevels(d[[group]]); k <- nlevels(g); N <- length(y)
-  if (k < 2) abort_caagro("Sao necessarios ao menos 2 grupos.")
+  if (k < 2) abort_caagro("S\u00e3o necessarios ao menos 2 grupos.")
   rk <- rank(y)
   desc <- data.frame(level = levels(g), n = as.vector(table(g)),
                      median = as.vector(tapply(y, g, stats::median)),
@@ -95,8 +95,8 @@ np_test <- function(data, response, group, test = c("kruskal", "friedman", "mood
   } else if (test == "friedman") {
     b <- droplevels(d[[block]])
     ct <- table(g, b)
-    if (any(ct != 1)) abort_caagro("Friedman exige exatamente uma observacao por tratamento em cada bloco (blocos completos). ",
-                                   "Para blocos incompletos, considere o teste de Skillings-Mack (nao implementado nesta versao).")
+    if (any(ct != 1)) abort_caagro("Friedman exige exatamente uma observa\u00e7\u00e3o por tratamento em cada bloco (blocos completos). ",
+                                   "Para blocos incompletos, considere o teste de Skillings-Mack (n\u00e3o implementado nesta vers\u00e3o).")
     ft <- stats::friedman.test(y, g, b)
     Q <- unname(ft$statistic); nb <- nlevels(b)
     rb <- stats::ave(y, b, FUN = rank)
@@ -106,13 +106,13 @@ np_test <- function(data, response, group, test = c("kruskal", "friedman", "mood
                      kendall_w = Q / (nb * (k - 1)), blocks = nb)
   } else if (test == "mood") {
     med <- stats::median(y)
-    above <- factor(ifelse(y > med, "acima", "nao acima"), levels = c("acima", "nao acima"))
+    above <- factor(ifelse(y > med, "acima", "n\u00e3o acima"), levels = c("acima", "n\u00e3o acima"))
     ct <- table(g, above)
     expct <- outer(rowSums(ct), colSums(ct)) / sum(ct)
     if (any(expct < 5)) {
       ft <- stats::fisher.test(ct, simulate.p.value = k > 4 || N > 200, B = 1e4)
       tb <- data.frame(test = "Mediana de Mood (exato de Fisher)", statistic = NA, df = NA, p = ft$p.value, grand_median = med)
-      warns <- c(warns, "Frequencias esperadas < 5: usado o teste exato de Fisher.")
+      warns <- c(warns, "Frequ\u00eancias esperadas < 5: usado o teste exato de Fisher.")
     } else {
       cs <- stats::chisq.test(ct, correct = FALSE)
       tb <- data.frame(test = "Mediana de Mood (qui-quadrado)", statistic = unname(cs$statistic), df = unname(cs$parameter),
@@ -120,7 +120,7 @@ np_test <- function(data, response, group, test = c("kruskal", "friedman", "mood
     }
     tables$contingency <- as.data.frame.matrix(ct)
     tables$contingency <- cbind(stats::setNames(data.frame(rownames(ct)), group), tables$contingency)
-    warns <- c(warns, "O teste da mediana tem baixo poder e compara proporcoes acima da mediana geral; so testa medianas se as distribuicoes tiverem a mesma forma.")
+    warns <- c(warns, "O teste da mediana tem baixo poder e compara propor\u00e7\u00f5es acima da mediana geral; s\u00f3 testa medianas se as distribui\u00e7\u00f5es tiverem a mesma forma.")
   } else if (test == "mann_whitney") {
     a <- y[g == lv[1]]; bb <- y[g == lv[2]]
     wt <- suppressWarnings(stats::wilcox.test(a, bb, conf.int = TRUE, conf.level = conf_level, exact = NULL))
@@ -128,7 +128,7 @@ np_test <- function(data, response, group, test = c("kruskal", "friedman", "mood
     tb <- data.frame(test = "Mann-Whitney (Wilcoxon soma de postos)", statistic = W, df = NA, p = wt$p.value,
                      hodges_lehmann = unname(wt$estimate), lower = wt$conf.int[1], upper = wt$conf.int[2],
                      rank_biserial = 2 * W / (n1 * n2) - 1)
-    if (any(duplicated(y))) warns <- c(warns, "Ha empates: p-valor pela aproximacao normal com correcao de continuidade.")
+    if (any(duplicated(y))) warns <- c(warns, "H\u00e1 empates: p-valor pela aproxima\u00e7\u00e3o normal com corre\u00e7\u00e3o de continuidade.")
   } else if (test %in% c("wilcoxon_paired", "sign")) {
     w <- stats::reshape(d[, c(id, group, response)], idvar = id, timevar = group, direction = "wide")
     a <- w[[paste0(response, ".", lv[1])]]; bb <- w[[paste0(response, ".", lv[2])]]
@@ -145,7 +145,7 @@ np_test <- function(data, response, group, test = c("kruskal", "friedman", "mood
       bt <- stats::binom.test(pos, nz)
       tb <- data.frame(test = "Teste dos sinais", statistic = pos, df = NA, p = bt$p.value, n_nonzero = nz,
                        median_diff = stats::median(dif), pairs = length(dif))
-      warns <- c(warns, sprintf("%d diferenca(s) nula(s) descartada(s) no teste dos sinais.", sum(dif == 0)))
+      warns <- c(warns, sprintf("%d diferen\u00e7a(s) nula(s) descartada(s) no teste dos sinais.", sum(dif == 0)))
     }
   } else if (test == "permutation") {
     stat_f <- if (k == 2) function(yy) mean(yy[g == lv[1]]) - mean(yy[g == lv[2]]) else
@@ -154,21 +154,21 @@ np_test <- function(data, response, group, test = c("kruskal", "friedman", "mood
     T0 <- stat_f(y)
     perm <- with_seed(seed, vapply(seq_len(R), function(i) stat_f(sample(y)), numeric(1)))
     p <- if (k == 2) (1 + sum(abs(perm) >= abs(T0) - 1e-12)) / (R + 1) else (1 + sum(perm >= T0 - 1e-12)) / (R + 1)
-    tb <- data.frame(test = if (k == 2) "Permutacao (diferenca de medias)" else "Permutacao (F de um fator)",
+    tb <- data.frame(test = if (k == 2) "Permuta\u00e7\u00e3o (diferen\u00e7a de m\u00e9dias)" else "Permuta\u00e7\u00e3o (F de um fator)",
                      statistic = T0, df = NA, p = p, permutations = R, seed = seed)
   }
   labels <- c(kruskal = "Kruskal-Wallis", friedman = "Friedman", mood = "Teste da mediana de Mood",
               mann_whitney = "Mann-Whitney", wilcoxon_paired = "Wilcoxon pareado", sign = "Teste dos sinais",
-              permutation = "Teste de permutacao")
-  new_result("np", paste("Nao parametrico -", labels[[test]]), "caagro_np",
+              permutation = "Teste de permuta\u00e7\u00e3o")
+  new_result("np", paste("N\u00e3o param\u00e9trico -", labels[[test]]), "caagro_np",
              design = if (!is.null(block)) "Blocos" else NULL,
              settings = list(response = response, group = group, test = test, block = block, id = id,
                              conf_level = conf_level, R = R, seed = seed, exclude = exclude),
              data = data, data_used = d, tables = c(list(test = tb, descriptives = desc), tables),
              warnings = warns, seed = if (test == "permutation") seed,
-             notes = list(Resultado = sprintf("%s: estatistica = %s, p %s.", labels[[test]], fmt_num(tb$statistic), fmt_p_eq(tb$p)),
-                          Interpretacao = "p pequeno indica que ao menos um grupo tende a apresentar valores sistematicamente maiores ou menores. Use comparacoes post-hoc com correcao de multiplicidade para localizar as diferencas.",
-                          Cuidados = "Testes de postos nao sao substitutos automaticos da ANOVA: testam hipoteses diferentes e perdem informacao de magnitude. Escolha o metodo pelo delineamento e pela natureza da variavel, nao apenas por um teste de normalidade."),
+             notes = list(Resultado = sprintf("%s: estat\u00edstica = %s, p %s.", labels[[test]], fmt_num(tb$statistic), fmt_p_eq(tb$p)),
+                          Interpretacao = "p pequeno indica que ao menos um grupo tende a apresentar valores sistematicamente maiores ou menores. Use compara\u00e7\u00f5es post-hoc com corre\u00e7\u00e3o de multiplicidade para localizar as diferen\u00e7as.",
+                          Cuidados = "Testes de postos n\u00e3o s\u00e3o substitutos autom\u00e1ticos da ANOVA: testam hip\u00f3teses diferentes e perdem informa\u00e7\u00e3o de magnitude. Escolha o m\u00e9todo pelo delineamento e pela natureza da vari\u00e1vel, n\u00e3o apenas por um teste de normalidade."),
              code = code_call("caagro::np_test", list(data = as.name("dados"), response = response, group = group, test = test,
                                                       block = block, id = id, R = if (test == "permutation") R,
                                                       seed = if (test == "permutation") seed, exclude = exclude)))
@@ -257,7 +257,7 @@ np_posthoc <- function(x, method = c("dunn", "conover", "wilcoxon"), p_adjust = 
   out$settings <- c(x$settings, list(posthoc = method, p_adjust = p_adjust, alpha = alpha))
   out$tables <- list(test = x$tables$test, descriptives = desc, pairs = pr)
   out$main <- "pairs"
-  out$notes$Interpretacao <- "Grupos com a mesma letra nao diferem pelo post-hoc (valores de p ajustados); letras ordenadas pelo posto medio."
+  out$notes$Interpretacao <- "Grupos com a mesma letra n\u00e3o diferem pelo post-hoc (valores de p ajustados); letras ordenadas pelo posto medio."
   out$code <- paste0(x$code, " |>\n  caagro::np_posthoc(", deparse(method), ", p_adjust = ", deparse(p_adjust), ", alpha = ", alpha, ")")
   out
 }

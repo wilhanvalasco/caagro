@@ -19,17 +19,19 @@ applications that call exactly the same functions.
 \code{\link[=run_exploratory]{run_exploratory()}}. Legacy launchers \code{\link[=anQuali]{anQuali()}}, \code{\link[=anQuant]{anQuant()}} and
 \code{\link[=anIC]{anIC()}} are kept.
 \item Data: \code{\link[=read_data]{read_data()}}, \code{\link[=check_data]{check_data()}}, \code{\link[=flag_outliers]{flag_outliers()}}, \code{\link[=to_long]{to_long()}}.
-\item Parametric: \code{\link[=anova_exp]{anova_exp()}}, \code{\link[=compare_means]{compare_means()}}, \code{\link[=check_assumptions]{check_assumptions()}},
-\code{\link[=mean_test]{mean_test()}}, \code{\link[=welch_anova]{welch_anova()}}, \code{\link[=contrast_test]{contrast_test()}}.
-\item Regression: \code{\link[=fit_regression]{fit_regression()}}, \code{\link[=compare_curves]{compare_curves()}}, \code{\link[=optimum_dose]{optimum_dose()}}.
+\item ANOVA (Fisher, DIC/DBC/factorial; Welch as alternative): \code{\link[=anova_exp]{anova_exp()}},
+\code{\link[=compare_means]{compare_means()}} (also planned contrasts), \code{\link[=check_assumptions]{check_assumptions()}},
+\code{\link[=mean_test]{mean_test()}}.
+\item Regression: \code{\link[=fit_regression]{fit_regression()}}, \code{\link[=optimum_dose]{optimum_dose()}}.
 \item Non-parametric: \code{\link[=np_test]{np_test()}}, \code{\link[=np_posthoc]{np_posthoc()}}.
-\item Confidence intervals: \code{\link[=conf_int]{conf_int()}}, \code{\link[=conf_int_groups]{conf_int_groups()}}, \code{\link[=conf_int_boot]{conf_int_boot()}}.
-\item Multivariate: \code{\link[=pca_exp]{pca_exp()}}, \code{\link[=cluster_exp]{cluster_exp()}}, \code{\link[=kmeans_exp]{kmeans_exp()}},
+\item Confidence intervals (classic, per treatment and bootstrap): \code{\link[=conf_int]{conf_int()}}.
+\item Multivariate: \code{\link[=pca_exp]{pca_exp()}}, \code{\link[=cluster_exp]{cluster_exp()}} (hierarchical or k-means),
 \code{\link[=cor_matrix]{cor_matrix()}}.
 \item Exploratory: \code{\link[=describe_data]{describe_data()}}.
-\item Graphics: \code{\link[=caagro_style]{caagro_style()}}, \code{\link[=theme_caagro]{theme_caagro()}}, \code{\link[=save_plot]{save_plot()}}.
+\item Graphics: \code{\link[=caagro_style]{caagro_style()}}, \code{\link[=theme_caagro]{theme_caagro()}}, \code{\link[=save_plot]{save_plot()}},
+\code{\link[=style_to_json]{style_to_json()}}.
 \item Export: \code{\link[=export_excel]{export_excel()}}, \code{\link[=export_report]{export_report()}}, \code{\link[=export_script]{export_script()}}.
-\item Guidance: \code{\link[=suggest_method]{suggest_method()}}.
+\item Results and guidance: \code{\link[=result_table]{result_table()}}, \code{\link[=suggest_method]{suggest_method()}}.
 }
 }
 

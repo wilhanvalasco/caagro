@@ -98,6 +98,6 @@ método.
 
 ```{r}
 mean_test(sleep, "extra", "group", type = "paired", id = "ID")$tables$test
-result_table(welch_anova(PlantGrowth, "weight", "group"))
-contrast_test(dic, list("controle vs tratados" = c(1, -0.5, -0.5)))$tables$contrasts
+result_table(anova_exp(PlantGrowth, "weight", "group", method = "welch"))
+compare_means(dic, contrasts = list("controle vs tratados" = c(1, -0.5, -0.5)))$tables$contrasts
 ```

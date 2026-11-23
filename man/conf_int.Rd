@@ -8,12 +8,20 @@ conf_int(
   data,
   response,
   parameter = c("mean", "variance", "sd", "proportion", "diff_means", "diff_means_welch",
-    "var_ratio", "paired_diff"),
+    "var_ratio", "paired_diff", "group_means", "median", "diff_medians"),
   group = NULL,
   id = NULL,
   conf_level = 0.95,
   success = NULL,
-  prop_method = c("wilson", "exact", "wald")
+  prop_method = c("wilson", "exact", "wald"),
+  method = c("classic", "bootstrap"),
+  block = NULL,
+  variance = c("pooled", "separate"),
+  simultaneous = c("none", "bonferroni"),
+  exclude = NULL,
+  R = 2000,
+  boot_type = c("bca", "percentile"),
+  seed = 123
 )
 }
 \arguments{
@@ -33,9 +41,21 @@ logical or a column compared to \code{success}).}
 \item{success}{Value of \code{response} counted as success (proportions).}
 
 \item{prop_method}{\code{"wilson"}, \code{"exact"} (Clopper-Pearson) or \code{"wald"}.}
+
+\item{method}{\code{"classic"} (analytical, default) or \code{"bootstrap"}
+(percentile or BCa; available for \code{"mean"}, \code{"median"}, \code{"sd"},
+\code{"diff_means"} and \code{"diff_medians"}).}
+
+\item{block, variance, simultaneous, exclude}{For \code{parameter = "group_means"}: optional block column; \code{"pooled"} (model error, assumes
+equal variances) or \code{"separate"} variances; \code{"none"} or \code{"bonferroni"}
+simultaneous coverage; rows to exclude.}
+
+\item{R, boot_type, seed}{Bootstrap settings: number of resamples,
+\code{"bca"} or \code{"percentile"}, random seed.}
 }
 \value{
-A \code{caagro_result} (class \code{caagro_ci}) with table \code{interval}.
+A \code{caagro_result} (class \code{caagro_ci}, or \code{caagro_ci_groups} for
+\code{"group_means"}) with table \code{interval} (or \code{intervals}).
 }
 \description{
 Classical (analytical) confidence intervals:
@@ -51,12 +71,25 @@ Classical (analytical) confidence intervals:
 \item \code{"var_ratio"}: F interval for \eqn{\sigma^2_1/\sigma^2_2} (assumes
 normality).
 \item \code{"paired_diff"}: interval for the mean paired difference.
+\item \code{"group_means"}: one interval per treatment mean (modernised engine of
+the legacy \code{anIC()}), with pooled (model error) or separate variances
+and optional Bonferroni simultaneous coverage. Overlap of individual
+intervals is not a test of differences.
+\item \code{"median"}, \code{"diff_medians"}: bootstrap only.
 }
+}
+\details{
+Bootstrap intervals (\code{method = "bootstrap"}) use non-parametric
+resampling (stratified by group for differences) with percentile or BCa
+limits (Efron, 1987; Efron and Tibshirani, 1993).
 }
 \examples{
 conf_int(PlantGrowth, "weight", "mean")
 conf_int(PlantGrowth, "weight", "variance")
 conf_int(subset(PlantGrowth, group != "trt2"), "weight", "diff_means_welch", group = "group")
+r <- conf_int(PlantGrowth, "weight", "group_means", group = "group")
+plot(r)
+conf_int(PlantGrowth, "weight", "median", method = "bootstrap", R = 999, seed = 1)
 }
 \references{
 Wilson, E. B. (1927). Probable inference, the law of succession, and
@@ -68,4 +101,11 @@ fiducial limits illustrated in the case of the binomial. \emph{Biometrika},
 26(4), 404-413. \doi{10.2307/2331986}
 
 Welch, B. L. (1947). \emph{Biometrika}, 34(1/2), 28-35. \doi{10.2307/2332510}
+
+Efron, B. (1987). Better bootstrap confidence intervals. \emph{Journal of the
+American Statistical Association}, 82(397), 171-185.
+\doi{10.1080/01621459.1987.10478410}
+
+Efron, B. and Tibshirani, R. J. (1993). \emph{An Introduction to the
+Bootstrap}. Chapman and Hall/CRC. \doi{10.1201/9780429246593}
 }

@@ -46,7 +46,7 @@ hipóteses diferentes e, em geral, não acomodam delineamentos complexos.
 ## Intervalos de confiança
 
 ```{r}
-ic <- conf_int_groups(PlantGrowth, "weight", "group")
+ic <- conf_int(PlantGrowth, "weight", "group_means", group = "group")
 result_table(ic)
 plot(ic, "forest")
 ```
@@ -58,6 +58,6 @@ Para diferenças, use intervalos de diferenças:
 result_table(conf_int(subset(PlantGrowth, group != "trt2"), "weight", "diff_means_welch", group = "group"))
 result_table(conf_int(PlantGrowth, "weight", "sd"))
 result_table(conf_int(data.frame(g = c(rep(1, 18), rep(0, 32))), "g", "proportion"))
-bt <- conf_int_boot(PlantGrowth, "weight", "median", R = 2000, seed = 7)
+bt <- conf_int(PlantGrowth, "weight", "median", method = "bootstrap", R = 2000, seed = 7)
 result_table(bt)
 ```

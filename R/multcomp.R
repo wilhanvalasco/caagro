@@ -27,6 +27,12 @@
 #' * `"games_howell"`: for heterogeneous variances; only for one-way (DIC)
 #'   designs.
 #'
+#' For Tukey and LSD the least significant difference (DMS, *diferenca
+#' minima significativa*) is reported in table `dms` when replication is
+#' equal; with unequal replication it varies by pair (see the `pairs` table).
+#' Dunnett does not produce grouping letters: each treatment is only
+#' classified as different or not from the control.
+#'
 #' Compact letter displays use the insert-absorb algorithm (Piepho, 2004).
 #' Means sharing a letter are not significantly different. Letters are only
 #' produced when the procedure supports that interpretation.
@@ -42,6 +48,10 @@
 #' @param p_adjust Multiplicity correction for LSD/pairwise methods.
 #' @param conf_level Confidence level for intervals of differences
 #'   (default `1 - alpha`).
+#' @param contrasts Optional named list of planned contrasts (one
+#'   coefficient per level of `factor`, summing to zero). When given, the
+#'   planned contrasts are tested (t tests with the model error, adjusted by
+#'   `p_adjust`) instead of a multiple comparison procedure.
 #' @return An object of classes `caagro_multcomp` and `caagro_result` with
 #'   tables `means` (with `group` letters) and `pairs`.
 #' @references
@@ -86,14 +96,15 @@
 compare_means <- function(x, method = c("tukey", "snk", "lsd", "scott_knott", "dunnett",
                                         "bonferroni", "holm", "pairwise", "games_howell"),
                           factor = NULL, by = NULL, alpha = 0.05, control = NULL,
-                          protected = TRUE, p_adjust = "none", conf_level = 1 - alpha) {
+                          protected = TRUE, p_adjust = "none", conf_level = 1 - alpha, contrasts = NULL) {
   if (!inherits(x, "caagro_anova")) abort_caagro("`x` deve ser resultado de anova_exp().")
+  if (!is.null(contrasts)) return(contrast_test(x, contrasts, factor = factor, p_adjust = p_adjust, conf_level = conf_level))
   method <- match.arg(method)
   check_alpha(alpha)
   valid_p_adjust(p_adjust)
   factor <- factor %||% x$settings$treatment
   fit <- x$model
-  if (!is.null(by) && !by %in% names(fit$xlevels)) abort_caagro("Fator `by` nao esta no modelo.")
+  if (!is.null(by) && !by %in% names(fit$xlevels)) abort_caagro("Fator `by` n\u00e3o esta no modelo.")
   tab <- x$tables$anova
   warns <- character()
   # Interaction check
@@ -101,7 +112,7 @@ compare_means <- function(x, method = c("tukey", "snk", "lsd", "scott_knott", "d
   if (is.null(by) && length(int_terms)) {
     pint <- tab$p[tab$term %in% int_terms & grepl(factor, tab$term, fixed = TRUE)]
     if (any(pint < alpha, na.rm = TRUE)) {
-      warns <- c(warns, sprintf("Interacao significativa envolvendo '%s'. Comparar medias marginais pode ser enganoso; use `by` para comparar dentro dos niveis do outro fator.", factor))
+      warns <- c(warns, sprintf("Intera\u00e7\u00e3o significativa envolvendo '%s'. Comparar m\u00e9dias marginais pode ser enganoso; use `by` para comparar dentro dos n\u00edveis do outro fator.", factor))
     }
   }
   if (method == "games_howell" && (!is.null(x$settings$block) || length(x$settings$factors))) {
@@ -111,7 +122,7 @@ compare_means <- function(x, method = c("tukey", "snk", "lsd", "scott_knott", "d
   em <- emm_compute(fit, specs, conf_level)
   V <- attr(em, "V")
   if (anyNA(em$emmean)) {
-    warns <- c(warns, "Algumas medias nao sao estimaveis e foram excluidas das comparacoes.")
+    warns <- c(warns, "Algumas m\u00e9dias n\u00e3o s\u00e3o estim\u00e1veis e foram exclu\u00eddas das compara\u00e7\u00f5es.")
   }
   groups <- if (is.null(by)) list(all = seq_len(nrow(em))) else split(seq_len(nrow(em)), em[[by]])
   dfe <- stats::df.residual(fit)
@@ -141,45 +152,58 @@ compare_means <- function(x, method = c("tukey", "snk", "lsd", "scott_knott", "d
     )
     mm <- m
     mm$letras <- res$letters[lv] %||% NA_character_
+    if (!is.null(res$vs_control)) mm$vs_controle <- unname(res$vs_control[lv])
     if (!is.null(by)) res$pairs[[by]] <- gname
     means_out[[gname]] <- mm
     pairs_out[[gname]] <- res$pairs
     warns <- c(warns, res$warnings)
   }
   means <- do.call(rbind, means_out); rownames(means) <- NULL
+  dms <- NULL
+  if (method %in% c("tukey", "lsd") && is.null(by)) {
+    reps <- table(droplevels(x$data_used[[factor]]))
+    k <- nlevels(droplevels(x$data_used[[factor]]))
+    balanced_f <- length(unique(as.vector(reps))) == 1 && isTRUE(x$tables$precision$balanced)
+    r <- as.numeric(reps[1])
+    crit <- if (method == "tukey") stats::qtukey(1 - alpha, k, dfe) * sqrt(mse / r) else stats::qt(1 - alpha / 2, dfe) * sqrt(2 * mse / r)
+    dms <- data.frame(method = method, alpha = alpha, replications = if (balanced_f) r else NA,
+                      dms = if (balanced_f && (method == "tukey" || p_adjust == "none")) crit else NA,
+                      note = if (!balanced_f) "Repeti\u00e7\u00f5es desiguais: a DMS varia entre pares (ver tabela de pares)." else
+                        if (method == "lsd" && p_adjust != "none") "Com ajuste de p, a DMS n\u00e3o \u00e9 \u00fanica." else "")
+  }
   pairs <- do.call(rbind, pairs_out); rownames(pairs) <- NULL
   okey <- if (is.null(by)) rep(0L, nrow(means)) else as.integer(means[[by]])
   means <- means[order(okey, -means$emmean), , drop = FALSE]
   rownames(means) <- NULL
   if (method == "lsd") {
     if (protected && !isTRUE(p_global < alpha)) {
-      warns <- c(warns, "LSD protegido: o teste F global nao foi significativo; nenhuma diferenca e declarada.")
+      warns <- c(warns, "LSD protegido: o teste F global n\u00e3o foi significativo; nenhuma diferen\u00e7a e declarada.")
     } else if (!protected) {
-      warns <- c(warns, "LSD nao protegido: a taxa de erro por familia de comparacoes nao e controlada.")
+      warns <- c(warns, "LSD n\u00e3o protegido: a taxa de erro por fam\u00edlia de compara\u00e7\u00f5es n\u00e3o \u00e9 controlada.")
     }
   }
-  if (method == "snk" && nrow(em) > 3) warns <- c(warns, "SNK nao controla a taxa de erro por familia (FWER) com mais de 3 medias.")
+  if (method == "snk" && nrow(em) > 3) warns <- c(warns, "SNK n\u00e3o controla a taxa de erro por fam\u00edlia (FWER) com mais de 3 m\u00e9dias.")
   if (method %in% c("tukey", "snk", "lsd", "bonferroni", "holm", "pairwise", "dunnett", "scott_knott") && !isTRUE(p_global < alpha) && method != "lsd") {
-    warns <- c(warns, "O teste F global nao foi significativo; diferencas pontuais devem ser interpretadas com cautela.")
+    warns <- c(warns, "O teste F global n\u00e3o foi significativo; diferen\u00e7as pontuais devem ser interpretadas com cautela.")
   }
   label <- c(tukey = "Tukey HSD (Tukey-Kramer)", snk = "Student-Newman-Keuls",
-             lsd = paste0("LSD de Fisher", if (protected) " (protegido)" else " (nao protegido)",
+             lsd = paste0("LSD de Fisher", if (protected) " (protegido)" else " (n\u00e3o protegido)",
                           if (p_adjust != "none") paste0(", ajuste ", p_adjust) else ""),
              scott_knott = "Scott-Knott", dunnett = "Dunnett (versus controle)",
-             bonferroni = "t pareado com correcao de Bonferroni", holm = "t pareado com correcao de Holm",
+             bonferroni = "t pareado com corre\u00e7\u00e3o de Bonferroni", holm = "t pareado com corre\u00e7\u00e3o de Holm",
              pairwise = paste0("t pareado, ajuste ", p_adjust), games_howell = "Games-Howell")[[method]]
   new_result(
-    type = "multcomp", method = paste0("Comparacao de medias - ", label), subclass = "caagro_multcomp",
+    type = "multcomp", method = paste0("Compara\u00e7\u00e3o de m\u00e9dias - ", label), subclass = "caagro_multcomp",
     formula = x$formula, design = x$design,
     settings = list(method = method, factor = factor, by = by, alpha = alpha, control = control,
                     protected = protected, p_adjust = p_adjust, conf_level = conf_level,
                     response = x$settings$response),
-    data = x$data, data_used = x$data_used, tables = list(means = means, pairs = pairs),
+    data = x$data, data_used = x$data_used, tables = c(list(means = means, pairs = pairs), if (!is.null(dms)) list(dms = dms)),
     model = fit, warnings = c(x$warnings, warns),
     notes = list(
-      Resultado = sprintf("%s ao nivel alfa = %s.", label, alpha),
-      Interpretacao = "Medias seguidas pela mesma letra nao diferem significativamente pelo procedimento utilizado. Diferencas nao significativas nao provam igualdade.",
-      Cuidados = "As comparacoes dependem dos pressupostos do modelo (normalidade e homogeneidade dos residuos)."
+      Resultado = sprintf("%s ao n\u00edvel alfa = %s.", label, alpha),
+      Interpretacao = "M\u00e9dias seguidas pela mesma letra n\u00e3o diferem significativamente pelo procedimento utilizado. Diferen\u00e7as n\u00e3o significativas n\u00e3o provam igualdade.",
+      Cuidados = "As compara\u00e7\u00f5es dependem dos pressupostos do modelo (normalidade e homogeneidade dos res\u00edduos)."
     ),
     code = paste0(x$code, " |>\n  caagro::compare_means(", deparse(method),
                   if (!is.null(by)) paste0(", by = ", deparse(by)), ", alpha = ", alpha,
@@ -249,7 +273,7 @@ mc_lsd <- function(est, V, dfe, alpha, conf_level, p_adjust, protected_ok) {
 
 mc_dunnett <- function(est, V, dfe, alpha, conf_level, control) {
   lv <- names(est)
-  if (!control %in% lv) abort_caagro("Nivel controle '", control, "' nao encontrado. Niveis: ", paste(lv, collapse = ", "))
+  if (!control %in% lv) abort_caagro("N\u00edvel controle '", control, "' n\u00e3o encontrado. N\u00edveis: ", paste(lv, collapse = ", "))
   c0 <- match(control, lv)
   oth <- setdiff(seq_along(lv), c0)
   pf <- pairs_frame(est, V, oth, rep(c0, length(oth)), dfe)
@@ -270,16 +294,16 @@ mc_dunnett <- function(est, V, dfe, alpha, conf_level, control) {
   pf$lower <- pf$diff - crit * pf$se; pf$upper <- pf$diff + crit * pf$se
   pf$p_adj <- pmin(pmax(pf$p_adj, 0), 1)
   pf$significant <- pf$p_adj < alpha
-  lets <- stats::setNames(ifelse(seq_along(lv) == c0, "controle",
-                                 ifelse(lv %in% pf$level1[pf$significant], "*", "ns")), lv)
-  list(pairs = pf, letters = lets,
-       warnings = "Dunnett compara cada tratamento apenas com o controle; '*' indica diferenca significativa em relacao ao controle (nao sao letras de agrupamento).")
+  vs <- stats::setNames(ifelse(seq_along(lv) == c0, "controle",
+                               ifelse(lv %in% pf$level1[pf$significant], "difere do controle", "n\u00e3o difere do controle")), lv)
+  list(pairs = pf, letters = stats::setNames(rep(NA_character_, length(lv)), lv), vs_control = vs,
+       warnings = "Dunnett compara cada tratamento apenas com o controle e n\u00e3o produz letras de agrupamento.")
 }
 
 mc_games_howell <- function(d, response, factor, alpha, conf_level) {
   y <- d[[response]]; g <- droplevels(d[[factor]])
   n <- tapply(y, g, length); m <- tapply(y, g, mean); v <- tapply(y, g, stats::var)
-  if (any(n < 2)) abort_caagro("Games-Howell exige ao menos 2 observacoes por grupo.")
+  if (any(n < 2)) abort_caagro("Games-Howell exige ao menos 2 observa\u00e7\u00f5es por grupo.")
   k <- length(m); ij <- pair_index(k)
   lv <- names(m)
   se2 <- v[ij$i] / n[ij$i] + v[ij$j] / n[ij$j]
@@ -307,7 +331,7 @@ mc_scott_knott <- function(est, mse, dfe, d, factor, by, gname, alpha) {
   }
   r <- harmonic_mean(reps)
   warns <- character()
-  if (length(unique(reps)) > 1) warns <- "Scott-Knott com repeticoes desiguais: usada a media harmonica do numero de repeticoes (aproximacao)."
+  if (length(unique(reps)) > 1) warns <- "Scott-Knott com repeti\u00e7\u00f5es desiguais: usada a m\u00e9dia harm\u00f4nica do n\u00famero de repeti\u00e7\u00f5es (aproxima\u00e7\u00e3o)."
   s2ybar <- mse / r
   ord <- order(est, decreasing = TRUE)
   y <- est[ord]

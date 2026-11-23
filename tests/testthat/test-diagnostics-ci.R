@@ -2,11 +2,12 @@ test_that("assumption tests match stats/car", {
   fit <- anova_exp(PlantGrowth, "weight", "group")
   tb <- result_table(check_assumptions(fit), "tests")
   r <- residuals(aov(weight ~ group, PlantGrowth))
-  expect_equal(tb$p[tb$test == "Shapiro-Wilk (residuos)"], shapiro.test(r)$p.value)
+  expect_equal(tb$p[tb$test == "Shapiro-Wilk"], shapiro.test(r)$p.value)
   expect_equal(tb$p[tb$test == "Bartlett"], bartlett.test(weight ~ group, PlantGrowth)$p.value)
+  rb <- result_table(check_assumptions(fit), "robust")
   skip_if_not_installed("car")
-  expect_equal(tb$p[tb$test == "Levene (media)"], car::leveneTest(weight ~ group, PlantGrowth, center = mean)$`Pr(>F)`[1], tolerance = 1e-10)
-  expect_equal(tb$p[grepl("Brown", tb$test)], car::leveneTest(weight ~ group, PlantGrowth, center = median)$`Pr(>F)`[1], tolerance = 1e-10)
+  expect_equal(rb$p[rb$test == "Levene (m\u00e9dia)"], car::leveneTest(weight ~ group, PlantGrowth, center = mean)$`Pr(>F)`[1], tolerance = 1e-10)
+  expect_equal(rb$p[grepl("Brown", rb$test)], car::leveneTest(weight ~ group, PlantGrowth, center = median)$`Pr(>F)`[1], tolerance = 1e-10)
 })
 
 test_that("analytical confidence intervals are correct", {
@@ -28,17 +29,17 @@ test_that("analytical confidence intervals are correct", {
 })
 
 test_that("group intervals with pooled variance use MSE", {
-  r <- conf_int_groups(PlantGrowth, "weight", "group")
+  r <- conf_int(PlantGrowth, "weight", "group_means", group = "group")
   it <- result_table(r)
   mse <- anova(lm(weight ~ group, PlantGrowth))$`Mean Sq`[2]
   expect_equal(it$se, rep(sqrt(mse / 10), 3))
-  s <- result_table(conf_int_groups(PlantGrowth, "weight", "group", variance = "separate"))
+  s <- result_table(conf_int(PlantGrowth, "weight", "group_means", group = "group", variance = "separate"))
   expect_equal(s$upper[1], as.numeric(t.test(PlantGrowth$weight[1:10])$conf.int[2]))
 })
 
 test_that("bootstrap intervals are reproducible and close to boot", {
-  a <- conf_int_boot(PlantGrowth, "weight", "mean", R = 2000, seed = 10)
-  b <- conf_int_boot(PlantGrowth, "weight", "mean", R = 2000, seed = 10)
+  a <- conf_int(PlantGrowth, "weight", "mean", method = "bootstrap", R = 2000, seed = 10)
+  b <- conf_int(PlantGrowth, "weight", "mean", method = "bootstrap", R = 2000, seed = 10)
   expect_identical(result_table(a), result_table(b))
   skip_if_not_installed("boot")
   set.seed(10)

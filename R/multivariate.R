@@ -2,13 +2,13 @@ mv_matrix <- function(data, variables, label = NULL, group = NULL) {
   data <- check_data_frame(data)
   if (is.null(variables)) variables <- setdiff(names(data)[vapply(data, is.numeric, logical(1))], c(label, group))
   check_columns(data, c(variables, label, group))
-  if (length(variables) < 2) abort_caagro("Selecione ao menos 2 variaveis quantitativas.")
+  if (length(variables) < 2) abort_caagro("Selecione ao menos 2 vari\u00e1veis quantitativas.")
   X <- as.data.frame(lapply(data[, variables, drop = FALSE], as_numeric_strict))
   names(X) <- variables
   ok <- stats::complete.cases(X)
-  msg <- if (any(!ok)) sprintf("%d linha(s) com valores ausentes removida(s) da analise multivariada (linhas %s).", sum(!ok), paste(utils::head(which(!ok), 20), collapse = ", ")) else character()
+  msg <- if (any(!ok)) sprintf("%d linha(s) com valores ausentes removida(s) da an\u00e1lise multivariada (linhas %s).", sum(!ok), paste(utils::head(which(!ok), 20), collapse = ", ")) else character()
   sds <- vapply(X[ok, , drop = FALSE], stats::sd, numeric(1))
-  if (any(sds == 0)) abort_caagro("Variavel(is) sem variabilidade: ", paste(variables[sds == 0], collapse = ", "), ".")
+  if (any(sds == 0)) abort_caagro("Vari\u00e1vel(is) sem variabilidade: ", paste(variables[sds == 0], collapse = ", "), ".")
   lab <- if (is.null(label)) as.character(which(ok)) else make.unique(as.character(data[[label]][ok]))
   M <- as.matrix(X[ok, , drop = FALSE]); rownames(M) <- lab
   list(M = M, ok = ok, msg = msg, variables = variables,
@@ -56,21 +56,27 @@ pca_exp <- function(data, variables = NULL, group = NULL, label = NULL, center =
   sc <- data.frame(label = mv$labels, pc$x, row.names = NULL, check.names = FALSE)
   if (!is.null(group)) sc$group <- mv$group
   warns <- mv$msg
-  if (!scale) warns <- c(warns, "PCA sobre a matriz de covariancia: variaveis com maior variancia (ou unidades maiores) dominam os componentes.")
-  if (nrow(mv$M) < 2 * ncol(mv$M)) warns <- c(warns, "Poucas observacoes em relacao ao numero de variaveis: autovalores e cargas podem ser instaveis.")
+  if (!scale) warns <- c(warns, "PCA sobre a matriz de covari\u00e2ncia: vari\u00e1veis com maior vari\u00e2ncia (ou unidades maiores) dominam os componentes.")
+  if (nrow(mv$M) < 2 * ncol(mv$M)) warns <- c(warns, "Poucas observa\u00e7\u00f5es em rela\u00e7\u00e3o ao n\u00famero de vari\u00e1veis: autovalores e cargas podem ser inst\u00e1veis.")
   kaiser <- sum(ev > 1)
-  new_result("pca", paste0("Analise de componentes principais (", if (scale) "matriz de correlacao" else "matriz de covariancia", ")"),
+  new_result("pca", paste0("An\u00e1lise de componentes principais (", if (scale) "matriz de correla\u00e7\u00e3o" else "matriz de covari\u00e2ncia", ")"),
              "caagro_pca", settings = list(variables = mv$variables, group = group, label = label, center = center, scale = scale),
              data = data, data_used = as.data.frame(mv$M), model = pc, warnings = warns,
              tables = list(eigenvalues = eig, loadings = load, correlations = cr, contributions = contrib, scores = sc),
-             notes = list(Resultado = sprintf("PC1 e PC2 explicam %.1f%% e %.1f%% da variancia (acumulado %.1f%%).", eig$variance[1], eig$variance[2], eig$cumulative[2]),
-                          Interpretacao = sprintf("Cargas (loadings) indicam o peso de cada variavel no componente; correlacoes variavel-componente mostram quanto cada variavel e representada. %d componente(s) com autovalor > 1 (criterio de Kaiser, apenas orientativo para matriz de correlacao).", kaiser),
-                          Cuidados = "PCA descreve a estrutura de correlacao; nao testa hipoteses. O sinal dos componentes e arbitrario. Elipses por grupo sao descritivas."),
+             notes = list(Resultado = sprintf("PC1 e PC2 explicam %.1f%% e %.1f%% da vari\u00e2ncia (acumulado %.1f%%).", eig$variance[1], eig$variance[2], eig$cumulative[2]),
+                          Interpretacao = sprintf("Cargas (loadings) indicam o peso de cada vari\u00e1vel no componente; correla\u00e7\u00f5es vari\u00e1vel-componente mostram quanto cada vari\u00e1vel e representada. %d componente(s) com autovalor > 1 (crit\u00e9rio de Kaiser, apenas orientativo para matriz de correla\u00e7\u00e3o).", kaiser),
+                          Cuidados = "PCA descreve a estrutura de correla\u00e7\u00e3o; n\u00e3o testa hip\u00f3teses. O sinal dos componentes e arbitr\u00e1rio. Elipses por grupo s\u00e3o descritivas."),
              code = code_call("caagro::pca_exp", list(data = as.name("dados"), variables = mv$variables, group = group,
                                                       label = label, center = center, scale = scale)))
 }
 
-#' Hierarchical cluster analysis
+#' Cluster analysis: hierarchical or k-means
+#'
+#' With `method` set to a linkage (`"ward.D2"`, `"complete"`, `"average"`,
+#' `"single"`, `"mcquitty"`) a hierarchical clustering is performed; with
+#' `method = "kmeans"` a k-means partition is computed (Hartigan-Wong, with
+#' `nstart` random starts and recorded seed), together with the elbow and
+#' silhouette diagnostics for k = 2..`k_max`.
 #'
 #' @param data A data frame.
 #' @param variables Quantitative columns.
@@ -78,14 +84,17 @@ pca_exp <- function(data, variables = NULL, group = NULL, label = NULL, center =
 #' @param distance Distance: `"euclidean"`, `"manhattan"`, `"maximum"`,
 #'   `"canberra"` or `"minkowski"`.
 #' @param method Linkage: `"ward.D2"`, `"complete"`, `"average"` (UPGMA),
-#'   `"single"`, `"mcquitty"`. Ward.D2 requires Euclidean distances.
+#'   `"single"`, `"mcquitty"` (Ward.D2 requires Euclidean distances), or
+#'   `"kmeans"`.
 #' @param scale Standardise variables before computing distances.
 #' @param k Number of groups to cut (optional).
 #' @param h Height at which to cut (optional, alternative to `k`).
 #' @param group Optional known grouping column (to compare with clusters).
-#' @return A `caagro_result` (class `caagro_cluster`) with tables
-#'   `merge_heights`, `clusters` (if `k`/`h`) and `quality` (cophenetic
-#'   correlation).
+#' @param nstart,k_max,seed k-means settings: random starts, largest k in the
+#'   elbow/silhouette diagnostics, random seed.
+#' @return A `caagro_result`: class `caagro_cluster` (tables `quality`,
+#'   `merge_heights`, `clusters`) or, for k-means, `caagro_kmeans` (tables
+#'   `summary`, `clusters`, `centers`, `selection`, `fit`).
 #' @references Ward, J. H. (1963). Hierarchical grouping to optimize an
 #'   objective function. *Journal of the American Statistical Association*,
 #'   58(301), 236-244. \doi{10.1080/01621459.1963.10500845}
@@ -94,18 +103,33 @@ pca_exp <- function(data, variables = NULL, group = NULL, label = NULL, center =
 #' clustering method: which algorithms implement Ward's criterion?
 #' *Journal of Classification*, 31, 274-295. \doi{10.1007/s00357-014-9161-z}
 #'
+#' Hartigan, J. A. and Wong, M. A. (1979). Algorithm AS 136: A k-means
+#' clustering algorithm. *Journal of the Royal Statistical Society C*,
+#' 28(1), 100-108. \doi{10.2307/2346830}
+#'
+#' Rousseeuw, P. J. (1987). Silhouettes: a graphical aid to the
+#' interpretation and validation of cluster analysis. *Journal of
+#' Computational and Applied Mathematics*, 20, 53-65.
+#' \doi{10.1016/0377-0427(87)90125-7}
+#'
 #' Sokal, R. R. and Rohlf, F. J. (1962). The comparison of dendrograms by
 #' objective methods. *Taxon*, 11(2), 33-40. \doi{10.2307/1217208}
 #' @examples
 #' h <- cluster_exp(sim_multivariado, label = "genotipo", k = 3)
 #' plot(h)
+#' km <- cluster_exp(sim_multivariado, method = "kmeans", k = 3, seed = 1)
+#' result_table(km, "selection")
 #' @export
 cluster_exp <- function(data, variables = NULL, label = NULL, distance = "euclidean", method = "ward.D2",
-                        scale = TRUE, k = NULL, h = NULL, group = NULL) {
+                        scale = TRUE, k = NULL, h = NULL, group = NULL, nstart = 25, k_max = 8, seed = 123) {
+  method <- match.arg(method, c("ward.D2", "complete", "average", "single", "mcquitty", "kmeans"))
+  if (method == "kmeans") {
+    return(kmeans_exp(data, variables, k = k %||% 3, label = label, scale = scale, nstart = nstart,
+                      k_max = k_max, seed = seed, group = group))
+  }
   distance <- match.arg(distance, c("euclidean", "manhattan", "maximum", "canberra", "minkowski"))
-  method <- match.arg(method, c("ward.D2", "complete", "average", "single", "mcquitty"))
   if (method == "ward.D2" && distance != "euclidean") {
-    abort_caagro("O metodo de Ward (ward.D2) pressupoe distancias euclidianas. Use distance = 'euclidean' ou outro metodo de ligacao.")
+    abort_caagro("O m\u00e9todo de Ward (ward.D2) pressup\u00f5e dist\u00e2ncias euclidianas. Use distance = 'euclidean' ou outro m\u00e9todo de liga\u00e7\u00e3o.")
   }
   mv <- mv_matrix(data, variables, label, group)
   M <- if (scale) scale(mv$M) else mv$M
@@ -120,40 +144,18 @@ cluster_exp <- function(data, variables = NULL, label = NULL, distance = "euclid
     if (!is.null(group)) tables$clusters$group <- mv$group
   }
   warns <- mv$msg
-  if (coph < 0.7) warns <- c(warns, sprintf("Correlacao cofenetica baixa (%.2f): o dendrograma representa mal as distancias originais.", coph))
-  new_result("cluster", sprintf("Agrupamento hierarquico (%s, distancia %s)", method, distance), "caagro_cluster",
+  if (coph < 0.7) warns <- c(warns, sprintf("Correla\u00e7\u00e3o cofen\u00e9tica baixa (%.2f): o dendrograma representa mal as dist\u00e2ncias originais.", coph))
+  new_result("cluster", sprintf("Agrupamento hier\u00e1rquico (%s, dist\u00e2ncia %s)", method, distance), "caagro_cluster",
              settings = list(variables = mv$variables, label = label, distance = distance, method = method, scale = scale, k = k, h = h, group = group),
              data = data, data_used = as.data.frame(mv$M), model = hc, tables = tables, main = "quality", warnings = warns,
-             notes = list(Resultado = sprintf("Correlacao cofenetica = %.3f.", coph),
-                          Interpretacao = "Individuos unidos a menor altura sao mais semelhantes. O corte (k ou altura) define grupos; avalie a estabilidade com outros metodos.",
-                          Cuidados = "O agrupamento sempre produz grupos, mesmo sem estrutura real. Resultados dependem da padronizacao, da distancia e do metodo de ligacao."),
+             notes = list(Resultado = sprintf("Correla\u00e7\u00e3o cofen\u00e9tica = %.3f.", coph),
+                          Interpretacao = "Indiv\u00edduos unidos a menor altura s\u00e3o mais semelhantes. O corte (k ou altura) define grupos; avalie a estabilidade com outros m\u00e9todos.",
+                          Cuidados = "O agrupamento sempre produz grupos, mesmo sem estrutura real. Resultados dependem da padroniza\u00e7\u00e3o, da dist\u00e2ncia e do m\u00e9todo de liga\u00e7\u00e3o."),
              code = code_call("caagro::cluster_exp", list(data = as.name("dados"), variables = mv$variables, label = label,
                                                           distance = distance, method = method, scale = scale, k = k, h = h)))
 }
 
-#' K-means clustering
-#'
-#' @inheritParams cluster_exp
-#' @param k Number of clusters.
-#' @param nstart Number of random starts.
-#' @param k_max Maximum k evaluated in the elbow and silhouette diagnostics.
-#' @param seed Random seed (recorded).
-#' @return A `caagro_result` (class `caagro_kmeans`) with tables
-#'   `clusters`, `centers`, `summary` and `selection` (total within SS and
-#'   mean silhouette width for k = 2..k_max).
-#' @references
-#' Hartigan, J. A. and Wong, M. A. (1979). Algorithm AS 136: A k-means
-#' clustering algorithm. *Journal of the Royal Statistical Society C*,
-#' 28(1), 100-108. \doi{10.2307/2346830}
-#'
-#' Rousseeuw, P. J. (1987). Silhouettes: a graphical aid to the
-#' interpretation and validation of cluster analysis. *Journal of
-#' Computational and Applied Mathematics*, 20, 53-65.
-#' \doi{10.1016/0377-0427(87)90125-7}
-#' @examples
-#' km <- kmeans_exp(sim_multivariado, k = 3, label = "genotipo", seed = 1)
-#' result_table(km, "selection")
-#' @export
+# K-means (called by cluster_exp(method = "kmeans"))
 kmeans_exp <- function(data, variables = NULL, k = 3, label = NULL, scale = TRUE, nstart = 25, k_max = 8,
                        seed = 123, group = NULL) {
   mv <- mv_matrix(data, variables, label, group)
@@ -181,10 +183,10 @@ kmeans_exp <- function(data, variables = NULL, k = 3, label = NULL, scale = TRUE
              tables = list(summary = summ, clusters = cl, centers = centers, selection = sel,
                            fit = data.frame(between_over_total = km$betweenss / km$totss, mean_silhouette = mean(sil[, 3]))),
              warnings = mv$msg,
-             notes = list(Resultado = sprintf("SQ entre / SQ total = %.1f%%; silhueta media = %.2f.", 100 * km$betweenss / km$totss, mean(sil[, 3])),
-                          Interpretacao = "Silhueta proxima de 1 indica individuos bem alocados; proxima de 0, na fronteira; negativa, possivelmente no grupo errado. O cotovelo e a silhueta orientam a escolha de k.",
-                          Cuidados = "K-means pressupoe grupos aproximadamente esfericos e de tamanho semelhante; o resultado depende da semente e da padronizacao."),
-             code = code_call("caagro::kmeans_exp", list(data = as.name("dados"), variables = mv$variables, k = k, label = label,
+             notes = list(Resultado = sprintf("SQ entre / SQ total = %.1f%%; silhueta m\u00e9dia = %.2f.", 100 * km$betweenss / km$totss, mean(sil[, 3])),
+                          Interpretacao = "Silhueta pr\u00f3xima de 1 indica indiv\u00edduos bem alocados; pr\u00f3xima de 0, na fronteira; negativa, possivelmente no grupo errado. O cotovelo e a silhueta orientam a escolha de k.",
+                          Cuidados = "K-means pressup\u00f5e grupos aproximadamente esf\u00e9ricos e de tamanho semelhante; o resultado depende da semente e da padroniza\u00e7\u00e3o."),
+             code = code_call("caagro::cluster_exp", list(data = as.name("dados"), variables = mv$variables, method = "kmeans", k = k, label = label,
                                                          scale = scale, nstart = nstart, seed = seed)))
 }
 
@@ -230,11 +232,11 @@ cor_matrix <- function(data, variables = NULL, method = c("pearson", "spearman",
   pr$p_adj <- stats::p.adjust(pr$p, p_adjust)
   pr$signif <- signif_stars(pr$p_adj)
   R <- stats::cor(X, use = "pairwise.complete.obs", method = method)
-  new_result("cor", paste("Correlacao de", c(pearson = "Pearson", spearman = "Spearman", kendall = "Kendall")[[method]]), "caagro_cor",
+  new_result("cor", paste("Correla\u00e7\u00e3o de", c(pearson = "Pearson", spearman = "Spearman", kendall = "Kendall")[[method]]), "caagro_cor",
              settings = list(variables = variables, method = method, p_adjust = p_adjust, conf_level = conf_level),
              data = data, data_used = X, tables = list(pairs = pr, matrix = data.frame(variable = variables, R, row.names = NULL, check.names = FALSE)),
              warnings = if (anyNA(X)) "Valores ausentes tratados par a par (pairwise)." else character(),
-             notes = list(Interpretacao = "Pearson mede associacao linear; Spearman e Kendall, associacao monotonica baseada em postos.",
-                          Cuidados = "Correlacao nao implica causalidade. Valores de p ajustados para multiplas comparacoes."),
+             notes = list(Interpretacao = "Pearson mede associa\u00e7\u00e3o linear; Spearman e Kendall, associa\u00e7\u00e3o monot\u00f4nica baseada em postos.",
+                          Cuidados = "Correla\u00e7\u00e3o n\u00e3o implica causalidade. Valores de p ajustados para m\u00faltiplas compara\u00e7\u00f5es."),
              code = code_call("caagro::cor_matrix", list(data = as.name("dados"), variables = variables, method = method, p_adjust = p_adjust)))
 }

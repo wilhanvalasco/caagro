@@ -2,12 +2,15 @@
 % Please edit documentation in R/export.R
 \name{export_script}
 \alias{export_script}
-\alias{export_config}
 \title{Export reproducible R script and configuration}
 \usage{
-export_script(results, file, data_file = "dados.xlsx", style = NULL)
-
-export_config(results, file)
+export_script(
+  results,
+  file,
+  data_file = "dados.xlsx",
+  style = NULL,
+  config = FALSE
+)
 }
 \arguments{
 \item{results}{A \code{caagro_result} or list of results.}
@@ -17,15 +20,17 @@ export_config(results, file)
 \item{data_file}{Path of the data file to be read in the script.}
 
 \item{style}{Optional \code{caagro_style} to include as code.}
+
+\item{config}{Also write a \code{.json} file (same name) with settings and
+reproducibility metadata (versions, date, seed).}
 }
 \value{
 The file path, invisibly.
 }
 \description{
-\code{export_script()} writes an R script that reproduces the analyses with the
-same functions and parameters used by the applications.
-\code{export_config()} writes the settings and reproducibility metadata as
-JSON.
+Writes an R script that reproduces the analyses with the same functions
+and parameters used by the applications and, optionally, a JSON file with
+the settings and reproducibility metadata.
 }
 \examples{
 fit <- anova_exp(PlantGrowth, "weight", "group")

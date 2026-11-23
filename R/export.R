@@ -24,7 +24,7 @@ save_plot <- function(plot, file, width = 17, height = 12, units = c("cm", "mm",
   units <- match.arg(units); bg <- match.arg(bg)
   if (!inherits(plot, "ggplot")) abort_caagro("`plot` deve ser um objeto ggplot.")
   if (!is.numeric(width) || !is.numeric(height) || width <= 0 || height <= 0) abort_caagro("Largura e altura devem ser positivas.")
-  if (!is.numeric(dpi) || dpi < 72 || dpi > 2400) abort_caagro("Resolucao deve estar entre 72 e 2400 dpi.")
+  if (!is.numeric(dpi) || dpi < 72 || dpi > 2400) abort_caagro("Resolu\u00e7\u00e3o deve estar entre 72 e 2400 dpi.")
   ext <- tolower(tools::file_ext(file))
   bgcol <- if (bg == "transparent") "transparent" else "white"
   if (bg == "transparent") {
@@ -42,21 +42,21 @@ save_plot <- function(plot, file, width = 17, height = 12, units = c("cm", "mm",
     },
     svg = if (requireNamespace("svglite", quietly = TRUE)) svglite::svglite else grDevices::svg,
     pdf = if (isTRUE(capabilities("cairo"))) grDevices::cairo_pdf else function(filename, ...) grDevices::pdf(filename, useDingbats = FALSE, ...),
-    abort_caagro("Formato nao suportado: '.", ext, "'. Use png, tiff, svg ou pdf."))
+    abort_caagro("Formato n\u00e3o suportado: '.", ext, "'. Use png, tiff, svg ou pdf."))
   ggplot2::ggsave(filename = file, plot = plot, device = dev, width = width, height = height, units = units,
                   dpi = dpi, bg = bgcol, limitsize = FALSE)
   invisible(file)
 }
 
-table_labels <- c(anova = "ANOVA", precision = "Precisao experimental", means = "Medias", effect_size = "Tamanho de efeito",
-                  pairs = "Comparacoes multiplas", tests = "Diagnosticos", influence = "Influencia", coefficients = "Coeficientes",
-                  fit_stats = "Indicadores de ajuste", equations = "Equacoes", predictions = "Predicoes", comparison = "Comparacao de modelos",
-                  curve_test = "Igualdade de curvas", failures = "Ajustes com falha", agronomic = "Grandezas agronomicas",
-                  test = "Teste", descriptives = "Descritiva", contingency = "Contingencia", interval = "Intervalo",
+table_labels <- c(anova = "ANOVA", precision = "Precis\u00e3o experimental", means = "M\u00e9dias", effect_size = "Tamanho de efeito",
+                  pairs = "Compara\u00e7\u00f5es m\u00faltiplas", tests = "Diagn\u00f3sticos", influence = "Influ\u00eancia", coefficients = "Coeficientes",
+                  fit_stats = "Indicadores de ajuste", equations = "Equa\u00e7\u00f5es", predictions = "Predi\u00e7\u00f5es", comparison = "Compara\u00e7\u00e3o de modelos",
+                  curve_test = "Igualdade de curvas", failures = "Ajustes com falha", agronomic = "Grandezas agron\u00f4micas",
+                  test = "Teste", descriptives = "Descritiva", contingency = "Conting\u00eancia", interval = "Intervalo",
                   intervals = "Intervalos", homogeneity = "Homogeneidade", eigenvalues = "Autovalores", loadings = "Cargas",
-                  correlations = "Correlacoes var-CP", contributions = "Contribuicoes", scores = "Escores", quality = "Qualidade",
-                  merge_heights = "Alturas de fusao", clusters = "Grupos", centers = "Centroides", summary = "Resumo dos grupos",
-                  selection = "Selecao de k", fit = "Ajuste", matrix = "Matriz", statistics = "Estatisticas", frequencies = "Frequencias",
+                  correlations = "Correla\u00e7\u00f5es var-CP", contributions = "Contribui\u00e7\u00f5es", scores = "Escores", quality = "Qualidade",
+                  merge_heights = "Alturas de fus\u00e3o", clusters = "Grupos", centers = "Centroides", summary = "Resumo dos grupos",
+                  selection = "Sele\u00e7\u00e3o de k", fit = "Ajuste", matrix = "Matriz", statistics = "Estat\u00edsticas", frequencies = "Frequ\u00eancias",
                   contrasts = "Contrastes")
 
 as_result_list <- function(results) {
@@ -98,9 +98,11 @@ export_excel <- function(results, file, digits = 4) {
     while (tolower(nm) %in% tolower(used)) { i <- i + 1; nm <- paste0(substr(base, 1, 28), "_", i) }
     used <<- c(used, nm); nm
   }
-  add <- function(name, df) {
+  add <- function(name, df, translate = TRUE) {
     if (is.null(df) || !is.data.frame(df) || !ncol(df)) return()
     df <- as.data.frame(df, stringsAsFactors = FALSE)
+    df <- df[, setdiff(names(df), ".row"), drop = FALSE]
+    if (translate) df <- pt_names(pt_values(df))
     df[] <- lapply(df, function(z) if (is.factor(z)) as.character(z) else if (is.list(z)) vapply(z, paste, "", collapse = "; ") else z)
     sn <- sheet_name(name)
     openxlsx::addWorksheet(wb, sn, gridLines = FALSE)
@@ -111,13 +113,13 @@ export_excel <- function(results, file, digits = 4) {
     openxlsx::freezePane(wb, sn, firstRow = TRUE)
   }
   r1 <- results[[1]]
-  if (is.data.frame(r1$data)) add("Dados originais", r1$data)
-  if (is.data.frame(r1$data_used)) add("Dados utilizados", r1$data_used)
+  if (is.data.frame(r1$data)) add("Dados originais", r1$data, translate = FALSE)
+  if (is.data.frame(r1$data_used)) add("Dados utilizados", r1$data_used, translate = FALSE)
   resp <- r1$settings$response %||% r1$settings$y
   if (is.data.frame(r1$data_used) && !is.null(resp) && resp %in% names(r1$data_used)) {
     grp <- r1$settings$treatment %||% r1$settings$group
     if (!is.null(grp) && !grp %in% names(r1$data_used)) grp <- NULL
-    add("Estatistica descritiva", tryCatch(describe_data(r1$data_used, resp, group = grp)$tables$statistics, error = function(e) NULL))
+    add("Estat\u00edstica descritiva", tryCatch(describe_data(r1$data_used, resp, group = grp)$tables$statistics, error = function(e) NULL))
   }
   multi <- length(results) > 1
   for (i in seq_along(results)) {
@@ -130,17 +132,18 @@ export_excel <- function(results, file, digits = 4) {
   meth <- do.call(rbind, lapply(seq_along(results), function(i) {
     r <- results[[i]]
     st <- vapply(r$settings, function(z) if (is.null(z)) "" else paste(format(unlist(z)), collapse = ", "), character(1))
-    rbind(data.frame(analise = i, item = "Metodo", valor = r$method),
+    rbind(data.frame(analise = i, item = "M\u00e9todo", valor = r$method),
           data.frame(analise = i, item = "Delineamento", valor = r$design %||% ""),
           data.frame(analise = i, item = "Modelo", valor = if (is.null(r$formula)) "" else paste(deparse(r$formula), collapse = " ")),
-          data.frame(analise = i, item = paste0("Parametro: ", names(st)), valor = unname(st)),
-          if (length(r$warnings)) data.frame(analise = i, item = "Advertencia", valor = r$warnings),
+          data.frame(analise = i, item = paste0("Par\u00e2metro: ", names(st)), valor = unname(st)),
+          if (length(r$warnings)) data.frame(analise = i, item = "Advert\u00eancia", valor = r$warnings),
           if (length(r$notes)) data.frame(analise = i, item = names(r$notes), valor = unlist(r$notes)),
           data.frame(analise = i, item = c("caagro", "R", "Data", "Semente"),
                      valor = c(r$meta$caagro_version, r$meta$r_version, r$meta$time, as.character(r$meta$seed %||% ""))),
-          data.frame(analise = i, item = "Codigo R", valor = r$code %||% ""))
+          data.frame(analise = i, item = "C\u00f3digo R", valor = r$code %||% ""))
   }))
-  add("Metodologia e parametros", meth)
+  names(meth) <- c("An\u00e1lise", "Item", "Valor")
+  add("Metodologia e par\u00e2metros", meth, translate = FALSE)
   openxlsx::saveWorkbook(wb, file, overwrite = TRUE)
   invisible(file)
 }
@@ -179,12 +182,16 @@ html_escape <- function(x) {
 html_table <- function(df, digits = 4) {
   if (is.null(df) || !nrow(df)) return("<p class='muted'>(sem linhas)</p>")
   df <- as.data.frame(df)
+  df <- df[, setdiff(names(df), ".row"), drop = FALSE]
+  pnames <- names(df) %in% c("p", "p_adj", "p_unadj", "p_bonferroni", "p_model")
+  df <- pt_values(df)
   is_num <- vapply(df, is.numeric, logical(1))
-  hdr <- paste0("<tr>", paste0("<th", ifelse(is_num, " class='num'", ""), ">", html_escape(names(df)), "</th>", collapse = ""), "</tr>")
+  lab <- names(pt_names(df))
+  hdr <- paste0("<tr>", paste0("<th", ifelse(is_num, " class='num'", ""), ">", html_escape(lab), "</th>", collapse = ""), "</tr>")
   rows <- vapply(seq_len(nrow(df)), function(i) {
     cells <- vapply(seq_along(df), function(j) {
       v <- df[[j]][i]
-      txt <- if (is_num[j]) { if (is.na(v)) "-" else if (names(df)[j] %in% c("p", "p_adj", "p_unadj", "p_bonferroni", "p_model")) fmt_p(v) else formatC(v, format = "g", digits = digits + 1) } else html_escape(as.character(v))
+      txt <- if (is_num[j]) { if (is.na(v)) "-" else if (pnames[j]) fmt_p_br(v) else formatC(v, format = "g", digits = digits + 1, decimal.mark = ",") } else html_escape(as.character(v))
       paste0("<td", if (is_num[j]) " class='num'" else "", ">", txt, "</td>")
     }, "")
     paste0("<tr>", paste(cells, collapse = ""), "</tr>")
@@ -223,12 +230,12 @@ plot_data_uri <- function(p, width = 17, height = 11) {
 #' f <- tempfile(fileext = ".html")
 #' export_report(list(fit, compare_means(fit), check_assumptions(fit)), f)
 #' @export
-export_report <- function(results, file, title = "Relatorio de analise estatistica", author = NULL,
+export_report <- function(results, file, title = "Relat\u00f3rio de an\u00e1lise estat\u00edstica", author = NULL,
                           level = c("full", "summary"), plots = NULL, style = caagro_style()) {
   level <- match.arg(level)
   results <- as_result_list(results)
   ext <- tolower(tools::file_ext(file))
-  if (!ext %in% c("html", "docx", "pdf")) abort_caagro("Use extensao .html, .docx ou .pdf.")
+  if (!ext %in% c("html", "docx", "pdf")) abort_caagro("Use extens\u00e3o .html, .docx ou .pdf.")
   pal <- caagro_palette()
   css <- sprintf("body{font-family:Inter,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:%s;background:%s;margin:0}
 .wrap{max-width:960px;margin:0 auto;padding:32px 40px;background:#fff}
@@ -251,8 +258,8 @@ pre{background:%s;padding:12px;font-size:12px;overflow:auto;border-radius:6px} i
            " &middot; caagro ", caagro_version(), " &middot; ", html_escape(R.version.string), "</p>")
   r1 <- results[[1]]
   if (is.data.frame(r1$data_used)) {
-    out <- c(out, "<h2>Dados</h2><p>Observacoes utilizadas: <b>", nrow(r1$data_used), "</b>",
-             if (is.data.frame(r1$data)) paste0(" de ", nrow(r1$data), " fornecidas"), ". Variaveis: ",
+    out <- c(out, "<h2>Dados</h2><p>Observa\u00e7\u00f5es utilizadas: <b>", nrow(r1$data_used), "</b>",
+             if (is.data.frame(r1$data)) paste0(" de ", nrow(r1$data), " fornecidas"), ". Vari\u00e1veis: ",
              html_escape(paste(setdiff(names(r1$data_used), ".row"), collapse = ", ")), ".</p>")
   }
   all_refs <- character()
@@ -274,9 +281,9 @@ pre{background:%s;padding:12px;font-size:12px;overflow:auto;border-radius:6px} i
     if (length(r$warnings)) out <- c(out, paste0("<div class='warn'>", html_escape(r$warnings), "</div>"))
     all_refs <- c(all_refs, method_references(r))
   }
-  out <- c(out, "<h2>Limitacoes</h2><p>Os resultados dependem da validade dos pressupostos de cada metodo e do planejamento experimental. ",
-           "Testes estatisticos nao estabelecem causalidade por si; resultados nao significativos nao demonstram igualdade entre tratamentos.</p>")
-  if (length(all_refs)) out <- c(out, "<h2>Referencias metodologicas</h2><ul>", paste0("<li>", html_escape(unique(all_refs)), "</li>"), "</ul>")
+  out <- c(out, "<h2>Limita\u00e7\u00f5es</h2><p>Os resultados dependem da validade dos pressupostos de cada m\u00e9todo e do planejamento experimental. ",
+           "Testes estat\u00edsticos n\u00e3o estabelecem causalidade por si; resultados n\u00e3o significativos n\u00e3o demonstram igualdade entre tratamentos.</p>")
+  if (length(all_refs)) out <- c(out, "<h2>Referencias metodol\u00f3gicas</h2><ul>", paste0("<li>", html_escape(unique(all_refs)), "</li>"), "</ul>")
   codes <- unique(unlist(lapply(results, `[[`, "code")))
   out <- c(out, "<h2>Reprodutibilidade</h2><pre>", html_escape(paste(c("library(caagro)", "# dados <- read_data(\"seu_arquivo.xlsx\")", codes), collapse = "\n\n")), "</pre>",
            "<p class='muted'>", html_escape(paste("Plataforma:", R.version$platform, "| Semente(s):", paste(unique(unlist(lapply(results, function(r) r$meta$seed))), collapse = ", "))), "</p>",
@@ -284,7 +291,7 @@ pre{background:%s;padding:12px;font-size:12px;overflow:auto;border-radius:6px} i
   html <- paste(out, collapse = "")
   if (ext == "html") { writeLines(html, file, useBytes = TRUE); return(invisible(file)) }
   if (!requireNamespace("rmarkdown", quietly = TRUE) || !rmarkdown::pandoc_available()) {
-    abort_caagro("Relatorios .docx/.pdf exigem o Pandoc (instalado com o RStudio ou em https://pandoc.org). Use o formato .html, que nao depende de software externo.")
+    abort_caagro("Relatorios .docx/.pdf exigem o Pandoc (instalado com o RStudio ou em https://pandoc.org). Use o formato .html, que n\u00e3o depende de software externo.")
   }
   tmp <- tempfile(fileext = ".html"); writeLines(html, tmp, useBytes = TRUE)
   if (ext == "docx") {
@@ -292,7 +299,7 @@ pre{background:%s;padding:12px;font-size:12px;overflow:auto;border-radius:6px} i
   } else {
     engines <- c("weasyprint", "wkhtmltopdf", "pdflatex", "xelatex")
     eng <- engines[nzchar(Sys.which(engines))][1]
-    if (is.na(eng)) abort_caagro("Nenhum mecanismo de PDF encontrado (weasyprint, wkhtmltopdf ou LaTeX). Gere o relatorio em .html e use 'Imprimir > Salvar como PDF' no navegador.")
+    if (is.na(eng)) abort_caagro("Nenhum mecanismo de PDF encontrado (weasyprint, wkhtmltopdf ou LaTeX). Gere o relat\u00f3rio em .html e use 'Imprimir > Salvar como PDF' no navegador.")
     rmarkdown::pandoc_convert(tmp, to = if (eng %in% c("pdflatex", "xelatex")) "latex" else "html", output = normalizePath(file, mustWork = FALSE),
                               options = c(paste0("--pdf-engine=", eng)))
   }
@@ -301,15 +308,16 @@ pre{background:%s;padding:12px;font-size:12px;overflow:auto;border-radius:6px} i
 
 #' Export reproducible R script and configuration
 #'
-#' `export_script()` writes an R script that reproduces the analyses with the
-#' same functions and parameters used by the applications.
-#' `export_config()` writes the settings and reproducibility metadata as
-#' JSON.
+#' Writes an R script that reproduces the analyses with the same functions
+#' and parameters used by the applications and, optionally, a JSON file with
+#' the settings and reproducibility metadata.
 #'
 #' @param results A `caagro_result` or list of results.
 #' @param file Output path.
 #' @param data_file Path of the data file to be read in the script.
 #' @param style Optional `caagro_style` to include as code.
+#' @param config Also write a `.json` file (same name) with settings and
+#'   reproducibility metadata (versions, date, seed).
 #' @return The file path, invisibly.
 #' @examples
 #' fit <- anova_exp(PlantGrowth, "weight", "group")
@@ -317,7 +325,7 @@ pre{background:%s;padding:12px;font-size:12px;overflow:auto;border-radius:6px} i
 #' export_script(fit, f, data_file = "dados.xlsx")
 #' cat(readLines(f), sep = "\n")
 #' @export
-export_script <- function(results, file, data_file = "dados.xlsx", style = NULL) {
+export_script <- function(results, file, data_file = "dados.xlsx", style = NULL, config = FALSE) {
   results <- as_result_list(results)
   lines <- c("# Script gerado pelo caagro", paste("# Data:", format(Sys.time(), "%Y-%m-%d %H:%M")),
              paste("# caagro", caagro_version(), "|", R.version.string), "",
@@ -325,17 +333,17 @@ export_script <- function(results, file, data_file = "dados.xlsx", style = NULL)
   for (i in seq_along(results)) {
     r <- results[[i]]
     if (!is.null(r$meta$seed)) lines <- c(lines, paste0("# semente utilizada: ", r$meta$seed))
-    lines <- c(lines, paste0("res", i, " <- ", r$code %||% "# (analise sem codigo reproduzivel)"), paste0("print(res", i, ")"), "")
+    lines <- c(lines, paste0("res", i, " <- ", r$code %||% "# (an\u00e1lise sem c\u00f3digo reproduz\u00edvel)"), paste0("print(res", i, ")"), "")
   }
-  if (!is.null(style)) lines <- c(lines, style_code(style), paste0("grafico <- plot(res", length(results), ", style = estilo)"),
-                                  "save_plot(grafico, \"grafico.png\", width = 17, height = 12, units = \"cm\", dpi = 600)", "")
+  if (!is.null(style)) lines <- c(lines, style_code(style), paste0("gr\u00e1fico <- plot(res", length(results), ", style = estilo)"),
+                                  "save_plot(gr\u00e1fico, \"gr\u00e1fico.png\", width = 17, height = 12, units = \"cm\", dpi = 600)", "")
   lines <- c(lines, paste0("export_excel(list(", paste0("res", seq_along(results), collapse = ", "), "), \"resultados.xlsx\")"))
   writeLines(lines, file, useBytes = TRUE)
+  if (isTRUE(config)) export_config(results, paste0(sub("[.][Rr]$", "", file), ".json"))
   invisible(file)
 }
 
-#' @rdname export_script
-#' @export
+# Settings and metadata as JSON (internal; export_script(config = TRUE))
 export_config <- function(results, file) {
   results <- as_result_list(results)
   cfg <- lapply(results, function(r) list(method = r$method, design = r$design,

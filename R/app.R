@@ -2,18 +2,18 @@
 
 module_registry <- function() {
   list(
-    exploratory = list(label = "Exploratoria", icon = "magnifying-glass-chart", ui = mod_exploratory_ui, server = mod_exploratory_server,
-                       desc = "Primeira avaliacao: descritivas, distribuicoes, valores ausentes e correlacoes."),
+    exploratory = list(label = "Explorat\u00f3ria", icon = "magnifying-glass-chart", ui = mod_exploratory_ui, server = mod_exploratory_server,
+                       desc = "Primeiro olhar sobre os dados: m\u00e9dias, dispers\u00e3o, gr\u00e1ficos e correla\u00e7\u00f5es."),
     anova = list(label = "ANOVA", icon = "table-cells", ui = mod_anova_ui, server = mod_anova_server,
-                 desc = "DIC, DBC e fatoriais; Tukey, Scott-Knott, SNK, LSD, Dunnett; diagnosticos; testes t e Welch."),
-    regression = list(label = "Regressao", icon = "chart-line", ui = mod_regression_ui, server = mod_regression_server,
-                      desc = "Modelos lineares, polinomiais, nao lineares e binomiais; bandas; doses otimas; multiplas curvas."),
-    nonparametric = list(label = "Nao parametrica", icon = "ranking-star", ui = mod_nonparametric_ui, server = mod_nonparametric_server,
-                         desc = "Kruskal-Wallis, Friedman, mediana de Mood, Mann-Whitney, Wilcoxon, sinais e permutacao."),
+                 desc = "Compare tratamentos em DIC, DBC ou fatorial, com Tukey, Scott-Knott e outros testes."),
+    regression = list(label = "Regress\u00e3o", icon = "chart-line", ui = mod_regression_ui, server = mod_regression_server,
+                      desc = "Ajuste curvas de resposta a doses ou tempo e encontre a dose de m\u00e1xima efici\u00eancia."),
+    nonparametric = list(label = "N\u00e3o param\u00e9trica", icon = "ranking-star", ui = mod_nonparametric_ui, server = mod_nonparametric_server,
+                         desc = "Compare tratamentos com notas, escalas ou dados muito assim\u00e9tricos."),
     confidence = list(label = "Intervalos", icon = "arrows-left-right-to-line", ui = mod_confidence_ui, server = mod_confidence_server,
-                      desc = "Intervalos de confianca classicos e bootstrap para medias, variancias, proporcoes e diferencas."),
+                      desc = "Estime m\u00e9dias, diferen\u00e7as, vari\u00e2ncias e propor\u00e7\u00f5es com intervalo de confian\u00e7a."),
     multivariate = list(label = "Multivariada", icon = "circle-nodes", ui = mod_multivariate_ui, server = mod_multivariate_server,
-                        desc = "PCA, biplot, dendrogramas, k-means e matrizes de correlacao.")
+                        desc = "Resuma muitas vari\u00e1veis (PCA), agrupe indiv\u00edduos e veja correla\u00e7\u00f5es.")
   )
 }
 
@@ -23,39 +23,35 @@ mod_home_ui <- function(id, modules) {
   shiny::div(class = "caagro-home",
     shiny::div(class = "caagro-hero",
       shiny::tags$img(src = "caagro-www/logo.svg", class = "caagro-hero-logo", alt = "caagro"),
-      shiny::div(shiny::h2("caagro"), shiny::p("Ciencia Aplicada em Analises do Agro - plataforma de analise estatistica para experimentacao agricola."),
-                 shiny::p(class = "caagro-muted", "Todos os calculos sao feitos localmente; nenhum dado e enviado para servidores externos."))),
-    bslib::layout_columns(col_widths = c(7, 5),
-      bslib::card(bslib::card_header(shiny::icon("compass"), " Assistente de analise"),
-        shiny::p(class = "caagro-muted", "Responda as perguntas para ver metodos candidatos. A decisao final e sua: as sugestoes seguem regras transparentes, nao testes de normalidade."),
-        shiny::fluidRow(
-          shiny::column(6, shiny::selectInput(ns("goal"), "1. Objetivo", c("Comparar tratamentos" = "compare", "Ajustar curvas (doses, tempo)" = "curve",
-                                                                            "Relacao entre variaveis" = "relationship", "Explorar dados" = "explore", "Analise multivariada" = "multivariate"))),
-          shiny::column(6, shiny::selectInput(ns("response"), "2. Variavel-resposta", c("Continua" = "continuous", "Binaria / proporcao" = "binary", "Contagem" = "count", "Ordinal (notas, escalas)" = "ordinal")))),
-        shiny::fluidRow(
-          shiny::column(4, shiny::numericInput(ns("n_groups"), "3. Grupos/tratamentos", 4, 2, 100)),
-          shiny::column(4, shiny::checkboxInput(ns("related"), "4. Dados relacionados (pareados)", FALSE)),
-          shiny::column(4, shiny::checkboxInput(ns("blocked"), "5. Ha blocos", FALSE))),
-        shiny::checkboxInput(ns("factorial"), "Ha dois ou mais fatores cruzados (fatorial)", FALSE),
-        shiny::uiOutput(ns("suggestions"))),
-      bslib::card(bslib::card_header(shiny::icon("layer-group"), " Modulos"),
-        shiny::div(class = "caagro-module-list", lapply(names(reg), function(m)
-          shiny::actionLink(ns(paste0("go_", m)), shiny::div(class = "caagro-module-item", shiny::icon(reg[[m]]$icon),
-                                                             shiny::div(shiny::strong(reg[[m]]$label), shiny::div(class = "caagro-muted", reg[[m]]$desc)))))))
-    )
+      shiny::div(shiny::h2("caagro"), shiny::p("An\u00e1lises estat\u00edsticas para experimenta\u00e7\u00e3o agr\u00edcola."),
+                 shiny::p(class = "caagro-muted", "Escolha um m\u00f3dulo, clique em Carregar exemplo e depois em Executar an\u00e1lise. Os dados s\u00e3o processados apenas no seu computador."))),
+    shiny::div(class = "caagro-module-grid", lapply(names(reg), function(m)
+      shiny::actionLink(ns(paste0("go_", m)), class = "caagro-module-card",
+                        label = shiny::tagList(shiny::div(class = "caagro-module-icon", shiny::icon(reg[[m]]$icon)),
+                                               shiny::div(shiny::strong(reg[[m]]$label), shiny::div(class = "caagro-muted", reg[[m]]$desc)))))),
+    details_panel("N\u00e3o sabe qual an\u00e1lise usar? Responda a tr\u00eas perguntas",
+      bslib::layout_columns(col_widths = bslib::breakpoints(sm = 12, md = 4),
+        shiny::selectInput(ns("goal"), "O que voc\u00ea quer fazer?", c("Comparar tratamentos" = "compare", "Ajustar uma curva (doses, tempo)" = "curve",
+                                                                   "Relacionar vari\u00e1veis" = "relationship", "Explorar os dados" = "explore", "Analisar muitas vari\u00e1veis juntas" = "multivariate"), width = "100%"),
+        shiny::selectInput(ns("response"), "Como \u00e9 a vari\u00e1vel-resposta?", c("Medida cont\u00ednua (kg, cm, sc/ha)" = "continuous", "Sim/n\u00e3o ou propor\u00e7\u00e3o" = "binary",
+                                                                            "Contagem" = "count", "Nota ou escala" = "ordinal"), width = "100%"),
+        shiny::selectInput(ns("design"), "Como \u00e9 o experimento?", c("DIC (sem blocos)" = "dic", "DBC (com blocos)" = "dbc", "Fatorial" = "fat",
+                                                                    "Mesma unidade medida duas vezes" = "paired"), width = "100%")),
+      shiny::uiOutput(ns("suggestions")))
   )
 }
 
 mod_home_server <- function(id, modules, parent_session) {
   shiny::moduleServer(id, function(input, output, session) {
     output$suggestions <- shiny::renderUI({
-      s <- suggest_method(input$goal, input$response, input$n_groups, input$related, input$blocked, input$factorial)
+      s <- suggest_method(input$goal, input$response, n_groups = 4, related = identical(input$design, "paired"),
+                          blocked = identical(input$design, "dbc"), factorial = identical(input$design, "fat"))
+      s <- utils::head(s, 3)
       shiny::tagList(lapply(seq_len(nrow(s)), function(i) shiny::div(class = "caagro-suggestion",
-        shiny::div(shiny::span(class = "caagro-rank", i), shiny::strong(s$method[i])),
-        shiny::div(class = "caagro-muted", shiny::code(s$function_call[i]), " - ", s$app[i]),
-        shiny::div(shiny::tags$small(shiny::tags$b("Pressupostos: "), s$assumptions[i])),
-        shiny::div(shiny::tags$small(shiny::tags$b("Quando usar: "), s$when[i])))),
-        shiny::div(class = "caagro-muted", attr(s, "note")))
+        shiny::div(shiny::span(class = "caagro-rank", i), shiny::strong(s$method[i]), shiny::span(class = "caagro-muted", paste0(" - m\u00f3dulo ", app_label(s$app[i])))),
+        shiny::div(shiny::tags$small(shiny::tags$b("Quando usar: "), s$when[i])),
+        shiny::div(shiny::tags$small(shiny::tags$b("Pressupostos: "), s$assumptions[i])))),
+        shiny::p(class = "caagro-muted", "Sugest\u00f5es baseadas em regras. A escolha final depende do planejamento do experimento."))
     })
     for (m in modules) local({
       mm <- m
@@ -69,7 +65,7 @@ caagro_app <- function(modules = names(module_registry()), home = TRUE) {
   modules <- intersect(modules, names(reg))
   app_resources()
   panels <- lapply(modules, function(m) bslib::nav_panel(title = reg[[m]]$label, value = m, icon = shiny::icon(reg[[m]]$icon), reg[[m]]$ui(m)))
-  if (home) panels <- c(list(bslib::nav_panel("Inicio", value = "home", icon = shiny::icon("house"), mod_home_ui("home", modules))), panels)
+  if (home) panels <- c(list(bslib::nav_panel("In\u00edcio", value = "home", icon = shiny::icon("house"), mod_home_ui("home", modules))), panels)
   title <- shiny::tags$span(class = "caagro-brand", shiny::tags$img(src = "caagro-www/logo-white.svg", height = "26px", alt = ""),
                             shiny::span("caagro"), if (length(modules) == 1 && !home) shiny::span(class = "caagro-brand-sub", reg[[modules]]$label))
   ui <- do.call(bslib::page_navbar, c(
@@ -77,13 +73,11 @@ caagro_app <- function(modules = names(module_registry()), home = TRUE) {
          header = app_head(), bg = caagro_palette()[["azul_profundo"]], inverse = TRUE),
     panels,
     list(bslib::nav_spacer(),
-         bslib::nav_item(shiny::div(class = "caagro-sci-toggle", bslib::input_switch("sci_mode", "Modo cientifico", FALSE))),
          bslib::nav_item(bslib::input_dark_mode(id = "dark", mode = "light")))
   ))
   server <- function(input, output, session) {
-    sci <- shiny::reactive(isTRUE(input$sci_mode))
     if (home) mod_home_server("home", modules, session)
-    for (m in modules) reg[[m]]$server(m, sci_mode = sci)
+    for (m in modules) reg[[m]]$server(m)
   }
   shiny::shinyApp(ui, server)
 }
@@ -177,4 +171,10 @@ anQuant <- function(iniciar = TRUE) {
 #' @export
 anIC <- function(iniciar = TRUE) {
   if (isTRUE(iniciar)) run_confidence(launch.browser = TRUE) else message("Defina iniciar = TRUE para rodar o aplicativo Shiny (equivalente a run_confidence()).")
+}
+
+app_label <- function(x) {
+  map <- c("run_anova()" = "ANOVA", "run_regression()" = "Regress\u00e3o", "run_nonparametric()" = "N\u00e3o param\u00e9trica",
+           "run_confidence()" = "Intervalos", "run_multivariate()" = "Multivariada", "run_exploratory()" = "Explorat\u00f3ria")
+  out <- unname(map[x]); ifelse(is.na(out), x, out)
 }

@@ -9,28 +9,35 @@ check_assumptions(x, group = NULL, alpha = 0.05)
 \arguments{
 \item{x}{A \code{caagro_anova} result or an \code{lm} object.}
 
-\item{group}{Grouping factor for variance tests (default: treatment).}
+\item{group}{Grouping factor for variance tests (default: treatment, or
+the combination of all factors in factorial experiments).}
 
 \item{alpha}{Significance level used to flag results.}
 }
 \value{
 An object of classes \code{caagro_diagnostics} and \code{caagro_result}
-with tables \code{tests} and \code{influence}.
+with tables \code{tests} (Shapiro-Wilk and Bartlett), \code{robust} and
+\code{influence}.
 }
 \description{
 Tests and measures to support (not replace) the scientific evaluation of
-the assumptions of a linear model:
+the assumptions of the ANOVA model:
 \itemize{
-\item Normality of residuals: Shapiro-Wilk (on residuals, not on the raw
-response).
-\item Homogeneity of variances across treatments: Bartlett, Levene (centred on
-the mean) and Brown-Forsythe (Levene centred on the median), and
-Fligner-Killeen; all computed on model residuals grouped by treatment
-(for DIC this is equivalent to using the raw response).
-\item Influence: studentised residuals, leverage and Cook's distance.
+\item Table \code{tests} (main assumptions): Shapiro-Wilk for normality of the
+model residuals (3 <= n <= 5000) and Bartlett for homogeneity of
+variances, with a short interpretation.
+\item Table \code{robust}: Levene (mean), Brown-Forsythe (median) and
+Fligner-Killeen, robust alternatives to Bartlett, which is sensitive to
+non-normality. They are reported, never substituted silently.
+\item Table \code{influence}: studentised residuals, leverage and Cook's distance.
 }
 }
 \details{
+Variance tests use the model residuals grouped by treatment; in factorial
+experiments the groups are the treatment combinations (cells). In DIC
+this is equivalent to using the raw response; in DBC it removes the block
+effect before comparing variances.
+
 Independence cannot be verified by an automatic test: it depends on
 randomisation and on the experimental plan.
 }

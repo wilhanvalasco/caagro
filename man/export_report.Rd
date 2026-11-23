@@ -7,7 +7,7 @@
 export_report(
   results,
   file,
-  title = "Relatorio de analise estatistica",
+  title = "Relatório de análise estatística",
   author = NULL,
   level = c("full", "summary"),
   plots = NULL,

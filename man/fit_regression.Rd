@@ -70,7 +70,7 @@ default (not to means), so that residual variance, standard errors, bands
 and information criteria refer to the experimental units.
 }
 \details{
-Available models are listed by \code{\link[=regression_models]{regression_models()}}:
+Available models:
 \code{linear}, \code{quadratic}, \code{cubic}, \code{logarithmic} (fitted by least squares),
 \code{exponential}, \code{power}, \code{logistic3}, \code{logistic4}, \code{gompertz},
 \code{michaelis_menten}, \code{asymptotic}, \code{mitscherlich}, \code{loglogistic}
@@ -137,7 +137,11 @@ analysis using R. \emph{PLoS ONE}, 10(12), e0146021.
 McFadden, D. (1974). Conditional logit analysis of qualitative choice
 behavior. In P. Zarembka (Ed.), \emph{Frontiers in Econometrics} (pp.
 105-142). Academic Press.
+When \code{group} is given and the model fits every group, table \code{curve_test}
+compares one common curve with separate curves (extra-sum-of-squares F
+test; likelihood-ratio test for binomial models), assuming equal residual
+variance.
 }
 \seealso{
-\code{\link[=optimum_dose]{optimum_dose()}}, \code{\link[=compare_curves]{compare_curves()}}, \code{\link[=regression_models]{regression_models()}}
+\code{\link[=optimum_dose]{optimum_dose()}}
 }

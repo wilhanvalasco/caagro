@@ -7,7 +7,7 @@
 #' and information criteria refer to the experimental units.
 #'
 #' @details
-#' Available models are listed by [regression_models()]:
+#' Available models:
 #' `linear`, `quadratic`, `cubic`, `logarithmic` (fitted by least squares),
 #' `exponential`, `power`, `logistic3`, `logistic4`, `gompertz`,
 #' `michaelis_menten`, `asymptotic`, `mitscherlich`, `loglogistic`
@@ -86,7 +86,11 @@
 #' McFadden, D. (1974). Conditional logit analysis of qualitative choice
 #' behavior. In P. Zarembka (Ed.), *Frontiers in Econometrics* (pp.
 #' 105-142). Academic Press.
-#' @seealso [optimum_dose()], [compare_curves()], [regression_models()]
+#' When `group` is given and the model fits every group, table `curve_test`
+#' compares one common curve with separate curves (extra-sum-of-squares F
+#' test; likelihood-ratio test for binomial models), assuming equal residual
+#' variance.
+#' @seealso [optimum_dose()]
 #' @examples
 #' r <- fit_regression(sim_dose, x = "dose", y = "produtividade",
 #'                     model = c("linear", "quadratic", "linear_plateau"),
@@ -108,10 +112,10 @@ fit_regression <- function(data, x, y, model = "quadratic", group = NULL, trials
   check_conf(conf_level)
   reg <- model_registry()
   bad <- setdiff(model, names(reg))
-  if (length(bad)) abort_caagro("Modelo(s) desconhecido(s): ", paste(bad, collapse = ", "), ". Veja regression_models().")
+  if (length(bad)) abort_caagro("Modelo(s) desconhecido(s): ", paste(bad, collapse = ", "), ". Veja a lista em ?fit_regression.")
   types <- unique(vapply(reg[model], `[[`, "", "type"))
   is_bin <- types == "glm"
-  if (length(unique(is_bin)) > 1) abort_caagro("Nao misture modelos binomiais com modelos gaussianos na mesma comparacao.")
+  if (length(unique(is_bin)) > 1) abort_caagro("N\u00e3o misture modelos binomiais com modelos gaussianos na mesma compara\u00e7\u00e3o.")
   is_bin <- any(is_bin)
   prep <- prepare_data(data, response = y, factors = group, numeric_cols = c(x, trials), exclude = exclude)
   d0 <- prep$data
@@ -120,18 +124,18 @@ fit_regression <- function(data, x, y, model = "quadratic", group = NULL, trials
   if (is_bin) {
     if (!is.null(trials)) {
       d$n <- d0[[trials]]; d$s <- d$y
-      if (any(d$s > d$n | d$s < 0)) abort_caagro("Sucessos devem estar entre 0 e o numero de ensaios.")
+      if (any(d$s > d$n | d$s < 0)) abort_caagro("Sucessos devem estar entre 0 e o n\u00famero de ensaios.")
     } else {
-      if (!all(d$y %in% c(0, 1))) abort_caagro("Para regressao binomial sem `trials`, a resposta deve ser 0/1.")
+      if (!all(d$y %in% c(0, 1))) abort_caagro("Para regress\u00e3o binomial sem `trials`, a resposta deve ser 0/1.")
       d$n <- 1; d$s <- d$y
     }
-    if (aggregate != "none") abort_caagro("Agregacao nao se aplica a modelos binomiais.")
+    if (aggregate != "none") abort_caagro("Agrega\u00e7\u00e3o n\u00e3o se aplica a modelos binomiais.")
   }
   if (aggregate != "none") {
     fn <- switch(aggregate, mean = mean, median = stats::median, min = min, max = max)
     d <- do.call(rbind, lapply(split(d, list(d$.group, d$x), drop = TRUE), function(z)
       data.frame(x = z$x[1], y = fn(z$y), .group = z$.group[1], .row = NA)))
-    warns <- c(warns, sprintf("Ajuste feito sobre a %s por nivel de x (modo legado). Erros-padrao, R2 e bandas referem-se aos resumos, nao as unidades experimentais.", aggregate))
+    warns <- c(warns, sprintf("Ajuste feito sobre a %s por n\u00edvel de x (modo legado). Erros-padr\u00e3o, R2 e bandas referem-se aos resumos, n\u00e3o as unidades experimentais.", aggregate))
   }
   # means table (raw data)
   means <- do.call(rbind, lapply(split(d0, list(if (is.null(group)) rep("(todos)", nrow(d0)) else d0[[group]], d0[[x]]), drop = TRUE), function(z) {
@@ -159,12 +163,12 @@ fit_regression <- function(data, x, y, model = "quadratic", group = NULL, trials
         fails[[key]] <- data.frame(model = m, group = gname, status = conditionMessage(fit)); next
       }
       if (spec$type == "glm" && !isTRUE(fit$converged)) {
-        fails[[key]] <- data.frame(model = m, group = gname, status = "glm nao convergiu"); next
+        fails[[key]] <- data.frame(model = m, group = gname, status = "glm n\u00e3o convergiu"); next
       }
       th <- stats::coef(fit)
-      if (any(is.na(th))) { fails[[key]] <- data.frame(model = m, group = gname, status = "Parametros nao estimaveis (niveis de x insuficientes)."); next }
+      if (any(is.na(th))) { fails[[key]] <- data.frame(model = m, group = gname, status = "Par\u00e2metros n\u00e3o estim\u00e1veis (n\u00edveis de x insuficientes)."); next }
       V <- tryCatch(stats::vcov(fit), error = function(e) NULL)
-      if (is.null(V) || any(!is.finite(V))) { fails[[key]] <- data.frame(model = m, group = gname, status = "Matriz de covariancia singular: parametros mal determinados."); next }
+      if (is.null(V) || any(!is.finite(V))) { fails[[key]] <- data.frame(model = m, group = gname, status = "Matriz de covari\u00e2ncia singular: par\u00e2metros mal determinados."); next }
       fits[[m]][[gname]] <- fit
       coefs[[key]] <- reg_coef_table(fit, spec, m, gname, conf_level)
       stats_l[[key]] <- reg_fit_stats(fit, spec, m, gname, dg)
@@ -185,10 +189,10 @@ fit_regression <- function(data, x, y, model = "quadratic", group = NULL, trials
     warns <- c(warns, sprintf("%d ajuste(s) falharam (ver tabela 'failures'); nenhum resultado foi inventado para eles.", length(fails)))
   }
   if (length(model) > 1) tables$comparison <- reg_compare_table(tables$fit_stats, is_bin)
-  if ("cubic" %in% model) warns <- c(warns, "O polinomio de 3o grau tende a sobreajustar; verifique se os parametros tem interpretacao biologica.")
+  if ("cubic" %in% model) warns <- c(warns, "O polin\u00f4mio de 3o grau tende a sobreajustar; verifique se os par\u00e2metros tem interpreta\u00e7\u00e3o biol\u00f3gica.")
   warns <- c(warns, unique(unlist(lapply(stats_l, attr, "warn"))))
   res <- new_result(
-    type = "regression", method = if (length(model) == 1) paste("Regressao -", reg[[model]]$label) else "Regressao - comparacao de modelos",
+    type = "regression", method = if (length(model) == 1) paste("Regress\u00e3o -", reg[[model]]$label) else "Regress\u00e3o - compara\u00e7\u00e3o de modelos",
     subclass = "caagro_regression", formula = paste(vapply(reg[model], `[[`, "", "formula"), collapse = " | "),
     settings = list(x = x, y = y, model = model, group = group, trials = trials, conf_level = conf_level,
                     band = band, band_method = band_method, nboot = nboot, seed = seed, aggregate = aggregate,
@@ -197,8 +201,8 @@ fit_regression <- function(data, x, y, model = "quadratic", group = NULL, trials
     seed = if (band_method == "bootstrap") seed,
     notes = list(
       Resultado = paste(apply(tables$equations, 1, function(r) paste0("[", r[["model"]], if (!is.null(group)) paste0(" | ", r[["group"]]), "] ", r[["equation"]])), collapse = "; "),
-      Interpretacao = "Os coeficientes descrevem a forma da resposta dentro da faixa experimental de x. Compare modelos por AICc/BIC, residuos e plausibilidade biologica, nao apenas pelo R2.",
-      Cuidados = "Nao extrapole alem da faixa de doses estudada. R2 de modelos nao lineares e um pseudo-R2. A sobreposicao visual de curvas nao prova igualdade: use compare_curves()."),
+      Interpretacao = "Os coeficientes descrevem a forma da resposta dentro da faixa experimental de x. Compare modelos por AICc/BIC, res\u00edduos e plausibilidade biol\u00f3gica, n\u00e3o apenas pelo R2.",
+      Cuidados = "N\u00e3o extrapole alem da faixa de doses estudada. R2 de modelos n\u00e3o lineares e um pseudo-R2. A sobreposi\u00e7\u00e3o visual de curvas n\u00e3o prova igualdade: veja o teste de igualdade de curvas."),
     code = code_call("caagro::fit_regression", list(data = as.name("dados"), x = x, y = y, model = model, group = group,
                                                     trials = trials, conf_level = conf_level, band = band,
                                                     band_method = band_method, nboot = if (band_method == "bootstrap") nboot,
@@ -212,8 +216,8 @@ fit_regression <- function(data, x, y, model = "quadratic", group = NULL, trials
 }
 
 reg_domain_check <- function(spec, dg) {
-  if (length(unique(dg$x)) < length(spec$params) && spec$type != "glm") return(sprintf("Niveis distintos de x (%d) insuficientes para %d parametros.", length(unique(dg$x)), length(spec$params)))
-  if (nrow(dg) <= length(spec$params) && spec$type != "glm") return("Observacoes insuficientes para estimar o modelo e o erro.")
+  if (length(unique(dg$x)) < length(spec$params) && spec$type != "glm") return(sprintf("N\u00edveis distintos de x (%d) insuficientes para %d par\u00e2metros.", length(unique(dg$x)), length(spec$params)))
+  if (nrow(dg) <= length(spec$params) && spec$type != "glm") return("Observa\u00e7\u00f5es insuficientes para estimar o modelo e o erro.")
   if (isTRUE(spec$x_positive) && any(dg$x <= 0)) return("O modelo exige x > 0 (ha doses iguais ou menores que zero).")
   if (isTRUE(spec$x_nonneg) && any(dg$x < 0)) return("O modelo exige x >= 0.")
   if (spec$type != "glm" && stats::sd(dg$y) == 0) return("Resposta sem variabilidade.")
@@ -240,7 +244,7 @@ reg_fit_stats <- function(fit, spec, m, gname, dg) {
   if (spec$type == "glm") {
     null_ll <- as.numeric(stats::logLik(stats::glm(cbind(s, n - s) ~ 1, family = stats::binomial(), data = dg)))
     disp <- sum(stats::residuals(fit, type = "pearson")^2) / stats::df.residual(fit)
-    if (disp > 1.5 && any(dg$n > 1)) w <- sprintf("[%s | %s] Razao de dispersao = %.2f: indicio de superdispersao; erros-padrao podem estar subestimados (considere quasibinomial ou efeitos aleatorios).", m, gname, disp)
+    if (disp > 1.5 && any(dg$n > 1)) w <- sprintf("[%s | %s] Raz\u00e3o de dispers\u00e3o = %.2f: ind\u00edcio de superdispers\u00e3o; erros-padr\u00e3o podem estar subestimados (considere quasibinomial ou efeitos aleat\u00f3rios).", m, gname, disp)
     out <- data.frame(model = m, group = gname, n = n, k = k, r2 = 1 - as.numeric(ll) / null_ll, r2_type = "McFadden",
                       r2_adj = NA, rmse = NA, mae = NA, mse = NA, sigma = NA, deviance = stats::deviance(fit),
                       df_resid = stats::df.residual(fit), dispersion = disp, logLik = as.numeric(ll),
@@ -255,7 +259,7 @@ reg_fit_stats <- function(fit, spec, m, gname, dg) {
     pm <- if (spec$type == "lm") { fs <- summary(fit)$fstatistic; stats::pf(fs[1], fs[2], fs[3], lower.tail = FALSE) } else NA
     conv <- if (spec$type == "nls") isTRUE(fit$convInfo$isConv) else TRUE
     it <- if (spec$type == "nls") fit$convInfo$finIter else NA
-    out <- data.frame(model = m, group = gname, n = n, k = k, r2 = r2, r2_type = if (spec$type == "lm") "classico" else "pseudo",
+    out <- data.frame(model = m, group = gname, n = n, k = k, r2 = r2, r2_type = if (spec$type == "lm") "cl\u00e1ssico" else "pseudo",
                       r2_adj = r2a, rmse = sqrt(rss / n), mae = mean(abs(r)), mse = rss / n,
                       sigma = sqrt(rss / (n - p)), deviance = rss, df_resid = n - p, dispersion = NA,
                       logLik = as.numeric(ll), AIC = aic, AICc = aicc, BIC = bic, p_model = unname(pm),
@@ -325,41 +329,26 @@ reg_compare_table <- function(fs, is_bin) {
   out
 }
 
-#' Test equality of curves among groups
-#'
-#' Extra-sum-of-squares F test comparing one common curve (all groups
-#' pooled) with separate curves for each group, for the same model. Assumes
-#' equal residual variance among groups. For binomial models a likelihood
-#' ratio (deviance) test is used.
-#'
-#' @param x A `caagro_regression` result fitted with `group`.
-#' @param model Model to test (default: first fitted model).
-#' @return A `caagro_result` with table `test`.
-#' @references Bates, D. M. and Watts, D. G. (1988). *Nonlinear Regression
-#'   Analysis and Its Applications*. Wiley.
-#' @examples
-#' r <- fit_regression(sim_dose, "dose", "produtividade", "quadratic", group = "cultivar")
-#' compare_curves(r)
-#' @export
+# Test equality of curves among groups (internal; result in table curve_test)
 compare_curves <- function(x, model = NULL) {
   if (!inherits(x, "caagro_regression")) abort_caagro("`x` deve ser resultado de fit_regression().")
-  if (is.null(x$settings$group)) abort_caagro("O ajuste nao tem variavel de agrupamento.")
+  if (is.null(x$settings$group)) abort_caagro("O ajuste n\u00e3o tem vari\u00e1vel de agrupamento.")
   model <- model %||% names(x$model)[1]
   spec <- model_registry()[[model]]
   fits <- x$model[[model]]
   ng <- length(unique(x$data_used[[x$settings$group]]))
-  if (length(fits) < ng) abort_caagro("O modelo nao foi ajustado em todos os grupos; teste indisponivel.")
+  if (length(fits) < ng) abort_caagro("O modelo n\u00e3o foi ajustado em todos os grupos; teste indispon\u00edvel.")
   d0 <- x$data_used
   d <- data.frame(x = d0[[x$settings$x]], y = d0[[x$settings$y]])
   if (isTRUE(x$settings$binomial)) {
     d$n <- if (is.null(x$settings$trials)) 1 else d0[[x$settings$trials]]; d$s <- d$y
   }
   pooled <- tryCatch(spec$fit(d), error = function(e) e)
-  if (inherits(pooled, "condition")) abort_caagro("A curva comum nao convergiu: ", conditionMessage(pooled))
+  if (inherits(pooled, "condition")) abort_caagro("A curva comum n\u00e3o convergiu: ", conditionMessage(pooled))
   if (spec$type == "glm") {
     dev_s <- sum(vapply(fits, stats::deviance, 1)); df_s <- sum(vapply(fits, stats::df.residual, 1))
     lr <- stats::deviance(pooled) - dev_s; dfl <- stats::df.residual(pooled) - df_s
-    tb <- data.frame(model = model, test = "Razao de verossimilhanca (deviance)", statistic = lr, df1 = dfl, df2 = NA,
+    tb <- data.frame(model = model, test = "Raz\u00e3o de verossimilhan\u00e7a (deviance)", statistic = lr, df1 = dfl, df2 = NA,
                      p = stats::pchisq(lr, dfl, lower.tail = FALSE))
   } else {
     rss_s <- sum(vapply(fits, function(f) sum(stats::residuals(f)^2), 1)); df_s <- sum(vapply(fits, stats::df.residual, 1))
@@ -370,9 +359,9 @@ compare_curves <- function(x, model = NULL) {
   }
   new_result("regression", "Teste de igualdade de curvas", "caagro_test", tables = list(test = tb),
              settings = list(model = model, group = x$settings$group),
-             notes = list(Resultado = sprintf("%s: estatistica = %.3f, p %s.", tb$test, tb$statistic, fmt_p_eq(tb$p)),
-                          Interpretacao = "p pequeno indica que uma curva unica nao descreve adequadamente todos os grupos (ao menos um parametro difere).",
-                          Cuidados = "Pressupoe variancia residual comum entre grupos e o mesmo modelo em todos. p grande nao prova curvas iguais."))
+             notes = list(Resultado = sprintf("%s: estat\u00edstica = %.3f, p %s.", tb$test, tb$statistic, fmt_p_eq(tb$p)),
+                          Interpretacao = "p pequeno indica que uma curva \u00fanica n\u00e3o descreve adequadamente todos os grupos (ao menos um par\u00e2metro difere).",
+                          Cuidados = "Pressup\u00f5e vari\u00e2ncia residual comum entre grupos e o mesmo modelo em todos. p grande n\u00e3o prova curvas iguais."))
 }
 
 #' Agronomic quantities from fitted curves
@@ -405,7 +394,7 @@ optimum_dose <- function(x, model = NULL, price_ratio = NULL, at = NULL, conf_le
   model <- model %||% names(x$model)[1]
   conf_level <- conf_level %||% x$settings$conf_level
   spec <- model_registry()[[model]]
-  if (is.null(spec)) abort_caagro("Modelo nao ajustado: ", model)
+  if (is.null(spec)) abort_caagro("Modelo n\u00e3o ajustado: ", model)
   rows <- list(); warns <- character()
   z <- stats::qnorm(1 - (1 - conf_level) / 2)
   for (gname in names(x$model[[model]])) {
@@ -420,21 +409,21 @@ optimum_dose <- function(x, model = NULL, price_ratio = NULL, at = NULL, conf_le
       inside <- est >= xr[1] && est <= xr[2]
       rows[[length(rows) + 1]] <<- data.frame(model = model, group = gname, quantity = q, estimate = est, se = se,
                                               lower = est - z * se, upper = est + z * se, within_range = inside)
-      if (!inside && grepl("dose|ED|x0|MET|otima", q)) warns <<- c(warns, sprintf("[%s] %s = %.4g esta fora da faixa experimental (%.4g a %.4g): extrapolacao nao confiavel.", gname, q, est, xr[1], xr[2]))
+      if (!inside && grepl("dose|ED|x0|MET|\u00f3tima", q)) warns <<- c(warns, sprintf("[%s] %s = %.4g esta fora da faixa experimental (%.4g a %.4g): extrapola\u00e7\u00e3o n\u00e3o confi\u00e1vel.", gname, q, est, xr[1], xr[2]))
     }
     if (model == "quadratic") {
       if (th[3] < 0) {
-        add("Dose de maxima eficiencia tecnica (MET)", function(t) -t[2] / (2 * t[3]))
-        add("Resposta maxima (y na MET)", function(t) t[1] - t[2]^2 / (4 * t[3]))
-        if (!is.null(price_ratio)) add("Dose otima economica", function(t) (price_ratio - t[2]) / (2 * t[3]))
-      } else warns <- c(warns, sprintf("[%s] Coeficiente quadratico >= 0: nao ha ponto de maximo.", gname))
+        add("Dose de m\u00e1xima efici\u00eancia t\u00e9cnica (MET)", function(t) -t[2] / (2 * t[3]))
+        add("Resposta m\u00e1xima (y na MET)", function(t) t[1] - t[2]^2 / (4 * t[3]))
+        if (!is.null(price_ratio)) add("Dose \u00f3tima econ\u00f4mica", function(t) (price_ratio - t[2]) / (2 * t[3]))
+      } else warns <- c(warns, sprintf("[%s] Coeficiente quadr\u00e1tico >= 0: n\u00e3o ha ponto de m\u00e1ximo.", gname))
     } else if (model == "linear_plateau") {
-      add("Dose critica (x0, inicio do plato)", function(t) t[3])
-      add("Plato (resposta maxima)", function(t) t[1] + t[2] * t[3])
+      add("Dose cr\u00edtica (x0, in\u00edcio do plat\u00f4)", function(t) t[3])
+      add("Plat\u00f4 (resposta m\u00e1xima)", function(t) t[1] + t[2] * t[3])
     } else if (model == "logistic3") {
-      add("Ponto de inflexao x0", function(t) t[2]); add("Assintota A", function(t) t[1])
+      add("Ponto de inflex\u00e3o x0", function(t) t[2]); add("Ass\u00edntota A", function(t) t[1])
     } else if (model == "logistic4") {
-      add("Ponto de inflexao x0", function(t) t[3])
+      add("Ponto de inflex\u00e3o x0", function(t) t[3])
     } else if (model == "loglogistic") {
       add("ED50 (e)", function(t) t[4])
     } else if (model == "binomial") {
@@ -442,12 +431,12 @@ optimum_dose <- function(x, model = NULL, price_ratio = NULL, at = NULL, conf_le
     } else if (model == "binomial_logdose") {
       add("ED50 (dose com p = 0,5)", function(t) exp(-t[1] / t[2]))
     } else if (model %in% c("mitscherlich", "asymptotic", "gompertz", "michaelis_menten")) {
-      add("Assintota (resposta maxima teorica)", function(t) t[1])
+      add("Ass\u00edntota (resposta m\u00e1xima te\u00f3rica)", function(t) t[1])
     }
     for (a in at) add(paste0("Resposta marginal dy/dx em x = ", a), function(t) (spec$f(t, a + 1e-4) - spec$f(t, a - 1e-4)) / 2e-4)
   }
   tb <- if (length(rows)) do.call(rbind, rows) else data.frame()
-  new_result("regression", "Grandezas agronomicas", "caagro_test", tables = list(agronomic = tb),
+  new_result("regression", "Grandezas agron\u00f4micas", "caagro_test", tables = list(agronomic = tb),
              settings = list(model = model, price_ratio = price_ratio, at = at, conf_level = conf_level), warnings = warns,
-             notes = list(Cuidados = "Intervalos pelo metodo delta (aproximacao assintotica); para pontos como MET, intervalos podem ser assimetricos na pratica. A dose economica depende da validade dos precos informados."))
+             notes = list(Cuidados = "Intervalos pelo m\u00e9todo delta (aproxima\u00e7\u00e3o assint\u00f3tica); para pontos como MET, intervalos podem ser assim\u00e9tricos na pr\u00e1tica. A dose econ\u00f4mica depende da validade dos precos informados."))
 }

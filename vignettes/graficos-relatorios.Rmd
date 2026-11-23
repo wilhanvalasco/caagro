@@ -17,7 +17,6 @@ library(caagro)
 ```{r}
 fit <- anova_exp(sim_dic, "produtividade", "cultivar")
 mc <- compare_means(fit, "tukey")
-plot_types(mc)
 estilo <- caagro_style(
   theme = "bw", title = "Produtividade de cultivares", subtitle = "",
   x = axis_spec(title = "Cultivar"),
@@ -39,7 +38,6 @@ O estilo pode ser salvo, recarregado e convertido em código R:
 f <- tempfile(fileext = ".json")
 style_to_json(estilo, f)
 identical(style_from_json(f)$theme, "bw")
-cat(style_code(estilo))
 ```
 
 ## Exportação de figuras

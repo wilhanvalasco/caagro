@@ -26,7 +26,7 @@ describe_data <- function(data, variables = NULL, group = NULL) {
     variables <- names(data)[vapply(data, is.numeric, logical(1))]
     variables <- setdiff(variables, group)
   }
-  if (!length(variables)) abort_caagro("Nenhuma variavel numerica para descrever.")
+  if (!length(variables)) abort_caagro("Nenhuma vari\u00e1vel num\u00e9rica para descrever.")
   check_columns(data, c(variables, group))
   g <- if (is.null(group)) factor(rep("(todos)", nrow(data))) else factor(data[[group]], exclude = NULL)
   rows <- list()
@@ -46,16 +46,16 @@ describe_data <- function(data, variables = NULL, group = NULL) {
                percent = 100 * as.vector(tb) / sum(tb))
   })) else data.frame()
   warns <- character()
-  if (any(st$missing > 0)) warns <- "Ha valores ausentes; as estatisticas foram calculadas com os valores disponiveis."
-  if (any(st$mean <= 0, na.rm = TRUE)) warns <- c(warns, "O CV% so e interpretavel para variaveis estritamente positivas em escala de razao.")
-  new_result("describe", "Estatistica descritiva", "caagro_describe",
+  if (any(st$missing > 0)) warns <- "H\u00e1 valores ausentes; as estat\u00edsticas foram calculadas com os valores dispon\u00edveis."
+  if (any(st$mean <= 0, na.rm = TRUE)) warns <- c(warns, "O CV% s\u00f3 \u00e9 interpret\u00e1vel para vari\u00e1veis estritamente positivas em escala de raz\u00e3o.")
+  new_result("describe", "Estat\u00edstica descritiva", "caagro_describe",
              settings = list(variables = variables, group = group),
              data = data, data_used = data, tables = list(statistics = st, frequencies = freq),
              warnings = warns,
              notes = list(
-               Resultado = "Medidas de posicao, dispersao e forma da distribuicao.",
-               Interpretacao = "Media e mediana muito diferentes sugerem assimetria; o CV% compara variabilidade relativa; assimetria > 0 indica cauda a direita; curtose > 0 indica caudas mais pesadas que a normal.",
-               Cuidados = "Estatisticas descritivas nao testam hipoteses. Com amostras pequenas, assimetria e curtose sao muito imprecisas."),
+               Resultado = "Medidas de posi\u00e7\u00e3o, dispers\u00e3o e forma da distribui\u00e7\u00e3o.",
+               Interpretacao = "M\u00e9dia e mediana muito diferentes sugerem assimetria; o CV% compara variabilidade relativa; assimetria > 0 indica cauda a direita; curtose > 0 indica caudas mais pesadas que a normal.",
+               Cuidados = "Estat\u00edsticas descritivas n\u00e3o testam hip\u00f3teses. Com amostras pequenas, assimetria e curtose s\u00e3o muito imprecisas."),
              code = code_call("caagro::describe_data", list(data = as.name("dados"), variables = variables, group = group)))
 }
 

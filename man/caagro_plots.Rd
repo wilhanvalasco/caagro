@@ -84,7 +84,7 @@
 \arguments{
 \item{x}{A caagro result.}
 
-\item{type}{Plot type (see \code{\link[=plot_types]{plot_types()}}).}
+\item{type}{Plot type (see Description).}
 
 \item{style}{A \code{\link[=caagro_style]{caagro_style()}}.}
 
@@ -102,8 +102,23 @@
 A ggplot object.
 }
 \description{
-Every plot method returns a ggplot object styled with \code{\link[=apply_style]{apply_style()}}.
-Available \code{type}s are listed by \code{\link[=plot_types]{plot_types()}}.
+Every plot method returns a ggplot object styled with the given
+\code{\link[=caagro_style]{caagro_style()}}. Available \code{type}s:
+\itemize{
+\item ANOVA: \code{"means"}, \code{"box"}, \code{"residuals"}.
+\item Mean comparisons: \code{"bars"}, \code{"points"}, \code{"box"}, \code{"differences"}.
+\item Diagnostics: \code{"qq"}, \code{"resid_fitted"}, \code{"scale_location"}, \code{"cooks"}, \code{"hist"}.
+\item Group intervals: \code{"pointrange"}, \code{"forest"}, \code{"bars"}; other intervals:
+\code{"pointrange"}, \code{"bootstrap"}.
+\item t tests: \code{"box"}, \code{"estimate"}. Descriptives: \code{"hist"}, \code{"box"},
+\code{"density"}, \code{"qq"}, \code{"violin"}.
+\item Regression: \code{"fit"}, \code{"facet"}, \code{"residuals"}, \code{"qq"}, \code{"ic"}.
+\item Non-parametric: \code{"box"}, \code{"violin"}, \code{"dots"}, \code{"heatmap"}, \code{"effect"},
+\code{"blocks"}.
+\item PCA: \code{"biplot"}, \code{"scree"}, \code{"scores"}, \code{"loadings"}, \code{"circle"},
+\code{"contrib"}; clustering: \code{"dendrogram"}; k-means: \code{"clusters"},
+\code{"elbow"}, \code{"silhouette"}; correlation: \code{"heatmap"}.
+}
 }
 \examples{
 fit <- anova_exp(PlantGrowth, "weight", "group")

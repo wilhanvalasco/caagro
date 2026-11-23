@@ -58,7 +58,7 @@ print.caagro_result <- function(x, digits = 4, ...) {
   cat("\n== caagro ::", x$method, "==\n")
   if (!is.null(x$design)) cat("Delineamento:", x$design, "\n")
   if (!is.null(x$formula)) cat("Modelo:", paste(deparse(x$formula), collapse = " "), "\n")
-  if (!is.null(x$data_used)) cat("Observacoes utilizadas:", nrow(x$data_used), "\n")
+  if (!is.null(x$data_used)) cat("Observa\u00e7\u00f5es utilizadas:", nrow(x$data_used), "\n")
   for (nm in names(x$tables)) {
     tb <- x$tables[[nm]]
     if (!is.data.frame(tb) || nrow(tb) == 0) next
@@ -108,10 +108,10 @@ as.data.frame.caagro_result <- function(x, row.names = NULL, optional = FALSE, .
 #' @rdname caagro_result
 #' @export
 result_table <- function(x, name = NULL) {
-  if (!inherits(x, "caagro_result")) abort_caagro("`x` nao e um resultado caagro.")
+  if (!inherits(x, "caagro_result")) abort_caagro("`x` n\u00e3o \u00e9 um resultado caagro.")
   name <- name %||% x$main
   if (!name %in% names(x$tables)) {
-    abort_caagro("Tabela '", name, "' inexistente. Disponiveis: ",
+    abort_caagro("Tabela '", name, "' inexistente. Dispon\u00edveis: ",
                  paste(names(x$tables), collapse = ", "), ".")
   }
   x$tables[[name]]

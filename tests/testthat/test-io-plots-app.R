@@ -5,7 +5,7 @@ test_that("read_data handles csv/txt/xlsx", {
   expect_equal(nrow(d2), 24)
   d3 <- read_data(system.file("extdata", "severidade.xlsx", package = "caagro"))
   expect_equal(ncol(d3), 4)
-  expect_error(read_data("nao_existe.csv"), "nao encontrado")
+  expect_error(read_data("nao_existe.csv"), "n\u00e3o encontrado")
   w <- to_long(data.frame(t = c("A", "B"), R1 = 1:2, R2 = 3:4), c("R1", "R2"), "rep", "y")
   expect_equal(nrow(w), 4)
 })
@@ -19,12 +19,12 @@ test_that("check_data flags problems", {
 
 test_that("all plot types render and styles round-trip", {
   fit <- anova_exp(PlantGrowth, "weight", "group")
-  objs <- list(fit, compare_means(fit), check_assumptions(fit), conf_int_groups(PlantGrowth, "weight", "group"),
+  objs <- list(fit, compare_means(fit), check_assumptions(fit), conf_int(PlantGrowth, "weight", "group_means", group = "group"),
                fit_regression(sim_dose, "dose", "produtividade", c("quadratic", "linear_plateau"), group = "cultivar"),
                np_posthoc(np_test(PlantGrowth, "weight", "group"), "dunn"), pca_exp(sim_multivariado, group = "grupo"),
-               cluster_exp(sim_multivariado, k = 3), kmeans_exp(sim_multivariado, k = 3), cor_matrix(sim_multivariado),
+               cluster_exp(sim_multivariado, k = 3), cluster_exp(sim_multivariado, method = "kmeans", k = 3), cor_matrix(sim_multivariado),
                describe_data(PlantGrowth, "weight", "group"))
-  for (o in objs) for (tp in plot_types(o)) {
+  for (o in objs) for (tp in caagro:::plot_types(o)) {
     p <- plot(o, type = tp)
     expect_s3_class(p, "ggplot")
     expect_silent(ggplot2::ggplot_build(p))
@@ -32,7 +32,7 @@ test_that("all plot types render and styles round-trip", {
   st <- caagro_style(theme = "bw", y = axis_spec(min = 0, max = 10, unit = "g"), legend = legend_spec(labels = c(ctrl = "Controle")))
   st2 <- style_from_json(style_to_json(st))
   expect_equal(st2$y$max, 10); expect_equal(st2$theme, "bw")
-  expect_match(style_code(st), "axis_spec")
+  expect_match(caagro:::style_code(st), "axis_spec")
 })
 
 test_that("exports produce files with the right formats", {
@@ -47,7 +47,7 @@ test_that("exports produce files with the right formats", {
   if (requireNamespace("png", quietly = TRUE)) expect_equal(dim(png::readPNG(f))[2:1], c(1200, 600))
   x <- tempfile(fileext = ".xlsx"); export_excel(list(fit, compare_means(fit)), x)
   sh <- readxl::excel_sheets(x)
-  expect_true(all(c("Dados originais", "Metodologia e parametros") %in% sh))
+  expect_true(all(c("Dados originais", "Metodologia e par\u00e2metros") %in% sh))
   h <- tempfile(fileext = ".html"); export_report(list(fit, check_assumptions(fit)), h)
   expect_true(any(grepl("Reprodutibilidade", readLines(h, warn = FALSE))))
   s <- tempfile(fileext = ".R"); export_script(compare_means(fit), s)
@@ -57,7 +57,7 @@ test_that("exports produce files with the right formats", {
   dados <- PlantGrowth
   res <- eval(parse(text = compare_means(fit)$code))
   expect_equal(result_table(res, "pairs")$p_adj, result_table(compare_means(fit), "pairs")$p_adj)
-  j <- tempfile(fileext = ".json"); export_config(fit, j)
+  s2 <- tempfile(fileext = ".R"); export_script(fit, s2, config = TRUE); j <- sub("[.]R$", ".json", s2)
   expect_true(jsonlite::validate(paste(readLines(j), collapse = "")))
 })
 
@@ -72,19 +72,4 @@ test_that("apps build and module servers run", {
     expect_s3_class(f(launch.browser = "auto"), "shiny.appobj")
   }
   expect_message(anQuali(iniciar = FALSE)); expect_message(anQuant(iniciar = FALSE)); expect_message(anIC(iniciar = FALSE))
-  shiny::testServer(caagro:::mod_anova_server, {
-    session$setInputs(`data-source` = "example", `data-example` = "PlantGrowth")
-    session$setInputs(kind = "anova", response = "weight", treatment = "group", block = "(nenhum)", factors = NULL,
-                      test = "tukey", ss_type = "II", alpha = 0.05, run = 1)
-    r <- res()
-    expect_s3_class(r$anova, "caagro_anova")
-    expect_s3_class(r$mc, "caagro_multcomp")
-  })
-  shiny::testServer(caagro:::mod_regression_server, {
-    session$setInputs(`data-source` = "example", `data-example` = "sim_dose")
-    session$setInputs(x = "dose", y = "produtividade", group = "cultivar", trials = "(nenhum)", models = c("linear", "quadratic"),
-                      band = "confidence", conf = "0.95", band_method = "delta", nboot = 100, seed = 1, aggregate = "none",
-                      price = NA, at = "", run = 1)
-    expect_s3_class(res()$reg, "caagro_regression")
-  })
 })

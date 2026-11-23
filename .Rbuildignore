@@ -13,3 +13,4 @@
 ^.*\.RData$
 ^doc$
 ^Meta$
+^AUDITORIA_1\.1\.md$

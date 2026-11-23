@@ -14,7 +14,8 @@ compare_means(
   control = NULL,
   protected = TRUE,
   p_adjust = "none",
-  conf_level = 1 - alpha
+  conf_level = 1 - alpha,
+  contrasts = NULL
 )
 }
 \arguments{
@@ -37,6 +38,11 @@ of its levels (simple effects in factorial designs).}
 
 \item{conf_level}{Confidence level for intervals of differences
 (default \code{1 - alpha}).}
+
+\item{contrasts}{Optional named list of planned contrasts (one
+coefficient per level of \code{factor}, summing to zero). When given, the
+planned contrasts are tested (t tests with the model error, adjusted by
+\code{p_adjust}) instead of a multiple comparison procedure.}
 }
 \value{
 An object of classes \code{caagro_multcomp} and \code{caagro_result} with
@@ -71,6 +77,12 @@ adjusted (computed with \pkg{mvtnorm}).
 \item \code{"games_howell"}: for heterogeneous variances; only for one-way (DIC)
 designs.
 }
+
+For Tukey and LSD the least significant difference (DMS, \emph{diferenca
+minima significativa}) is reported in table \code{dms} when replication is
+equal; with unequal replication it varies by pair (see the \code{pairs} table).
+Dunnett does not produce grouping letters: each treatment is only
+classified as different or not from the control.
 
 Compact letter displays use the insert-absorb algorithm (Piepho, 2004).
 Means sharing a letter are not significantly different. Letters are only

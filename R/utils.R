@@ -35,7 +35,7 @@ check_columns <- function(data, cols) {
   cols <- cols[!is.null(cols) & !is.na(cols) & nzchar(cols)]
   miss <- setdiff(cols, names(data))
   if (length(miss)) {
-    abort_caagro("Coluna(s) nao encontrada(s) nos dados: ",
+    abort_caagro("Coluna(s) n\u00e3o encontrada(s) nos dados: ",
                  paste0("'", miss, "'", collapse = ", "), ".")
   }
   invisible(TRUE)
@@ -44,7 +44,7 @@ check_columns <- function(data, cols) {
 check_alpha <- function(alpha) {
   if (!is.numeric(alpha) || length(alpha) != 1 || !is.finite(alpha) ||
       alpha <= 0 || alpha >= 0.5) {
-    abort_caagro("`alpha` deve ser um numero entre 0 e 0,5 (ex.: 0,05).")
+    abort_caagro("`alpha` deve ser um n\u00famero entre 0 e 0,5 (ex.: 0,05).")
   }
   alpha
 }
@@ -63,8 +63,8 @@ as_numeric_strict <- function(x, name = "resposta") {
   y <- suppressWarnings(as.numeric(gsub(",", ".", as.character(x), fixed = TRUE)))
   bad <- !is.na(x) & is.na(y)
   if (any(bad)) {
-    abort_caagro("A variavel '", name, "' contem ", sum(bad),
-                 " valor(es) nao numerico(s) (ex.: '",
+    abort_caagro("A vari\u00e1vel '", name, "' contem ", sum(bad),
+                 " valor(es) n\u00e3o num\u00e9rico(s) (ex.: '",
                  as.character(x[which(bad)[1]]), "').")
   }
   y
@@ -91,7 +91,7 @@ signif_stars <- function(p) {
 valid_p_adjust <- function(method) {
   ok <- c("none", "holm", "bonferroni", "hochberg", "hommel", "BH", "BY", "fdr")
   if (!method %in% ok) {
-    abort_caagro("Correcao de multiplicidade desconhecida: '", method,
+    abort_caagro("Corre\u00e7\u00e3o de multiplicidade desconhecida: '", method,
                  "'. Use uma de: ", paste(ok, collapse = ", "), ".")
   }
   method

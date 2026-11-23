@@ -16,6 +16,12 @@
 #'   replicates; `cultivar`, `dose`, `rep`, `produtividade`.
 #' * `sim_germinacao`: binomial dose-response (germinated seeds out of 50)
 #'   for two products; `produto`, `dose`, `rep`, `germinadas`, `total`.
+#' * `sim_soja`: completely randomised design, soybean yield (sc/ha) of 4
+#'   treatments (Testemunha, Produto A, B, C) x 5 replicates; `tratamento`,
+#'   `repeticao`, `produtividade`. Used as the ANOVA example of the app.
+#' * `sim_notas`: disease severity scores (ordinal scale 1-9) of 5
+#'   treatments x 6 replicates; `tratamento`, `repeticao`, `nota`. Used as the
+#'   Kruskal-Wallis example of the app.
 #' * `sim_multivariado`: 36 genotypes from 3 groups, 6 traits; `genotipo`,
 #'   `grupo`, `altura`, `diam_colmo`, `massa_100`, `n_fileiras`, `ciclo`,
 #'   `produtividade`.
@@ -29,7 +35,7 @@
 #' @format Data frames.
 #' @source Simulated with `set.seed(20251123)`.
 #' @name caagro-datasets
-#' @aliases sim_dic sim_dbc sim_fatorial sim_dose sim_germinacao sim_multivariado
+#' @aliases sim_dic sim_dbc sim_fatorial sim_dose sim_germinacao sim_multivariado sim_soja sim_notas
 #' @keywords datasets
 #' @examples
 #' head(sim_dbc)
@@ -46,3 +52,7 @@
 "sim_germinacao"
 #' @rdname caagro-datasets
 "sim_multivariado"
+#' @rdname caagro-datasets
+"sim_soja"
+#' @rdname caagro-datasets
+"sim_notas"

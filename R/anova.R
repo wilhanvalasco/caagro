@@ -14,11 +14,16 @@
 #' If a `block` column is supplied the analysis is **never** carried out as
 #' DIC: `design = "DIC"` with a block column is an error.
 #'
-#' Sums of squares: `ss_type = "I"` (sequential; blocks entered first),
-#' `"II"` (each term adjusted for all terms not containing it; respects
-#' marginality) or `"III"` (each term adjusted for all others, sum-to-zero
-#' contrasts). For balanced data the three coincide. For unbalanced data
-#' type II is the default; the choice is reported in the result.
+#' The default is the conventional Fisher analysis of variance with
+#' sequential (type I) sums of squares, as in [stats::aov()]: blocks are
+#' entered first, so in a DBC the treatment sum of squares is always
+#' adjusted for blocks. Types `"II"` (each term adjusted for all terms not
+#' containing it) and `"III"` (sum-to-zero contrasts) are available for
+#' unbalanced factorial experiments. For balanced data the three coincide;
+#' the type used is always reported.
+#'
+#' `method = "welch"` performs Welch's one-way ANOVA (Welch, 1951), which
+#' does not assume equal variances. It is an alternative for DIC only.
 #'
 #' CV (%) = 100 x sqrt(MSE) / grand mean. Standard errors of the treatment
 #' means are model based, sqrt(MSE / n_i) for balanced DIC/DBC, and come
@@ -33,7 +38,10 @@
 #' @param block Name of the block column (DBC), optional.
 #' @param factors Further factor columns for factorial experiments.
 #' @param design `"auto"`, `"DIC"`, `"DBC"` or `"factorial"`.
-#' @param ss_type Type of sums of squares: `"I"`, `"II"` or `"III"`.
+#' @param ss_type Type of sums of squares: `"I"` (default, Fisher/aov),
+#'   `"II"` or `"III"`.
+#' @param method `"fisher"` (default, conventional F test) or `"welch"`
+#'   (one-way ANOVA without the equal-variance assumption; DIC only).
 #' @param conf_level Confidence level for intervals of the means.
 #' @param exclude Integer vector of row numbers of `data` to exclude
 #'   explicitly (e.g. confirmed outliers). Exclusions are recorded.
@@ -45,6 +53,10 @@
 #'
 #' Montgomery, D. C. (2017). *Design and Analysis of Experiments* (9th ed.).
 #' Wiley.
+#'
+#' Welch, B. L. (1951). On the comparison of several mean values: an
+#' alternative approach. *Biometrika*, 38(3/4), 330-336.
+#' \doi{10.2307/2332579}
 #'
 #' Olejnik, S. and Algina, J. (2003). Generalized eta and omega squared
 #' statistics. *Psychological Methods*, 8(4), 434-447.
@@ -65,14 +77,19 @@
 #' @export
 anova_exp <- function(data, response, treatment, block = NULL, factors = NULL,
                       design = c("auto", "DIC", "DBC", "factorial"),
-                      ss_type = c("II", "I", "III"), conf_level = 0.95,
-                      exclude = NULL) {
+                      ss_type = c("I", "II", "III"), conf_level = 0.95,
+                      exclude = NULL, method = c("fisher", "welch")) {
   design <- match.arg(design)
   ss_type <- match.arg(ss_type)
+  method <- match.arg(method)
+  if (method == "welch") {
+    if (!is.null(block) || !is.null(factors)) abort_caagro("A ANOVA de Welch s\u00f3 se aplica ao DIC com um fator (sem blocos ou fatorial).")
+    return(welch_anova(data, response, treatment, exclude = exclude))
+  }
   check_conf(conf_level)
   if (design == "DIC" && !is.null(block)) {
     abort_caagro("Foi informada uma coluna de blocos, mas o delineamento escolhido e DIC. ",
-                 "Dados de DBC nao devem ser analisados como DIC. Use design = 'DBC'.")
+                 "Dados de DBC n\u00e3o devem ser analisados como DIC. Use design = 'DBC'.")
   }
   if (design == "DBC" && is.null(block)) abort_caagro("DBC exige a coluna de blocos (`block`).")
   if (design == "factorial" && is.null(factors)) abort_caagro("Fatorial exige ao menos um fator adicional em `factors`.")
@@ -94,9 +111,9 @@ anova_exp <- function(data, response, treatment, block = NULL, factors = NULL,
   fml <- stats::as.formula(paste(bq(response), "~", rhs))
   fit <- stats::lm(fml, data = d)
   if (any(is.na(stats::coef(fit)))) {
-    warns <- c(warns, "Ha parametros nao estimaveis (matriz singular), geralmente por combinacoes de niveis ausentes. Interprete apenas os efeitos estimaveis.")
+    warns <- c(warns, "H\u00e1 par\u00e2metros n\u00e3o estim\u00e1veis (matriz singular), geralmente por combina\u00e7\u00f5es de n\u00edveis ausentes. Interprete apenas os efeitos estim\u00e1veis.")
   }
-  if (stats::df.residual(fit) < 1) abort_caagro("Graus de liberdade do residuo insuficientes (sem repeticoes suficientes para estimar o erro).")
+  if (stats::df.residual(fit) < 1) abort_caagro("Graus de liberdade do res\u00edduo insuficientes (sem repeti\u00e7\u00f5es suficientes para estimar o erro).")
 
   cells <- table(d[, facs, drop = FALSE])
   balanced <- length(unique(as.vector(cells))) == 1 &&
@@ -120,7 +137,7 @@ anova_exp <- function(data, response, treatment, block = NULL, factors = NULL,
     r_squared = summary(fit)$r.squared, ss_type = ss_type,
     balanced = balanced
   )
-  if (grand <= 0) warns <- c(warns, "Media geral <= 0: o CV% nao e interpretavel.")
+  if (grand <= 0) warns <- c(warns, "M\u00e9dia geral <= 0: o CV% n\u00e3o \u00e9 interpret\u00e1vel.")
 
   # effect sizes
   eff <- tab[tab$term != "Residuals", c("term", "df", "ss", "ms", "F")]
@@ -140,7 +157,7 @@ anova_exp <- function(data, response, treatment, block = NULL, factors = NULL,
   }
   tables$effect_size <- eff
 
-  if (!balanced) warns <- c(warns, sprintf("Dados desbalanceados: foram usadas somas de quadrados tipo %s e medias marginais estimadas (ajustadas).", ss_type))
+  if (!balanced) warns <- c(warns, sprintf("Dados desbalanceados: foram usadas somas de quadrados tipo %s e m\u00e9dias marginais estimadas (ajustadas).", ss_type))
   ptr <- tab$p[tab$term == treatment]
   notes <- anova_notes(tab, precision, treatment, design)
   code <- code_call("caagro::anova_exp", list(
@@ -166,7 +183,9 @@ anova_table <- function(fit, ss_type, d) {
   res_ss <- sum(stats::residuals(fit)^2)
   dfe <- stats::df.residual(fit)
   if (ss_type == "I") {
-    df <- a1$Df[-nrow(a1)]; ss <- a1$`Sum Sq`[-nrow(a1)]
+    idx <- match(labs, trimws(rownames(a1)))
+    df <- a1$Df[idx]; ss <- a1$`Sum Sq`[idx]
+    df[is.na(df)] <- 0; ss[is.na(ss)] <- 0
   } else if (ss_type == "II") {
     fac_mat <- attr(stats::terms(fit), "factors")
     df <- ss <- numeric(length(labs))
@@ -224,30 +243,22 @@ anova_notes <- function(tab, precision, treatment, design) {
   Fv <- tab$F[tab$term == treatment]
   d1 <- tab$df[tab$term == treatment]; d2 <- tab$df[tab$term == "Residuals"]
   list(
-    Resultado = sprintf("Efeito de '%s': F(%s, %s) = %.3f, p %s. CV experimental = %.2f%%; QM do residuo = %.4g.",
+    Resultado = sprintf("Efeito de '%s': F(%s, %s) = %.3f, p %s. CV experimental = %.2f%%; QM do res\u00edduo = %.4g.",
                         treatment, d1, d2, Fv, fmt_p_eq(p), precision$cv_percent, precision$mse),
     Interpretacao = if (isTRUE(p < 0.05))
-      "Ha evidencia de diferenca entre ao menos duas medias de tratamentos ao nivel de 5%. Use um teste de comparacoes multiplas adequado para identificar quais diferem."
+      "H\u00e1 evid\u00eancia de diferen\u00e7a entre ao menos duas m\u00e9dias de tratamentos ao n\u00edvel de 5%. Use um teste de compara\u00e7\u00f5es m\u00faltiplas adequado para identificar quais diferem."
     else
-      "Nao houve evidencia suficiente de diferenca entre as medias ao nivel de 5%. Isso NAO demonstra que os tratamentos sao iguais: a ausencia de significancia pode refletir baixo poder (poucas repeticoes ou alta variabilidade).",
+      "N\u00e3o houve evid\u00eancia suficiente de diferen\u00e7a entre as m\u00e9dias ao n\u00edvel de 5%. Isso N\u00c3O demonstra que os tratamentos s\u00e3o iguais: a aus\u00eancia de signific\u00e2ncia pode refletir baixo poder (poucas repeti\u00e7\u00f5es ou alta variabilidade).",
     Cuidados = paste(
-      "A validade depende de independencia (garantida pela casualizacao e pelo planejamento, nao por um teste),",
-      "normalidade dos residuos e homogeneidade de variancias. Verifique os diagnosticos.",
-      if (design == "DBC") "No DBC assume-se aditividade entre blocos e tratamentos (sem interacao)." else ""
+      "A validade depende de independ\u00eancia (garantida pela casualiza\u00e7\u00e3o e pelo planejamento, n\u00e3o por um teste),",
+      "normalidade dos res\u00edduos e homogeneidade de vari\u00e2ncias. Verifique os diagn\u00f3sticos.",
+      if (design == "DBC") "No DBC assume-se aditividade entre blocos e tratamentos (sem intera\u00e7\u00e3o)." else ""
     )
   )
 }
 
-#' Welch's one-way ANOVA (heterogeneous variances)
-#'
-#' @inheritParams anova_exp
-#' @return A `caagro_result` with table `test`.
-#' @references Welch, B. L. (1951). On the comparison of several mean values:
-#'   an alternative approach. *Biometrika*, 38(3/4), 330-336.
-#'   \doi{10.2307/2332579}
-#' @examples
-#' welch_anova(PlantGrowth, "weight", "group")
-#' @export
+# Welch's one-way ANOVA (called by anova_exp(method = "welch"))
+# Welch, B. L. (1951). Biometrika, 38(3/4), 330-336. doi:10.2307/2332579
 welch_anova <- function(data, response, treatment, exclude = NULL) {
   prep <- prepare_data(data, response, treatment, exclude = exclude)
   d <- prep$data
@@ -255,30 +266,15 @@ welch_anova <- function(data, response, treatment, exclude = NULL) {
   ot <- stats::oneway.test(fml, data = d, var.equal = FALSE)
   tb <- data.frame(statistic = unname(ot$statistic), df1 = unname(ot$parameter[1]),
                    df2 = unname(ot$parameter[2]), p = ot$p.value)
-  new_result("anova", "ANOVA de Welch (variancias heterogeneas)", "caagro_test",
+  new_result("anova", "ANOVA de Welch (vari\u00e2ncias heterog\u00eaneas)", "caagro_test",
              formula = fml, design = "DIC", settings = list(response = response, treatment = treatment),
              data = data, data_used = d, tables = list(test = tb), warnings = prep$messages,
              notes = list(Resultado = sprintf("F de Welch(%.0f; %.2f) = %.3f, p %s.", tb$df1, tb$df2, tb$statistic, fmt_p_eq(tb$p)),
-                          Cuidados = "Nao pressupoe variancias iguais. Para comparacoes par a par, use Games-Howell."),
-             code = code_call("caagro::welch_anova", list(data = as.name("dados"), response = response, treatment = treatment)))
+                          Cuidados = "N\u00e3o pressup\u00f5e vari\u00e2ncias iguais. Para compara\u00e7\u00f5es par a par, use Games-Howell."),
+             code = code_call("caagro::anova_exp", list(data = as.name("dados"), response = response, treatment = treatment, method = "welch")))
 }
 
-#' Planned contrasts among treatment means
-#'
-#' Tests user-defined linear contrasts of estimated marginal means using the
-#' model error variance.
-#'
-#' @param x A `caagro_anova` result.
-#' @param contrasts Named list of numeric coefficient vectors, one value per
-#'   level of `factor` (in level order). Coefficients should sum to zero.
-#' @param factor Factor whose means are contrasted (default: treatment).
-#' @param p_adjust Multiplicity correction (see [stats::p.adjust()]).
-#' @param conf_level Confidence level.
-#' @return A `caagro_result` with table `contrasts`.
-#' @examples
-#' fit <- anova_exp(PlantGrowth, "weight", "group")
-#' contrast_test(fit, list("ctrl vs trat" = c(1, -0.5, -0.5), "trt1 vs trt2" = c(0, 1, -1)))
-#' @export
+# Planned contrasts (called by compare_means(x, contrasts = ...))
 contrast_test <- function(x, contrasts, factor = NULL, p_adjust = "none", conf_level = 0.95) {
   if (!inherits(x, "caagro_anova")) abort_caagro("`x` deve ser resultado de anova_exp().")
   factor <- factor %||% x$settings$treatment
@@ -286,10 +282,10 @@ contrast_test <- function(x, contrasts, factor = NULL, p_adjust = "none", conf_l
   em <- emm_compute(x$model, factor, conf_level)
   k <- nrow(em)
   C <- do.call(rbind, lapply(contrasts, function(cc) {
-    if (length(cc) != k) abort_caagro("Cada contraste deve ter ", k, " coeficientes (niveis: ", paste(em[[factor]], collapse = ", "), ").")
+    if (length(cc) != k) abort_caagro("Cada contraste deve ter ", k, " coeficientes (n\u00edveis: ", paste(em[[factor]], collapse = ", "), ").")
     cc
   }))
-  if (any(abs(rowSums(C)) > 1e-8)) warn_caagro("Algum contraste nao soma zero; ele nao e um contraste propriamente dito.")
+  if (any(abs(rowSums(C)) > 1e-8)) warn_caagro("Algum contraste n\u00e3o soma zero; ele n\u00e3o \u00e9 um contraste propriamente dito.")
   est <- as.vector(C %*% em$emmean)
   V <- attr(em, "V")
   se <- sqrt(diag(C %*% V %*% t(C)))
@@ -303,5 +299,5 @@ contrast_test <- function(x, contrasts, factor = NULL, p_adjust = "none", conf_l
   new_result("anova", "Contrastes planejados", "caagro_test", design = x$design,
              settings = list(factor = factor, p_adjust = p_adjust, contrasts = contrasts),
              data_used = x$data_used, tables = list(contrasts = tb), model = x$model,
-             notes = list(Cuidados = "Contrastes devem ser definidos antes da analise dos dados. Intervalos nao ajustados para multiplicidade quando p_adjust = 'none'."))
+             notes = list(Cuidados = "Contrastes devem ser definidos antes da an\u00e1lise dos dados. Intervalos n\u00e3o ajustados para multiplicidade quando p_adjust = 'none'."))
 }
