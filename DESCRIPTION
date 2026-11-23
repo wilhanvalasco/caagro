@@ -34,7 +34,7 @@ Description: A statistical analysis platform for agricultural and
     worked example. A complete user guide in Portuguese is available
     in the README (see URL).
 License: MIT + file LICENSE
-URL: https://github.com/wilhanvalasco/caagro#readme,
+URL: https://wilhanvalasco.github.io/caagro/,
     https://github.com/wilhanvalasco/caagro
 BugReports: https://github.com/wilhanvalasco/caagro/issues
 Encoding: UTF-8
