@@ -352,11 +352,11 @@ mod_exploratory_server <- function(id) {
       apply_style(finish_plot(p, groups = if (is.null(g)) "a" else unique(as.character(d[[g]])),
                               defaults = list(title = NULL, x = input$sx, y = input$sy, legend = g)),
                   caagro_style(legend = legend_spec(show = !is.null(g), position = "bottom")))
-    }, res = 96)
+    }, res = 96, bg = "transparent")
     output$cormat <- shiny::renderPlot({
       d <- dat$data(); shiny::req(d, length(input$variables) >= 2, all(input$variables %in% names(d)))
       plot(cor_matrix(d, input$variables), style = caagro_style(show_title = FALSE))
-    }, res = 96)
+    }, res = 96, bg = "transparent")
     ed <- mod_plot_editor_server("plot", r)
     mod_export_server("export", shiny::reactive(list(r())), dat$name, ed$style)
   })

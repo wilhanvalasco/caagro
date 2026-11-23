@@ -123,8 +123,8 @@ mod_regression_server <- function(id) {
         details_panel("M\u00e9dias observadas por n\u00edvel de x", dt_out(ns("t_means"))))
     })
     nt <- caagro_style(show_title = FALSE)
-    output$d_res <- shiny::renderPlot(plot(reg(), "residuals", style = nt), res = 96)
-    output$d_qq <- shiny::renderPlot(plot(reg(), "qq", style = nt), res = 96)
+    output$d_res <- shiny::renderPlot(plot(reg(), "residuals", style = nt), res = 96, bg = "transparent")
+    output$d_qq <- shiny::renderPlot(plot(reg(), "qq", style = nt), res = 96, bg = "transparent")
     output$t_conv <- DT::renderDT({
       g <- reg(); fs <- g$tables$fit_stats[, c("model", "group", "converged", "iterations", "n", "k")]
       if (!is.null(g$tables$failures)) fs <- merge(fs, g$tables$failures, all = TRUE)

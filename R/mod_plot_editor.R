@@ -75,7 +75,7 @@ mod_plot_editor_ui <- function(id, height = "560px") {
       bslib::layout_columns(col_widths = bslib::breakpoints(sm = 6, lg = 4),
         shiny::selectInput(ns("fmt"), "Formato", c("PNG" = "png", "TIFF" = "tiff", "SVG" = "svg", "PDF" = "pdf"), width = "100%"),
         shiny::selectInput(ns("dpi"), "Resolu\u00e7\u00e3o", c("300 dpi" = 300, "600 dpi" = 600, "1200 dpi" = 1200, "150 dpi" = 150), width = "100%"),
-        shiny::selectInput(ns("bg"), "Fundo", c("Branco" = "white", "Transparente" = "transparent"), width = "100%"),
+        shiny::selectInput(ns("bg"), "Fundo", c("Transparente" = "transparent", "Branco" = "white"), width = "100%"),
         shiny::numericInput(ns("width"), "Largura", 17, 1, 200, width = "100%"),
         shiny::numericInput(ns("height"), "Altura", 12, 1, 200, width = "100%"),
         shiny::selectInput(ns("units"), "Unidade", c("cm", "mm", "in"), width = "100%")),
@@ -195,7 +195,7 @@ mod_plot_editor_server <- function(id, result, extra = shiny::reactive(list())) 
                  ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 0, label = paste("Gr\u00e1fico indispon\u00edvel:", conditionMessage(e)), colour = "#64748B") + ggplot2::theme_void()
                })
     })
-    output$plot <- shiny::renderPlot(plot_obj(), res = 110)
+    output$plot <- shiny::renderPlot(plot_obj(), res = 110, bg = "transparent")
     shiny::observeEvent(input$reset, update_inputs_from_style(session, caagro_style()))
     shiny::observeEvent(input$copy_style, { clip(style()); shiny::showNotification("Estilo copiado. Use 'Aplicar estilo copiado' em outro gr\u00e1fico.", type = "message") })
     shiny::observeEvent(input$paste_style, {

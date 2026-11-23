@@ -1,7 +1,7 @@
 Package: caagro
 Type: Package
 Title: Applied Statistics for Agricultural Experimentation in a 'shiny' Application
-Version: 1.2.0
+Version: 1.2.1
 Authors@R: c(
     person("Wilhan", "Valasco dos Santos",
            email = "wilhanvalasco@hotmail.com",
@@ -31,8 +31,12 @@ Description: A statistical analysis platform for agricultural and
     clustering and correlation matrices; a graphics editor with
     publication-quality export; and export of results to 'Excel', HTML or
     'Word' reports and reproducible R scripts. Every module includes a
-    worked example.
+    worked example. A complete user guide in Portuguese is available
+    in the README (see URL).
 License: MIT + file LICENSE
+URL: https://github.com/wilhanvalasco/caagro#readme,
+    https://github.com/wilhanvalasco/caagro
+BugReports: https://github.com/wilhanvalasco/caagro/issues
 Encoding: UTF-8
 Language: en-GB
 LazyData: true

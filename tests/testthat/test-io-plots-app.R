@@ -67,3 +67,12 @@ test_that("assistant suggests appropriate methods", {
   expect_match(suggest_method("curve", "binary")$method[1], "binomial")
 })
 
+
+test_that("plots have a transparent background", {
+  p <- plot(compare_means(anova_exp(sim_soja, "produtividade", "tratamento")))
+  th <- ggplot2::theme_get(); b <- ggplot2::ggplot_build(p)$plot$theme
+  expect_equal(b$plot.background$fill, "transparent")
+  expect_equal(b$panel.background$fill, "transparent")
+  f <- tempfile(fileext = ".png"); save_plot(p, f, 8, 6, dpi = 100, bg = "transparent")
+  if (requireNamespace("png", quietly = TRUE)) expect_equal(dim(png::readPNG(f))[3], 4)
+})

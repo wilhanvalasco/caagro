@@ -12,6 +12,15 @@ platform for agricultural experimentation used through a single function,
 be exported to Excel, to an HTML/Word report and to a reproducible R
 script.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/wilhanvalasco/caagro#readme}
+  \item \url{https://github.com/wilhanvalasco/caagro}
+  \item Report bugs at \url{https://github.com/wilhanvalasco/caagro/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Wilhan Valasco dos Santos \email{wilhanvalasco@hotmail.com} (\href{https://orcid.org/0000-0002-6533-2407}{ORCID}) (Instituto Federal Goiano, Campus Rio Verde, Rio Verde, Goiás, Brasil) [copyright holder]
 

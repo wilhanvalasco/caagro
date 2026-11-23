@@ -1,3 +1,13 @@
+# caagro 1.2.1
+
+* Todos os gráficos têm fundo transparente, no aplicativo e na exportação
+  (o fundo transparente passou a ser o padrão do editor; branco continua
+  disponível).
+* DESCRIPTION com `URL` apontando para o README no GitHub e `BugReports`.
+* README reescrito como manual de uso completo em português (instalação,
+  fluxo de análise, organização da planilha, cada módulo, editor gráfico,
+  exportação, reprodutibilidade, interpretação e problemas comuns).
+
 # caagro 1.2.0
 
 * Autoria: Walter Baida Garcia Coutinho (Universidade Federal de Viçosa)

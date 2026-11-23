@@ -29,7 +29,8 @@ caagro_palette <- function(n = NULL, type = c("qualitative", "sequential", "dive
 #' Five editorial themes sharing the same typographic hierarchy:
 #' `"light"` (Scientific Light, default), `"minimal"` (Scientific Minimal),
 #' `"bw"` (Publication Black & White), `"dark"` (Scientific Dark) and
-#' `"corporate"` (caagro Corporate).
+#' `"corporate"` (caagro Corporate). All themes have a transparent
+#' background.
 #'
 #' @param style Theme name.
 #' @param base_size Base font size (pt).
@@ -45,7 +46,7 @@ theme_caagro <- function(style = c("light", "minimal", "bw", "dark", "corporate"
   pal <- caagro_palette()
   ink <- switch(style, dark = "#E7ECF0", bw = "#000000", "#14283F")
   sub <- switch(style, dark = "#A9B4C2", bw = "#333333", pal[["cinza_tecnico"]])
-  bg <- switch(style, dark = "#14283F", corporate = "#FFFFFF", "#FFFFFF")
+  bg <- "transparent"  # transparent background in every theme (app and exports)
   grid <- switch(style, dark = "#2A3F57", bw = NA, minimal = "#EEF1F4", "#E7ECF0")
   axis_line <- switch(style, minimal = NA, dark = "#64748B", bw = "#000000", "#64748B")
   th <- ggplot2::theme_minimal(base_size = base_size, base_family = base_family) +
@@ -82,7 +83,7 @@ theme_caagro <- function(style = c("light", "minimal", "bw", "dark", "corporate"
       plot.title = ggplot2::element_text(face = "bold", colour = pal[["azul_profundo"]], size = ggplot2::rel(1.3)),
       strip.background = ggplot2::element_rect(fill = pal[["azul_profundo"]], colour = NA),
       strip.text = ggplot2::element_text(colour = "white", face = "bold", hjust = 0.02),
-      panel.background = ggplot2::element_rect(fill = "#FBFCFD", colour = NA))
+      panel.background = ggplot2::element_rect(fill = "transparent", colour = NA))
   }
   th
 }

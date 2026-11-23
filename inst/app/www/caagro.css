@@ -38,7 +38,6 @@ table.dataTable.caagro-dt td { font-size:.84rem; font-variant-numeric: tabular-n
 .caagro-module-list a { text-decoration:none; }
 .caagro-suggestion { border:1px solid var(--cg-line); border-radius:.6rem; padding:.6rem .8rem; margin:.45rem 0; background:#fff; }
 .caagro-rank { display:inline-flex; width:1.4rem; height:1.4rem; border-radius:50%; background:var(--cg-navy); color:#fff; font-size:.75rem; align-items:center; justify-content:center; margin-right:.45rem; }
-.caagro-plot-card .shiny-plot-output { background:#fff; }
 [data-bs-theme="dark"] body { background:#0F1E2F; }
 [data-bs-theme="dark"] .card, [data-bs-theme="dark"] .caagro-stat, [data-bs-theme="dark"] .caagro-note, [data-bs-theme="dark"] .caagro-suggestion,
 [data-bs-theme="dark"] .bslib-sidebar-layout > .sidebar { background:#14283F; border-color:#2A3F57; }
